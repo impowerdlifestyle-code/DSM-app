@@ -136,12 +136,59 @@ function getCoachVResponse(input) {
     "15 minutes of ball mastery every single day. No exceptions. Daily technical work on weak foot, first touch, moves. It compounds. 15 mins for 6 months straight? That's elite technical ability. Log it. ⚽",
     "Weak foot work is non-negotiable. Your strong foot is already good — your weak foot is where your next level lives. Every day, at least 50% of your ball mastery should be weak foot. That discomfort is growth. 🔥",
   ])
+  if (matchMsg(msg, ['inconsistent','inconsistency','sometimes good','sometimes bad','up and down','fluctuat'])) return randomMsg([
+    "Inconsistency is almost never physical or technical — it's MENTAL. You play great against strong teams and drop off against weaker ones? That's arousal levels. Your brain relaxes when it thinks the opponent is easy. Fix it: treat EVERY opponent like they're the best team you've ever faced. Same intensity. Same shark mentality. Every single game. 🦈",
+    "Here's what's happening when you're inconsistent: your confidence is tied to the situation instead of to YOUR actions. When the game feels big, you rise. When it feels easy, you drop. The goal is to bring the same energy regardless of the opponent. Action step: Before your next game, say 'this is the hardest opponent I've ever faced' — even if it's not. Watch what happens. 🔥",
+  ])
+  if (matchMsg(msg, ['confident feeling','act confident','confident action','feel confident','wait to feel','acting confident'])) return randomMsg([
+    "Here's the most important thing I can teach you about confidence: DO NOT wait to feel confident before acting confidently. Confident FEELINGS are uncontrollable — energy, ease, fun. Confident ACTIONS are controllable — calling for the ball, positive body language, shooting from inside the box. Act confident FIRST. The feelings follow. Always. 💪",
+    "Separate your feelings from your actions. You don't need to FEEL confident to ACT confident. Call for the ball even when you're nervous. Shoot from inside the box even when you're doubting yourself. Take that first touch forward even when it feels risky. The action creates the feeling — not the other way around. That's the key. 🦈",
+  ])
+  if (matchMsg(msg, ['confidence','confident','believe','doubt','unsure','scale','build confidence'])) return randomMsg([
+    "Confidence is a SKILL — not a personality trait, not something you're born with. It's a scale from 1 to 10 and you can MOVE that number through practice. Every time you do ball mastery and push through frustration, you build confidence. Every time you run the mental loop in a game, you build confidence. It compounds. Stack the reps. 💪",
+    "Confidence isn't something you wait to feel — it's something you BUILD. Every rep of ball mastery. Every action step you complete. Every time you act confidently even when you don't feel it. You're building confidence brick by brick. You don't find it. You earn it. 💪",
+    "Your brain focuses on what you tell it. Flip it. I am a shark. I take risks. I move forward. Your body follows your mind. Train your mind first.",
+  ])
+  if (matchMsg(msg, ['weak team','easy game','c team','lower level','easy opponent','relaxed','low intensity'])) return randomMsg([
+    "Playing a weaker team and dropping off? That's a mental trap. Your brain lowers its arousal because it thinks you don't need to be switched on. Wrong. Elite athletes bring the SAME intensity to every game — training, friendlies, cup finals. It's all the same. Shark mentality doesn't take days off. Action step: Pick 3 confident actions to execute in your next game regardless of the opponent. 🦈",
+    "The C team game is just as important as the derby. Why? Because consistency is a HABIT. You train your brain to switch on or off based on the opponent — that's a dangerous habit. Train it to switch on regardless. Same pre-match routine. Same shark mentality phrase. Same intensity. Every time. 🔥",
+  ])
+  if (matchMsg(msg, ['call for ball','shoot','first touch','box','positive action','one good thing'])) return randomMsg([
+    "Here's your weekly focus: after every practice and game, write down ONE positive action you took. Not a goal. Not an assist. One moment where you acted confidently — called for the ball, took a shot, made an aggressive first touch. Find that moment. Celebrate it. That's how you train your brain to find confidence. ✅",
+    "Confident actions to practice every session: call for the ball loudly, take your first touch FORWARD not backwards, shoot from inside the box when you get the chance, positive body language always. These are controllable. These build confidence. Log them in your action steps. 💪",
+  ])
   if (matchMsg(msg, ['motivat','tired','lazy','hard','struggle','dont want'])) return randomMsg([
     "You don't need motivation — you need discipline. Motivation comes and goes. Discipline shows up every day whether you feel like it or not. Show up anyway. 🔥",
     "On the days you don't feel like it — those are the most important days. That's where champions separate themselves. 15 minutes of ball mastery even when you're tired. That's the work. 💪",
   ])
   if (matchMsg(msg, ['schedule','program','daily','how often'])) return randomMsg([
     "Your program: DAILY — 15 min ball mastery + weak foot. PRACTICE DAYS — Action steps form after every session. WEEKLY — Check-in form before Tuesday. DAILY HABIT — Morning visualization, pre-match routine, reflection. Stay consistent. In 3 months you won't recognize yourself. 💪",
+  ])
+  if (matchMsg(msg, ['belief','beliefs','limiting','story','wall','invisible','rubbish','not good enough','capable'])) return randomMsg([
+    "Beliefs are the stories you tell yourself — and they shape EVERYTHING. Limiting beliefs are invisible walls. 'I'm rubbish.' 'I'm not as good as my friend.' Those thoughts are LYING to you. Here's the 2-step fix:\n\n1️⃣ IDENTIFY the limiting belief — catch it\n2️⃣ REPLACE it with an empowering belief\n\nInstead of 'I'm rubbish' try 'I have talent and I'm improving.' Same situation — completely different outcome. Action step: Write down one limiting belief you have right now and replace it. 💪",
+    "Stop letting limiting beliefs run your game. Every time you think 'I can't do this' or 'I'm not good enough' — that's a limiting belief creating an invisible wall. You have to CHOOSE to break through it. The 2-step process: identify it, replace it. Do it every single day until the empowering belief becomes automatic. 🦈",
+    "Here's your daily belief declaration — say it every morning: 'I believe I am capable of playing my best while having fun.' Say it out loud. Mean it. Your brain believes what you repeat. Repeat empowering beliefs until they become your reality. 🔥",
+  ])
+  if (matchMsg(msg, ['empowering','empower','affirmation','declaration','positive belief'])) return randomMsg([
+    "Empowering beliefs fuel confidence and growth. Examples: 'I have talent and I'm improving.' 'We are all on different journeys.' 'I get better every single day.' These aren't fake — they're the TRUTH you choose to focus on. Write yours down. Say them daily. Log them in your self-talk section. 💬",
+    "Your daily belief declaration is your most powerful mental tool. Write one sentence that captures who you're becoming as an athlete. Say it every morning before training. Say it before games. Burn it into your brain. That's how you build unshakeable confidence. 🦈",
+  ])
+  if (matchMsg(msg, ['progress','improving','better','archie','2.0','reset','recovery','frustration','body language'])) return randomMsg([
+    "Progress isn't always a goal or a win. Sometimes progress is resetting faster after frustration. Catching yourself before the negative body language takes over. Choosing to respond instead of react. That's HUGE. That's the difference between an average athlete and an elite one. Recognize your progress — even the small wins. 💪",
+    "Archie 1.0 reacted with frustration and slumped shoulders. Archie 2.0 catches it, resets, and keeps competing. Which version are you choosing today? Growth isn't linear — but every time you reset faster, you're leveling up. That's real progress. 🔥",
+    "When pressure hits — slumped shoulders, frustration, negative self talk — that's your signal to run the reset routine. Shake it out. Say 'next play.' Stand tall. Shark mentality back on. The faster you reset, the better athlete you become. How fast can you reset? 🦈",
+  ])
+  if (matchMsg(msg, ['pressure','drill','demonstrate','selected','coach watching','eyes on me'])) return randomMsg([
+    "High pressure moments are where champions are MADE. When the coach calls on you, when all eyes are on you — that's not a threat, that's an opportunity. Shark mentality means you WANT those moments. You step up, not back. Action step: Next time you feel pressure, say 'I want this' before you act. 🦈",
+    "Pressure reveals character. When you're put on the spot in a drill, in a game, in front of everyone — what do you do? The mental work you do every day is FOR those moments. Trust your preparation. Trust the process. You've put in the reps. Now perform. 🔥",
+  ])
+  if (matchMsg(msg, ['journey','compare','friend','teammate','better than me','not as good'])) return randomMsg([
+    "Stop comparing your journey to someone else's. We are ALL on different journeys. Your friend might be ahead of you right now — so what? Your path is YOUR path. Focus on being better than YOU were yesterday. That's the only comparison that matters. Action step: Write down one thing you did better today than last week. 💪",
+    "Comparing yourself to others is a trap. It feeds limiting beliefs. 'I'm not as good as him.' 'She's better than me.' These thoughts steal your focus from YOUR development. Empowering belief: I am on my own journey and I improve every single day. Say it. Mean it. 🦈",
+  ])
+  if (matchMsg(msg, ['body language','shoulders','slump','head down','negative body'])) return randomMsg([
+    "Your body language affects your mindset AS MUCH as your mindset affects your body language. Slumped shoulders tell your brain you've given up. Stand tall, chest out, head up — even when things go wrong. Fake it until your body catches up with your mind. That's a real technique used by elite athletes. 💪",
+    "Catch the slumped shoulders before they catch you. The moment you feel frustration — stand tall. That physical reset triggers a mental reset. It's biology. Use it. Action step: Every time something goes wrong today, physically stand tall and take one deep breath before responding. 🦈",
   ])
   return randomMsg([
     "Lock in. Whatever you're going through — shark mentality. Keep moving forward. What specific challenge do you want to work on today? 🦈",
