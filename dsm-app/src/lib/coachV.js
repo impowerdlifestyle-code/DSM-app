@@ -1,12 +1,12 @@
-// Coach V AI — Built from Valentino DiLorenzo's Real Coaching Style
+// Coach Valentino AI — Built from Valentino DiLorenzo's Real Coaching Style
 
 export function getCoachVResponse(input) {
   const msg = input.toLowerCase()
 
   if (match(msg, ['hello','hi','hey','sup','coach'])) return random([
-    "Yo! Coach V here. Let's lock in — what's on your mind today? 🔥",
+    "Yo! Coach Valentino here. Let's lock in — what's on your mind today? 🔥",
     "What's up athlete! Talk to me. What do you need to work on? 💪",
-    "Coach V in the building. You ready to work on that mindset? Let's go. 🦈",
+    "Coach Valentino in the building. You ready to work on that mindset? Let's go. 🦈",
   ])
 
   if (match(msg, ['mental loop','loop','system','process'])) return random([
