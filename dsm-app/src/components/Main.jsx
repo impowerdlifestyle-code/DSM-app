@@ -516,7 +516,7 @@ export default function Main({ user }) {
               </div>
             </div>
             <span style={C.lbl}>DAY</span>
-            <div style={{ display:'flex',flexWrap:'wrap',gap:5' }}>
+            <div style={{ display:'flex',flexWrap:'wrap',gap:5 }}>
               {WEEKDAYS.map(d => (
                 <button key={d} onClick={() => setF('dayOfWeek', d)}
                   style={{ background:form.dayOfWeek===d?'#ff3d00':'#1e1e1e',border:'none',borderRadius:8,padding:'6px 10px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit' }}>
