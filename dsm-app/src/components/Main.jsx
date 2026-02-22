@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel } from '../lib/supabase.js'
-import { getCoachVResponse, SUGGESTED_QUESTIONS } from '../lib/coachV.js'
 
 const QUOTES = [
   "The body achieves what the mind believes. Train your mind first.",
@@ -68,6 +67,88 @@ function getWeekKey() {
   const start = new Date(now.getFullYear(), 0, 1)
   const week = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7)
   return `${now.getFullYear()}-W${week}`
+}
+
+
+// ── COACH VALENTINO RESPONSES (built-in) ──
+const SUGGESTED_QUESTIONS = [
+  "How do I stop being scared in 1v1s?",
+  "I keep dwelling on my mistakes",
+  "I'm nervous before big games",
+  "Explain the Mental Loop",
+  "How do I build confidence?",
+  "I had a bad game today",
+  "What is Shark Mentality?",
+  "What is Goldfish Mentality?",
+  "How often should I train?",
+  "I don't feel motivated today",
+]
+
+function matchMsg(msg, keywords) {
+  return keywords.some(k => msg.includes(k))
+}
+function randomMsg(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function getCoachVResponse(input) {
+  const msg = input.toLowerCase()
+  if (matchMsg(msg, ['hello','hi','hey','sup','coach'])) return randomMsg([
+    "Yo! Coach Valentino here. Let's lock in — what's on your mind today? 🔥",
+    "What's up athlete! Talk to me. What do you need to work on? 💪",
+    "Coach Valentino in the building. Ready to work on that mindset? Let's go. 🦈",
+  ])
+  if (matchMsg(msg, ['mental loop','loop','system','process'])) return randomMsg([
+    "The Mental Loop is your reset system:\n\n1️⃣ SHARK MENTALITY — go in aggressive, fearless, hungry\n2️⃣ GOLDFISH MENTALITY — mistake? Gone in 1-2 seconds\n3️⃣ POSITIVE SELF TALK — say next play and mean it\n4️⃣ Back to SHARK — re-engage, attack again\n\nRuns on repeat the entire game. Master it and nothing can stop you. 🦈",
+  ])
+  if (matchMsg(msg, ['1v1','scared','afraid','fear','bigger','defender','physical','tackle','challenge'])) return randomMsg([
+    "I hear this all the time. Bigger defender and your brain says don't do it. That's your amygdala firing. Here's the truth: when you go in HESITANT, you're more likely to get hurt. When you commit fully — shark mentality — you're in control. Aggressive is safe. Hesitant is dangerous. Action step: Next 1v1, commit fully before you even touch the ball. 🦈",
+    "Fear in 1v1s comes from focusing on what you DON'T want. Flip it. Focus on winning the ball. Shark mentality means you WANT the 1v1. Action step: In your next practice, seek out 1v1 situations instead of avoiding them.",
+    "Bigger defenders aren't scarier — they're just bigger. Speed beats size. Confidence beats size. The only thing holding you back is the story you're telling yourself. Change the story. You're a shark. 🦈",
+  ])
+  if (matchMsg(msg, ['shark','aggressive','fearless','attack','risk'])) return randomMsg([
+    "Shark Mentality means one thing: you keep moving forward. Sharks don't swim backwards. They don't hesitate. On that pitch, you take risks. You challenge for balls you're not sure you'll win. Action step: Make 3 aggressive decisions you'd normally avoid in your next session. 🦈",
+    "Shark Mentality is an identity, not just a strategy. You don't DO shark mentality — you ARE a shark. Before your next game say out loud: I am a shark. I am aggressive. I am fearless. I move forward. Say it 3 times. 🦈",
+  ])
+  if (matchMsg(msg, ['goldfish','mistake','forget','error','bad pass','miss','messed up','reset'])) return randomMsg([
+    "Goldfish forget in 1-2 seconds. That's your superpower. Bad touch? Gone. Missed shot? Gone. Lost the 1v1? GONE. The best players in the world have short memories. Action step: Every mistake today — shake your hands out and say next play. 🐠",
+    "The mistake already happened. You can't change it. The ONLY thing you control is the next play. 1-2 seconds to process, then switch fully to what's in front of you. Goldfish mentality is elite mental skill. 🐠",
+  ])
+  if (matchMsg(msg, ['self talk','voice','head','negative','positive','inner'])) return randomMsg([
+    "Your inner voice is either coaching you or destroying you. Replace I can't do this with next play and I'm a shark. Simple phrases that reset your brain. Action step: Write down 3 power phrases you'll use in your next game. 💬",
+  ])
+  if (matchMsg(msg, ['growth','fixed','mindset','improve','better','develop'])) return randomMsg([
+    "Fixed mindset: I'm either good at this or I'm not. Growth mindset: I'm not good at this YET. That one word — YET — changes everything. Your abilities grow with effort. Every rep of ball mastery, every action step you log — that's you growing. 💪",
+  ])
+  if (matchMsg(msg, ['confidence','confident','believe','doubt','unsure'])) return randomMsg([
+    "Confidence isn't something you wait to feel — it's something you BUILD. Every rep of ball mastery. Every action step you complete. You're building confidence brick by brick. You don't find it. You earn it. 💪",
+    "Your brain focuses on what you tell it. Flip it. I am a shark. I take risks. I move forward. Your body follows your mind. Train your mind first.",
+  ])
+  if (matchMsg(msg, ['nervous','nerves','anxiety','worried','stress','pressure'])) return randomMsg([
+    "Nerves mean you care. Use them. Channel that energy into aggression, into your pre-match routine. 5 deep breaths. Shark mentality phrase. Visualize one aggressive action in the first 5 minutes. Then go compete. 🔥",
+    "Reframe the nerves. Instead of I'm so nervous say I'm so ready. Same physical feeling — completely different mental response. Your brain believes what you tell it. Tell it you're a shark.",
+  ])
+  if (matchMsg(msg, ['lost','lose','bad game','terrible','played bad'])) return randomMsg([
+    "One bad game doesn't define you. What defines you is how you RESPOND. Goldfish mentality applies to games too. Process it, learn from it, move on. What's one thing you'll fix this week? 🐠",
+    "Losses hurt. Good. That means you care. Now use that hurt. Name ONE thing that went wrong and ONE thing you'll do in training to fix it. That's how champions are built. 💪",
+  ])
+  if (matchMsg(msg, ['ball mastery','weak foot','technical','skills','training'])) return randomMsg([
+    "15 minutes of ball mastery every single day. No exceptions. Daily technical work on weak foot, first touch, moves. It compounds. 15 mins for 6 months straight? That's elite technical ability. Log it. ⚽",
+    "Weak foot work is non-negotiable. Your strong foot is already good — your weak foot is where your next level lives. Every day, at least 50% of your ball mastery should be weak foot. That discomfort is growth. 🔥",
+  ])
+  if (matchMsg(msg, ['motivat','tired','lazy','hard','struggle','dont want'])) return randomMsg([
+    "You don't need motivation — you need discipline. Motivation comes and goes. Discipline shows up every day whether you feel like it or not. Show up anyway. 🔥",
+    "On the days you don't feel like it — those are the most important days. That's where champions separate themselves. 15 minutes of ball mastery even when you're tired. That's the work. 💪",
+  ])
+  if (matchMsg(msg, ['schedule','program','daily','how often'])) return randomMsg([
+    "Your program: DAILY — 15 min ball mastery + weak foot. PRACTICE DAYS — Action steps form after every session. WEEKLY — Check-in form before Tuesday. DAILY HABIT — Morning visualization, pre-match routine, reflection. Stay consistent. In 3 months you won't recognize yourself. 💪",
+  ])
+  return randomMsg([
+    "Lock in. Whatever you're going through — shark mentality. Keep moving forward. What specific challenge do you want to work on today? 🦈",
+    "Talk to me. Give me more details and I'll give you a specific action step you can use today. 💪",
+    "Process over outcome. Don't focus on the result — focus on the work. What's one thing you can do TODAY to get better? ⚽",
+    "Every challenge has a solution. Tell me exactly what's happening and we'll break it down. Shark, Goldfish, or Self Talk — which one do you need right now? 🔥",
+  ])
 }
 
 export default function Main({ user }) {
