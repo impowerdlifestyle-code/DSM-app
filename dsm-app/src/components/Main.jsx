@@ -15,16 +15,16 @@ const DAYS = ["M", "T", "W", "T", "F", "S", "S"]
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 const BALL_MASTERY_SKILLS = [
-  { id: "toe_taps", label: "Toe Taps", icon: "⚽" },
-  { id: "inside_outside", label: "Inside/Outside", icon: "🦶" },
-  { id: "pullbacks", label: "Pull Backs", icon: "↩️" },
-  { id: "scissors", label: "Scissors", icon: "✂️" },
-  { id: "v_moves", label: "V Moves", icon: "✌️" },
-  { id: "dribbling", label: "Dribbling", icon: "🏃" },
-  { id: "passing", label: "Passing", icon: "➡️" },
-  { id: "shooting", label: "Shooting", icon: "🥅" },
-  { id: "first_touch", label: "First Touch", icon: "🎯" },
-  { id: "juggling", label: "Juggling", icon: "🔄" },
+  { id: "toe_taps", label: "Toe Taps", icon: "⚽", video: "https://www.youtube.com/watch?v=ufMTOvD8Byw" },
+  { id: "inside_outside", label: "Inside/Outside", icon: "🦶", video: "https://www.youtube.com/watch?v=cJZChBCkpL4" },
+  { id: "pullbacks", label: "Pull Backs", icon: "↩️", video: "https://www.youtube.com/watch?v=FzEkGHFCXTk" },
+  { id: "scissors", label: "Scissors", icon: "✂️", video: "https://www.youtube.com/watch?v=4L3H3p-QO2I" },
+  { id: "v_moves", label: "V Moves", icon: "✌️", video: "https://www.youtube.com/watch?v=ZbNDD73dBiI" },
+  { id: "dribbling", label: "Dribbling", icon: "🏃", video: "https://www.youtube.com/watch?v=2xtNcVMISxk" },
+  { id: "passing", label: "Passing", icon: "➡️", video: "https://www.youtube.com/watch?v=aBMqR7L2BgA" },
+  { id: "shooting", label: "Shooting", icon: "🥅", video: "https://www.youtube.com/watch?v=rnXSbWBFgx4" },
+  { id: "first_touch", label: "First Touch", icon: "🎯", video: "https://www.youtube.com/watch?v=rFbNVGvJHMI" },
+  { id: "juggling", label: "Juggling", icon: "🔄", video: "https://www.youtube.com/watch?v=MHpFzCQMoGE" },
 ]
 
 const PARENT_GUIDE = [
@@ -135,6 +135,26 @@ function getCoachVResponse(input) {
   if (matchMsg(msg, ['ball mastery','weak foot','technical','skills','training'])) return randomMsg([
     "15 minutes of ball mastery every single day. No exceptions. Daily technical work on weak foot, first touch, moves. It compounds. 15 mins for 6 months straight? That's elite technical ability. Log it. ⚽",
     "Weak foot work is non-negotiable. Your strong foot is already good — your weak foot is where your next level lives. Every day, at least 50% of your ball mastery should be weak foot. That discomfort is growth. 🔥",
+  ])
+  if (matchMsg(msg, ['downshift','downshifting breath','calm breath','4 second','inhale 4','box breath','breathing technique'])) return randomMsg([
+    "The downshifting breath is for when you need to CALM DOWN — too amped, too frustrated, too in your head:\n\nInhale for 4 seconds — clench your fists\nHold for 2 seconds\nExhale for 6 seconds — release your fists\n\nDo this once or twice and your nervous system physically calms down. Use it before big moments, at halftime, or when frustration is building. Practice it in ball mastery so it is automatic. 💨",
+  ])
+  if (matchMsg(msg, ['energizing breath','energy breath','pump up','fire up','wake up','get going','fast exhale'])) return randomMsg([
+    "The energizing breath is for when you need to WAKE UP — flat, low energy, not switched on:\n\nStrong inhale through the nose\nFast forceful exhale through the mouth\n\nOne or two of these and your body gets a shot of energy. Use it before kickoff, coming off the bench, or when you feel flat in the second half. Quick inhale, BOOM exhale. Fire yourself up. 🔥",
+  ])
+  if (matchMsg(msg, ['reactive','responsive','reactive self talk','responsive self talk','respond not react'])) return randomMsg([
+    "There are two types of self-talk after a mistake:\n\nREACTIVE — automatic, negative, self-defeating. I am trash. Why did I do that. I suck.\nRESPONSIVE — chosen, positive, constructive. Forget it. Lock in. Next play.\n\nYou cannot stop the reactive thought from firing. But you CAN choose the responsive one that follows. That choice is your superpower. Train it every day in ball mastery. 💬",
+  ])
+  if (matchMsg(msg, ['rate mental','mental performance','1 to 10','mental score','rate yourself','felt in the zone','got distracted'])) return randomMsg([
+    "When you fill in your action steps, rate your MENTAL performance 1-10 — not just your physical. And write a note explaining the score. Felt in the zone? What created that? Got distracted? What triggered it? The more detail you give, the better I can coach you. This data is how we track your real progress. 📊",
+  ])
+  if (matchMsg(msg, ['forget it','lock in','cue','cue word','trigger word','keyword','phrase'])) return randomMsg([
+    "Your cue words are the triggers for your reset routine. Forget it — that is your goldfish cue. The mistake is gone. Lock in — that is your shark cue. You are back, aggressive, focused. Two words. That is the whole system. Use them EVERY time in ball mastery so they are completely automatic by game day. 🦈",
+    "Pick your cue words and stick with them. Forget it. Next play. Let it go. Whatever goldfish phrase snaps you out of the past. Then Lock in. Be hungry. I got this. Whatever shark phrase fires you back up. Same words every time. Repetition builds the habit. The habit saves you in big moments. 🔥",
+  ])
+  if (matchMsg(msg, ['spiral','prevent spiral','stop spiraling','one mistake leads','snowball'])) return randomMsg([
+    "The reset routine exists for one reason — to prevent the spiral. Mistake happens. You react. If you do NOT reset, the frustration carries into the next play. Then the next. Suddenly one bad touch turned into five bad minutes. The reset routine BREAKS that chain at step one. Goldfish it. Breathe. Shark back. Done. Do not let one mistake become five. 🦈",
+    "Spiraling after mistakes is almost never physical — it is mental. Your technique does not suddenly get worse. Your FOCUS does. The reset routine brings your focus back to the present play where it belongs. Practice it after every mistake in ball mastery. Even the tiny ones. Build the habit when the pressure is low so it fires automatically when the pressure is high. 🔥",
   ])
   if (matchMsg(msg, ['helpful','unhelpful','resetting statement','reset statement','helpful self talk','check focus','awareness','notice'])) return randomMsg([
     "Stop thinking about self-talk as positive vs negative. Think about it as HELPFUL vs UNHELPFUL. The question is not: is this thought positive? The question is: is this thought helping me focus on the right things RIGHT NOW? If not — replace it with a resetting statement and get back in the game. 💬",
@@ -495,6 +515,52 @@ export default function Main({ user }) {
     nb: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' },
   }
 
+  // PAYWALL CHECK
+  const isLocked = profile && profile.role !== 'coach' && profile.access_level === 'locked'
+  const isPending = profile && profile.role !== 'coach' && !profile.access_level
+
+  if (isLocked || isPending) {
+    return (
+      <div style={C.app}>
+        <style>{`
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          html, body, #root { background: #0a0a0a; min-height: 100vh; }
+          @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+          .fade { animation: fadeIn 0.3s ease; }
+        `}</style>
+        <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'30px 24px', textAlign:'center' }} className="fade">
+          <div style={{ fontSize:36, fontWeight:900, letterSpacing:4, marginBottom:4 }}>DSM</div>
+          <div style={{ fontSize:9, letterSpacing:3, color:'#ff3d00', fontWeight:700, marginBottom:40 }}>DILORENZO SOCCER MINDSET</div>
+          <div style={{ fontSize:60, marginBottom:20 }}>🔒</div>
+          <div style={{ fontSize:24, fontWeight:900, letterSpacing:2, marginBottom:12 }}>UNLOCK YOUR ACCESS</div>
+          <div style={{ fontSize:14, color:'#888', lineHeight:1.6, marginBottom:32, maxWidth:320 }}>
+            You're one step away from the full DSM program. Join now to unlock Coach Valentino, Ball Mastery tracking, Weekly Check-ins and more.
+          </div>
+          <div style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:14, padding:'20px 18px', marginBottom:24, width:'100%', maxWidth:340 }}>
+            <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:12 }}>WHAT YOU GET</div>
+            {[['🤖','Coach Valentino AI'],['⚽','Daily Ball Mastery Log'],['📋','Weekly Check-In'],['✅','Action Steps Tracker'],['📊','Habit Tracker'],['🦈','Full DSM Program']].map(([icon,label])=>(
+              <div key={label} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+                <div style={{ fontSize:18 }}>{icon}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#ccc' }}>{label}</div>
+                <div style={{ marginLeft:'auto', fontSize:11, color:'#ff3d00', fontWeight:800 }}>✓</div>
+              </div>
+            ))}
+          </div>
+          <a href="https://www.fanbasis.com" target="_blank" rel="noreferrer"
+            style={{ display:'block', width:'100%', maxWidth:340, background:'linear-gradient(135deg,#ff3d00,#ff6d00)', border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:'#fff', cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
+            JOIN NOW — FANBASIS 🔥
+          </a>
+          <div style={{ fontSize:11, color:'#444', lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
+            After payment, your coach will activate your account within 24 hours.
+          </div>
+          <button onClick={signOut} style={{ background:'none', border:'1px solid #333', borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+            SIGN OUT
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const navTabs = [
     { id: 'home', icon: '⚡', label: 'HOME' },
     { id: 'actions', icon: '✅', label: 'ACTIONS' },
@@ -747,7 +813,13 @@ export default function Main({ user }) {
                       {(ballMastery[skill.id]?.reps||0)>0?'✓':skill.icon}
                     </button>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
+                        <a href={skill.video} target="_blank" rel="noreferrer"
+                          style={{ fontSize:9, color:'#ff3d00', fontWeight:800, letterSpacing:1, textDecoration:'none', background:'#1e1e1e', borderRadius:6, padding:'2px 6px' }}>
+                          ▶ VIDEO
+                        </a>
+                      </div>
                       {(ballMastery[skill.id]?.reps||0)>0 && (
                         <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4 }}>
                           <span style={{ fontSize:10,color:'#555' }}>Reps:</span>
@@ -1011,8 +1083,25 @@ export default function Main({ user }) {
             ))}
           </div>
 
-          <span style={C.lbl}>ATHLETES</span>
-          {allAthletes.filter(a=>a.role==='athlete').map((a,i)=>(
+          {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')).length > 0 && <>
+            <span style={{ ...C.lbl, color:'#ff3d00' }}>⚠️ PENDING ACTIVATION</span>
+            {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')).map((a,i)=>(
+              <div key={i} style={{ ...C.card, borderColor:'#ff3d00', cursor:'pointer' }} onClick={()=>setSelectedAthlete(a)}>
+                <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+                  <div>
+                    <div style={{ fontSize:16,fontWeight:800,marginBottom:2 }}>{a.full_name||a.email}</div>
+                    <div style={{ fontSize:10,color:'#ff3d00',fontWeight:700 }}>⚠️ WAITING FOR ACTIVATION</div>
+                  </div>
+                  <button onClick={async(e)=>{ e.stopPropagation(); await updateAccessLevel(a.id,'paid'); loadUserData(); }}
+                    style={{ background:'#00aa44',border:'none',borderRadius:8,padding:'8px 12px',fontSize:10,fontWeight:900,color:'#fff',cursor:'pointer',fontFamily:'inherit' }}>
+                    UNLOCK
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>}
+          <span style={C.lbl}>ACTIVE ATHLETES</span>
+          {allAthletes.filter(a=>a.role==='athlete'&&a.access_level&&a.access_level!=='locked').map((a,i)=>(
             <div key={i} style={{ ...C.card,cursor:'pointer' }} onClick={()=>setSelectedAthlete(a)}>
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                 <div>
@@ -1073,7 +1162,17 @@ export default function Main({ user }) {
             </div>
           </div>
           <div style={C.card}>
-            <span style={C.lbl}>GRANT ACCESS</span>
+            <span style={C.lbl}>ACCESS CONTROL</span>
+            <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+              <button onClick={async()=>{ await updateAccessLevel(selectedAthlete.id,'paid'); setSelectedAthlete({...selectedAthlete,access_level:'paid'}); loadUserData(); }}
+                style={{ flex:1, background:'#00aa44', border:'none', borderRadius:10, padding:'12px 8px', fontSize:11, fontWeight:900, color:'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                ✅ UNLOCK ACCESS
+              </button>
+              <button onClick={async()=>{ await updateAccessLevel(selectedAthlete.id,'locked'); setSelectedAthlete({...selectedAthlete,access_level:'locked'}); loadUserData(); }}
+                style={{ flex:1, background:'#aa0000', border:'none', borderRadius:10, padding:'12px 8px', fontSize:11, fontWeight:900, color:'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                🔒 LOCK ACCESS
+              </button>
+            </div>
             <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
               {['trial','mentoring','paid','locked'].map(level=>(
                 <button key={level} onClick={async()=>{ await updateAccessLevel(selectedAthlete.id,level); setSelectedAthlete({...selectedAthlete,access_level:level}); loadUserData(); }}
