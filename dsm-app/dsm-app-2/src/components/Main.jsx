@@ -309,6 +309,155 @@ function getCoachVResponse(input) {
   ])
 }
 
+// ── STANDALONE ACTION FORM (fixes mobile typing) ──
+function ActionForm({ user, onSubmit, initialSubmissions }) {
+  const WEEKDAYS2 = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+  const [form, setForm] = useState({
+    playerName:'', sessionType:'Practice',
+    date: new Date().toISOString().split('T')[0],
+    dayOfWeek: WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],
+    didSteps:'', usedSteps:{}, occasions:{}, comments:{},
+    conditioning:7, strength:7, technical:7, mental:7,
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (k,v) => setForm(p=>({...p,[k]:v}))
+
+  const StepCard = ({icon,title,desc,k}) => {
+    const [occ, setOcc] = useState('')
+    const [com, setCom] = useState('')
+    return (
+      <div style={{background:'#111',borderRadius:12,padding:16,marginBottom:8,border:`1px solid ${form.usedSteps[k]?'#ff3d00':'#1e1e1e'}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:form.usedSteps[k]?10:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{fontSize:20}}>{icon}</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:800}}>{title}</div>
+              <div style={{fontSize:10,color:'#555'}}>{desc}</div>
+            </div>
+          </div>
+          <button onClick={()=>set('usedSteps',{...form.usedSteps,[k]:!form.usedSteps[k]})}
+            style={{background:form.usedSteps[k]?'#ff3d00':'#1e1e1e',border:'none',borderRadius:20,padding:'5px 10px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+            {form.usedSteps[k]?'✓ USED':'MARK'}
+          </button>
+        </div>
+        {form.usedSteps[k] && (
+          <div>
+            <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>OCCASION</div>
+            <input style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box',marginBottom:8}}
+              placeholder="When did you use this?" value={occ}
+              onChange={e=>{setOcc(e.target.value);set('occasions',{...form.occasions,[k]:e.target.value})}} />
+            <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>COMMENTS</div>
+            <textarea style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fff',fontFamily:'inherit',outline:'none',resize:'none',boxSizing:'border-box',height:55}}
+              placeholder="How did it help?" value={com}
+              onChange={e=>{setCom(e.target.value);set('comments',{...form.comments,[k]:e.target.value})}} />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const handleSubmit = async () => {
+    if(!form.playerName) return alert('Enter your name!')
+    if(!form.didSteps) return alert('Did you do the action steps?')
+    setSaving(true)
+    await onSubmit(form)
+    setForm({playerName:'',sessionType:'Practice',date:new Date().toISOString().split('T')[0],dayOfWeek:WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],didSteps:'',usedSteps:{},occasions:{},comments:{},conditioning:7,strength:7,technical:7,mental:7})
+    setSaving(false)
+  }
+
+  const inp = {width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box'}
+  const lbl = {fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7,display:'block'}
+  const btn = {background:'linear-gradient(135deg,#ff3d00,#ff6d00)',border:'none',borderRadius:10,padding:'14px 18px',fontSize:13,fontWeight:800,letterSpacing:2,color:'#fff',cursor:'pointer',width:'100%',fontFamily:'inherit',marginBottom:8}
+  const card = {background:'#111',borderRadius:12,padding:16,marginBottom:10,border:'1px solid #1e1e1e'}
+  const orange = {background:'linear-gradient(135deg,#ff3d00,#ff6d00)',borderRadius:12,padding:'18px 16px',marginBottom:12}
+
+  return (
+    <div style={{padding:'16px 20px 40px'}}>
+      <div style={{fontSize:26,fontWeight:900,letterSpacing:2,marginBottom:2}}>ACTION STEPS</div>
+      <div style={{fontSize:9,color:'#555',letterSpacing:3,fontWeight:700,marginBottom:12}}>AFTER EVERY PRACTICE & GAME</div>
+      <div style={orange}>
+        <span style={{...lbl,color:'rgba(255,255,255,0.6)'}}>⚠️ REQUIRED — NO EXCEPTIONS</span>
+        <div style={{fontSize:14,fontWeight:800,lineHeight:1.4}}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
+      </div>
+      <div style={card}>
+        <span style={lbl}>PLAYER NAME</span>
+        <input style={{...inp,marginBottom:10}} placeholder="Your name" value={form.playerName} onChange={e=>set('playerName',e.target.value)} />
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+          <div><span style={lbl}>SESSION</span>
+            <select value={form.sessionType} onChange={e=>set('sessionType',e.target.value)}
+              style={{background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',color:'#fff',fontFamily:'inherit',fontSize:14,outline:'none',width:'100%'}}>
+              <option>Practice</option><option>Game</option>
+            </select>
+          </div>
+          <div><span style={lbl}>DATE</span>
+            <input type="date" style={inp} value={form.date} onChange={e=>set('date',e.target.value)} />
+          </div>
+        </div>
+        <span style={lbl}>DAY</span>
+        <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+          {WEEKDAYS2.map(d=>(
+            <button key={d} onClick={()=>set('dayOfWeek',d)}
+              style={{background:form.dayOfWeek===d?'#ff3d00':'#1e1e1e',border:'none',borderRadius:8,padding:'6px 10px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+              {d.slice(0,3).toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={card}>
+        <span style={lbl}>DID YOU DO THE ACTION STEPS?</span>
+        <div style={{display:'flex',gap:8}}>
+          {['Yes','No'].map(opt=>(
+            <button key={opt} onClick={()=>set('didSteps',opt)}
+              style={{flex:1,background:form.didSteps===opt?'#ff3d00':'#1e1e1e',border:'none',borderRadius:10,padding:12,fontSize:14,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+              {opt==='Yes'?'✅ YES':'❌ NO'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <span style={lbl}>WHICH DID YOU USE?</span>
+      <StepCard icon="🦈" title="SHARK MENTALITY" desc="Taking risks, aggressive, fearless" k="shark" />
+      <StepCard icon="🐠" title="GOLDFISH MENTALITY" desc="Short term memory for mistakes" k="goldfish" />
+      <StepCard icon="💬" title="POSITIVE SELF TALK" desc="Control your inner voice" k="selftalk" />
+      <StepCard icon="🔇" title="TUNE OUT COACH YELLING" desc="Stay focused under pressure" k="tuneout" />
+      <div style={{...card,opacity:0.4,marginBottom:10}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{fontSize:20}}>👁️</div>
+            <div><div style={{fontSize:13,fontWeight:800,color:'#555'}}>VISUALIZATION</div>
+              <div style={{fontSize:10,color:'#444'}}>Unlocks at Lesson 5</div></div>
+          </div>
+          <div style={{background:'#1e1e1e',borderRadius:20,padding:'4px 10px',fontSize:9,fontWeight:800,color:'#555'}}>🔒 LOCKED</div>
+        </div>
+      </div>
+      <div style={card}>
+        <span style={lbl}>RATE MY PERFORMANCE (1–10)</span>
+        {['conditioning','strength','technical','mental'].map(k=>(
+          <div key={k} style={{marginBottom:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+              <span style={{fontSize:12,color:'#aaa',textTransform:'capitalize'}}>{k}</span>
+              <span style={{fontSize:14,fontWeight:900,color:'#ff3d00'}}>{form[k]}/10</span>
+            </div>
+            <input type="range" min="1" max="10" value={form[k]} onChange={e=>set(k,parseInt(e.target.value))}
+              style={{accentColor:'#ff3d00',width:'100%'}} />
+          </div>
+        ))}
+      </div>
+      <button style={btn} onClick={handleSubmit} disabled={saving}>
+        {saving?'SAVING...':'📤 SUBMIT & DOWNLOAD'}
+      </button>
+      {initialSubmissions?.length > 0 && <>
+        <span style={{...lbl,marginTop:16}}>PAST SUBMISSIONS</span>
+        {initialSubmissions.slice(0,5).map((s,i)=>(
+          <div key={i} style={card}>
+            <div style={{fontSize:10,color:'#ff3d00',fontWeight:700,letterSpacing:2}}>{s.day_of_week}, {s.date} · {s.session_type}</div>
+            <div style={{fontSize:14,fontWeight:800,marginTop:2}}>{s.player_name}</div>
+          </div>
+        ))}
+      </>}
+    </div>
+  )
+}
+
 export default function Main({ user }) {
   const [tab, setTab] = useState('home')
   const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)])
@@ -756,10 +905,21 @@ export default function Main({ user }) {
 
       {/* ── ACTION STEPS ── */}
       {tab === 'actions' && (
-        <div style={C.scroll} className="fade">
-          <div style={C.title}>ACTION STEPS</div>
-          <div style={C.sub}>AFTER EVERY PRACTICE & GAME</div>
-          <div style={{ ...C.orange }}>
+        <div className="fade">
+          <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
+            const { error } = await submitActionSteps(formData, user.id)
+            if (error) { alert('Error: ' + error.message); return }
+            const steps = ['shark','goldfish','selftalk','tuneout'].filter(k => formData.usedSteps[k])
+            const txt = 'DSM ACTION STEPS\n' + '='.repeat(40) + '\nPLAYER: ' + formData.playerName + '\nDAY: ' + formData.dayOfWeek + ', ' + formData.date + '\nSESSION: ' + formData.sessionType + '\nDID STEPS: ' + formData.didSteps + '\n\n' + steps.map(k=>'✅ ' + k.toUpperCase() + '\n  Occasion: ' + (formData.occasions[k]||'—') + '\n  Comments: ' + (formData.comments[k]||'—')).join('\n\n') + '\n\nPERFORMANCE:\nConditioning: ' + formData.conditioning + '/10\nStrength: ' + formData.strength + '/10\nTechnical: ' + formData.technical + '/10\nMental: ' + formData.mental + '/10'
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }))
+            a.download = 'DSM-' + formData.playerName + '-' + formData.date + '.txt'
+            a.click()
+            const { data: updated } = await getActionSteps(user.id)
+            setSubmissions(updated || [])
+            alert('✅ Saved & downloaded!')
+          }} />
+          {false && <div style={{ ...C.orange }}>
             <span style={C.olbl}>⚠️ REQUIRED — NO EXCEPTIONS</span>
             <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
           </div>
@@ -829,20 +989,6 @@ export default function Main({ user }) {
           <button style={C.btn} onClick={handleSubmitForm} disabled={savingForm}>
             {savingForm ? 'SAVING...' : '📤 SUBMIT & DOWNLOAD'}
           </button>
-          {submissions.length > 0 && <>
-            <span style={{ ...C.lbl, marginTop: 16 }}>PAST SUBMISSIONS</span>
-            {submissions.slice(0,5).map((s,i) => (
-              <div key={i} style={C.card}>
-                <div style={{ fontSize:10,color:'#ff3d00',fontWeight:700,letterSpacing:2 }}>{s.day_of_week}, {s.date} · {s.session_type}</div>
-                <div style={{ fontSize:14,fontWeight:800,marginTop:2 }}>{s.player_name}</div>
-                <div style={{ display:'flex',gap:8,marginTop:6,flexWrap:'wrap' }}>
-                  {[['shark','🦈'],['goldfish','🐠'],['selftalk','💬'],['tuneout','🔇']].map(([k,icon]) => s[k+'_used'] &&
-                    <span key={k} style={{ background:'#1e1e1e',borderRadius:20,padding:'2px 8px',fontSize:9,fontWeight:700,color:'#ff3d00' }}>{icon}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </>}
         </div>
       )}
 
