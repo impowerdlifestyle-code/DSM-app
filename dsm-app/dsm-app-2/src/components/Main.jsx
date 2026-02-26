@@ -424,12 +424,6 @@ export default function Main({ user }) {
   const setF = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const setCI = (k, v) => setCheckin(p => ({ ...p, [k]: v }))
 
-  // Debounced input handler for smooth mobile typing
-  const handleInput = (setter, key) => (e) => {
-    const val = e.target.value
-    setter(p => ({ ...p, [key]: val }))
-  }
-
   const completedHabits = habits.reduce((a, h) => a + h.days.filter(Boolean).length, 0)
   const totalHabits = habits.length * 7
   const pct = Math.round((completedHabits / totalHabits) * 100)
@@ -627,31 +621,39 @@ export default function Main({ user }) {
     ...(isCoach ? [{ id: 'dashboard', icon: '🏆', label: 'COACH' }] : []),
   ]
 
-  const ActionStep = ({ icon, title, desc, k }) => (
-    <div style={{ ...C.card, borderColor: form.usedSteps[k] ? '#ff3d00' : '#1e1e1e', marginBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: form.usedSteps[k] ? 10 : 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 20 }}>{icon}</div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800 }}>{title}</div>
-            <div style={{ fontSize: 10, color: '#555' }}>{desc}</div>
+  const ActionStep = ({ icon, title, desc, k }) => {
+    const [occasion, setOccasion] = React.useState(form.occasions[k] || '')
+    const [comment, setComment] = React.useState(form.comments[k] || '')
+    return (
+      <div style={{ ...C.card, borderColor: form.usedSteps[k] ? '#ff3d00' : '#1e1e1e', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: form.usedSteps[k] ? 10 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontSize: 20 }}>{icon}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>{title}</div>
+              <div style={{ fontSize: 10, color: '#555' }}>{desc}</div>
+            </div>
           </div>
+          <button onClick={() => setF('usedSteps', { ...form.usedSteps, [k]: !form.usedSteps[k] })}
+            style={{ background: form.usedSteps[k] ? '#ff3d00' : '#1e1e1e', border: 'none', borderRadius: 20, padding: '5px 10px', fontSize: 10, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+            {form.usedSteps[k] ? '✓ USED' : 'MARK'}
+          </button>
         </div>
-        <button onClick={() => setF('usedSteps', { ...form.usedSteps, [k]: !form.usedSteps[k] })}
-          style={{ background: form.usedSteps[k] ? '#ff3d00' : '#1e1e1e', border: 'none', borderRadius: 20, padding: '5px 10px', fontSize: 10, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-          {form.usedSteps[k] ? '✓ USED' : 'MARK'}
-        </button>
+        {form.usedSteps[k] && (
+          <div>
+            <span style={C.lbl}>OCCASION</span>
+            <input style={{ ...C.inp, marginBottom: 8 }} placeholder="When did you use this?"
+              value={occasion}
+              onChange={e => { setOccasion(e.target.value); setF('occasions', { ...form.occasions, [k]: e.target.value }) }} />
+            <span style={C.lbl}>COMMENTS</span>
+            <textarea style={{ ...C.ta, height: 55 }} placeholder="How did it help?"
+              value={comment}
+              onChange={e => { setComment(e.target.value); setF('comments', { ...form.comments, [k]: e.target.value }) }} />
+          </div>
+        )}
       </div>
-      {form.usedSteps[k] && (
-        <div>
-          <span style={C.lbl}>OCCASION</span>
-          <input style={{ ...C.inp, marginBottom: 8 }} placeholder="When did you use this?" defaultValue={form.occasions[k] || ''} onBlur={e => setF('occasions', { ...form.occasions, [k]: e.target.value })} />
-          <span style={C.lbl}>COMMENTS</span>
-          <textarea style={{ ...C.ta, height: 55 }} placeholder="How did it help?" defaultValue={form.comments[k] || ''} onBlur={e => setF('comments', { ...form.comments, [k]: e.target.value })} />
-        </div>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
     <div style={C.app}>
@@ -763,7 +765,9 @@ export default function Main({ user }) {
           </div>
           <div style={C.card}>
             <span style={C.lbl}>PLAYER NAME</span>
-            <input style={{ ...C.inp, marginBottom: 10 }} placeholder="Your name" defaultValue={form.playerName} onBlur={e => setF('playerName', e.target.value)} onChange={e => setF('playerName', e.target.value)} />
+            <input style={{ ...C.inp, marginBottom: 10 }} placeholder="Your name"
+              value={form.playerName}
+              onChange={e => setForm(p => ({ ...p, playerName: e.target.value }))} />
             <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10 }}>
               <div><span style={C.lbl}>SESSION</span>
                 <select value={form.sessionType} onChange={e => setF('sessionType', e.target.value)}>
@@ -894,7 +898,7 @@ export default function Main({ user }) {
             <div style={C.card}>
               <span style={C.lbl}>NOTES</span>
               <textarea style={{ ...C.ta,height:70 }} placeholder="How did it go? What to improve tomorrow?"
-                defaultValue={ballMastery.notes||''} onBlur={e => setBallMastery(p => ({ ...p,notes:e.target.value }))} />
+                value={ballMastery.notes||''} onChange={e => setBallMastery(p => ({ ...p,notes:e.target.value }))} />
             </div>
             <div style={{ ...C.card,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
               <div>
@@ -975,9 +979,9 @@ export default function Main({ user }) {
             </div>
             <div style={C.card}>
               <span style={C.lbl}>🏆 BIGGEST WIN THIS WEEK *</span>
-              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What are you most proud of?" defaultValue={checkin.biggestWin} onBlur={e=>setCI('biggestWin',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What are you most proud of?" value={checkin.biggestWin} onChange={e=>setCI('biggestWin',e.target.value)} />
               <span style={C.lbl}>💥 BIGGEST CHALLENGE</span>
-              <textarea style={{ ...C.ta,height:65 }} placeholder="What was hardest this week?" defaultValue={checkin.biggestChallenge} onBlur={e=>setCI('biggestChallenge',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65 }} placeholder="What was hardest this week?" value={checkin.biggestChallenge} onChange={e=>setCI('biggestChallenge',e.target.value)} />
             </div>
             <div style={C.card}>
               <span style={C.lbl}>DSM MOMENTS THIS WEEK</span>
@@ -990,9 +994,9 @@ export default function Main({ user }) {
             </div>
             <div style={C.card}>
               <span style={C.lbl}>🎯 GOAL FOR NEXT WEEK *</span>
-              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What's your #1 focus next week?" defaultValue={checkin.goalNextWeek} onBlur={e=>setCI('goalNextWeek',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What's your #1 focus next week?" value={checkin.goalNextWeek} onChange={e=>setCI('goalNextWeek',e.target.value)} />
               <span style={C.lbl}>💬 MESSAGE TO COACH VALENTINO</span>
-              <textarea style={{ ...C.ta,height:65 }} placeholder="Anything you want Coach Valentino to know?" defaultValue={checkin.messageToCoach} onBlur={e=>setCI('messageToCoach',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65 }} placeholder="Anything you want Coach Valentino to know?" value={checkin.messageToCoach} onChange={e=>setCI('messageToCoach',e.target.value)} />
             </div>
             <button style={C.btn} onClick={handleSubmitCheckin} disabled={savingCheckin}>
               {savingCheckin?'SUBMITTING...':'📋 SUBMIT WEEKLY CHECK-IN'}
