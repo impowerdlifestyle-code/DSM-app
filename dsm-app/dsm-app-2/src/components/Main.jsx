@@ -15,16 +15,16 @@ const DAYS = ["M", "T", "W", "T", "F", "S", "S"]
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 const BALL_MASTERY_SKILLS = [
-  { id: "toe_taps", label: "Toe Taps", icon: "⚽", video: "https://www.youtube.com/watch?v=ufMTOvD8Byw" },
-  { id: "inside_outside", label: "Inside/Outside", icon: "🦶", video: "https://www.youtube.com/watch?v=cJZChBCkpL4" },
-  { id: "pullbacks", label: "Pull Backs", icon: "↩️", video: "https://www.youtube.com/watch?v=FzEkGHFCXTk" },
-  { id: "scissors", label: "Scissors", icon: "✂️", video: "https://www.youtube.com/watch?v=4L3H3p-QO2I" },
-  { id: "v_moves", label: "V Moves", icon: "✌️", video: "https://www.youtube.com/watch?v=ZbNDD73dBiI" },
-  { id: "dribbling", label: "Dribbling", icon: "🏃", video: "https://www.youtube.com/watch?v=2xtNcVMISxk" },
-  { id: "passing", label: "Passing", icon: "➡️", video: "https://www.youtube.com/watch?v=aBMqR7L2BgA" },
-  { id: "shooting", label: "Shooting", icon: "🥅", video: "https://www.youtube.com/watch?v=rnXSbWBFgx4" },
-  { id: "first_touch", label: "First Touch", icon: "🎯", video: "https://www.youtube.com/watch?v=rFbNVGvJHMI" },
-  { id: "juggling", label: "Juggling", icon: "🔄", video: "https://www.youtube.com/watch?v=MHpFzCQMoGE" },
+  { id: "toe_taps", label: "Toe Taps", icon: "⚽", videos: [{ label: "Toe Taps", url: "https://www.youtube.com/watch?v=dRAXOXBhoJk" }] },
+  { id: "inside_outside", label: "Inside/Outside", icon: "🦶", videos: [{ label: "Inside/Outside", url: "https://www.youtube.com/watch?v=cJZChBCkpL4" }] },
+  { id: "pullbacks", label: "Pull Backs", icon: "↩️", videos: [{ label: "Pull Backs", url: "https://www.youtube.com/watch?v=FzEkGHFCXTk" }] },
+  { id: "scissors", label: "Scissors", icon: "✂️", videos: [{ label: "Scissors", url: "https://www.youtube.com/watch?v=4L3H3p-QO2I" }] },
+  { id: "v_moves", label: "V Moves", icon: "✌️", videos: [{ label: "V Moves", url: "https://www.youtube.com/watch?v=ZbNDD73dBiI" }] },
+  { id: "dribbling", label: "Dribbling", icon: "🏃", videos: [{ label: "Dribbling", url: "https://www.youtube.com/watch?v=U3N_qXaqrtI" }] },
+  { id: "passing", label: "Passing", icon: "➡️", videos: [{ label: "Passing Basics", url: "https://www.youtube.com/watch?v=aBMqR7L2BgA" }, { label: "Passing & First Touch", url: "https://www.youtube.com/watch?v=NH4ZxxBnFW8" }] },
+  { id: "shooting", label: "Shooting", icon: "🥅", videos: [{ label: "Shooting Technique", url: "https://www.youtube.com/watch?v=aJwWT54fvmQ" }, { label: "Power Shot", url: "https://www.youtube.com/watch?v=uTCLJ4_i8o0" }] },
+  { id: "first_touch", label: "First Touch", icon: "🎯", videos: [{ label: "First Touch Basics", url: "https://www.youtube.com/watch?v=rFbNVGvJHMI" }, { label: "Passing & First Touch", url: "https://www.youtube.com/watch?v=NH4ZxxBnFW8" }] },
+  { id: "juggling", label: "Juggling", icon: "🔄", videos: [{ label: "Juggling", url: "https://www.youtube.com/watch?v=MHpFzCQMoGE" }] },
 ]
 
 const PARENT_GUIDE = [
@@ -335,6 +335,17 @@ export default function Main({ user }) {
   const [savingCheckin, setSavingCheckin] = useState(false)
   const [allCheckins, setAllCheckins] = useState([])
   const [allBallMastery, setAllBallMastery] = useState([])
+  const [communityPosts, setCommunityPosts] = useState([])
+  const [newPost, setNewPost] = useState({ type: 'win', content: '' })
+  const [postingComment, setPostingComment] = useState(null)
+  const [newComment, setNewComment] = useState('')
+  const [savingPost, setSavingPost] = useState(false)
+  const [communityTab, setCommunityTab] = useState('athletes')
+  const [challenges, setChallenges] = useState([])
+  const [leaderboard, setLeaderboard] = useState([])
+  const [newChallenge, setNewChallenge] = useState({ title: '', description: '', type: 'weekly', target: 7, unit: 'sessions' })
+  const [competitionTab, setCompetitionTab] = useState('leaderboard')
+  const [savingChallenge, setSavingChallenge] = useState(false)
   const chatEnd = useRef(null)
   const today = new Date().toISOString().split('T')[0]
   const currentWeek = getWeekKey()
@@ -357,6 +368,41 @@ export default function Main({ user }) {
       setCheckinHistory(cd)
       if (cd.find(c => c.week === currentWeek)) setCheckinDone(true)
     }
+    // Load leaderboard
+    const { data: lb } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, streak, role')
+      .eq('role', 'athlete')
+      .order('streak', { ascending: false })
+      .limit(20)
+    if (lb) {
+      // Enrich with counts
+      const enriched = await Promise.all(lb.map(async (a) => {
+        const { count: bmCount } = await supabase.from('ball_mastery').select('id', { count: 'exact' }).eq('user_id', a.id)
+        const { count: asCount } = await supabase.from('action_steps').select('id', { count: 'exact' }).eq('user_id', a.id)
+        const { count: ciCount } = await supabase.from('weekly_checkins').select('id', { count: 'exact' }).eq('user_id', a.id)
+        const score = (a.streak||0)*3 + (bmCount||0)*2 + (asCount||0)*2 + (ciCount||0)*1
+        return { ...a, bmCount: bmCount||0, asCount: asCount||0, ciCount: ciCount||0, score }
+      }))
+      setLeaderboard(enriched.sort((a,b) => b.score - a.score))
+    }
+
+    // Load challenges
+    const { data: ch } = await supabase
+      .from('challenges')
+      .select('*, challenge_completions(user_id)')
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (ch) setChallenges(ch)
+
+    // Load community posts
+    const { data: posts } = await supabase
+      .from('community_posts')
+      .select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (posts) setCommunityPosts(posts)
+
     if (p?.role === 'coach') {
       const { data: at } = await getAllProfiles()
       setAllAthletes(at || [])
@@ -377,6 +423,12 @@ export default function Main({ user }) {
 
   const setF = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const setCI = (k, v) => setCheckin(p => ({ ...p, [k]: v }))
+
+  // Debounced input handler for smooth mobile typing
+  const handleInput = (setter, key) => (e) => {
+    const val = e.target.value
+    setter(p => ({ ...p, [key]: val }))
+  }
 
   const completedHabits = habits.reduce((a, h) => a + h.days.filter(Boolean).length, 0)
   const totalHabits = habits.length * 7
@@ -567,7 +619,10 @@ export default function Main({ user }) {
     { id: 'ball', icon: '⚽', label: 'BALL' },
     { id: 'weekly', icon: '📋', label: 'WEEKLY' },
     { id: 'tracker', icon: '📊', label: 'TRACK' },
+    { id: 'progress', icon: '📈', label: 'PROGRESS' },
     { id: 'bot', icon: '🤖', label: 'COACH VALENTINO' },
+    { id: 'community', icon: '👥', label: 'COMMUNITY' },
+    { id: 'compete', icon: '🏆', label: 'COMPETE' },
     { id: 'parents', icon: '👨‍👩‍👧', label: 'PARENTS' },
     ...(isCoach ? [{ id: 'dashboard', icon: '🏆', label: 'COACH' }] : []),
   ]
@@ -590,9 +645,9 @@ export default function Main({ user }) {
       {form.usedSteps[k] && (
         <div>
           <span style={C.lbl}>OCCASION</span>
-          <input style={{ ...C.inp, marginBottom: 8 }} placeholder="When did you use this?" value={form.occasions[k] || ''} onChange={e => setF('occasions', { ...form.occasions, [k]: e.target.value })} />
+          <input style={{ ...C.inp, marginBottom: 8 }} placeholder="When did you use this?" defaultValue={form.occasions[k] || ''} onBlur={e => setF('occasions', { ...form.occasions, [k]: e.target.value })} />
           <span style={C.lbl}>COMMENTS</span>
-          <textarea style={{ ...C.ta, height: 55 }} placeholder="How did it help?" value={form.comments[k] || ''} onChange={e => setF('comments', { ...form.comments, [k]: e.target.value })} />
+          <textarea style={{ ...C.ta, height: 55 }} placeholder="How did it help?" defaultValue={form.comments[k] || ''} onBlur={e => setF('comments', { ...form.comments, [k]: e.target.value })} />
         </div>
       )}
     </div>
@@ -708,7 +763,7 @@ export default function Main({ user }) {
           </div>
           <div style={C.card}>
             <span style={C.lbl}>PLAYER NAME</span>
-            <input style={{ ...C.inp, marginBottom: 10 }} placeholder="Your name" value={form.playerName} onChange={e => setF('playerName', e.target.value)} />
+            <input style={{ ...C.inp, marginBottom: 10 }} placeholder="Your name" defaultValue={form.playerName} onBlur={e => setF('playerName', e.target.value)} onChange={e => setF('playerName', e.target.value)} />
             <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10 }}>
               <div><span style={C.lbl}>SESSION</span>
                 <select value={form.sessionType} onChange={e => setF('sessionType', e.target.value)}>
@@ -815,10 +870,12 @@ export default function Main({ user }) {
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
-                        <a href={skill.video} target="_blank" rel="noreferrer"
-                          style={{ fontSize:9, color:'#ff3d00', fontWeight:800, letterSpacing:1, textDecoration:'none', background:'#1e1e1e', borderRadius:6, padding:'2px 6px' }}>
-                          ▶ VIDEO
-                        </a>
+                        {(skill.videos||[]).map((v,vi)=>(
+                          <a key={vi} href={v.url} target="_blank" rel="noreferrer"
+                            style={{ fontSize:9, color:'#ff3d00', fontWeight:800, letterSpacing:1, textDecoration:'none', background:'#1e1e1e', borderRadius:6, padding:'2px 6px' }}>
+                            ▶ {v.label}
+                          </a>
+                        ))}
                       </div>
                       {(ballMastery[skill.id]?.reps||0)>0 && (
                         <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4 }}>
@@ -837,7 +894,7 @@ export default function Main({ user }) {
             <div style={C.card}>
               <span style={C.lbl}>NOTES</span>
               <textarea style={{ ...C.ta,height:70 }} placeholder="How did it go? What to improve tomorrow?"
-                value={ballMastery.notes||''} onChange={e => setBallMastery(p => ({ ...p,notes:e.target.value }))} />
+                defaultValue={ballMastery.notes||''} onBlur={e => setBallMastery(p => ({ ...p,notes:e.target.value }))} />
             </div>
             <div style={{ ...C.card,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
               <div>
@@ -918,9 +975,9 @@ export default function Main({ user }) {
             </div>
             <div style={C.card}>
               <span style={C.lbl}>🏆 BIGGEST WIN THIS WEEK *</span>
-              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What are you most proud of?" value={checkin.biggestWin} onChange={e=>setCI('biggestWin',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What are you most proud of?" defaultValue={checkin.biggestWin} onBlur={e=>setCI('biggestWin',e.target.value)} />
               <span style={C.lbl}>💥 BIGGEST CHALLENGE</span>
-              <textarea style={{ ...C.ta,height:65 }} placeholder="What was hardest this week?" value={checkin.biggestChallenge} onChange={e=>setCI('biggestChallenge',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65 }} placeholder="What was hardest this week?" defaultValue={checkin.biggestChallenge} onBlur={e=>setCI('biggestChallenge',e.target.value)} />
             </div>
             <div style={C.card}>
               <span style={C.lbl}>DSM MOMENTS THIS WEEK</span>
@@ -933,9 +990,9 @@ export default function Main({ user }) {
             </div>
             <div style={C.card}>
               <span style={C.lbl}>🎯 GOAL FOR NEXT WEEK *</span>
-              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What's your #1 focus next week?" value={checkin.goalNextWeek} onChange={e=>setCI('goalNextWeek',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65,marginBottom:12 }} placeholder="What's your #1 focus next week?" defaultValue={checkin.goalNextWeek} onBlur={e=>setCI('goalNextWeek',e.target.value)} />
               <span style={C.lbl}>💬 MESSAGE TO COACH VALENTINO</span>
-              <textarea style={{ ...C.ta,height:65 }} placeholder="Anything you want Coach Valentino to know?" value={checkin.messageToCoach} onChange={e=>setCI('messageToCoach',e.target.value)} />
+              <textarea style={{ ...C.ta,height:65 }} placeholder="Anything you want Coach Valentino to know?" defaultValue={checkin.messageToCoach} onBlur={e=>setCI('messageToCoach',e.target.value)} />
             </div>
             <button style={C.btn} onClick={handleSubmitCheckin} disabled={savingCheckin}>
               {savingCheckin?'SUBMITTING...':'📋 SUBMIT WEEKLY CHECK-IN'}
@@ -993,6 +1050,161 @@ export default function Main({ user }) {
         </div>
       )}
 
+      {/* ── PROGRESS ── */}
+      {tab === 'progress' && (
+        <div style={C.scroll} className="fade">
+          <div style={C.title}>PROGRESS</div>
+          <div style={C.sub}>YOUR JOURNEY OVER TIME</div>
+
+          {/* Energy & Confidence Chart */}
+          {checkinHistory.length > 0 ? <>
+            <span style={C.lbl}>ENERGY & CONFIDENCE (LAST 8 WEEKS)</span>
+            <div style={{ ...C.card, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff3d00' }} />
+                    <span style={{ fontSize: 9, color: '#aaa', fontWeight: 700 }}>ENERGY</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff8c00' }} />
+                    <span style={{ fontSize: 9, color: '#aaa', fontWeight: 700 }}>CONFIDENCE</span>
+                  </div>
+                </div>
+              </div>
+              {/* Bar chart */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
+                {[...checkinHistory].reverse().map((c, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 100 }}>
+                      <div style={{ flex: 1, background: '#ff3d00', borderRadius: '3px 3px 0 0', height: `${(c.energy_level / 10) * 100}%`, minHeight: 4 }} />
+                      <div style={{ flex: 1, background: '#ff8c00', borderRadius: '3px 3px 0 0', height: `${(c.confidence_level / 10) * 100}%`, minHeight: 4 }} />
+                    </div>
+                    <div style={{ fontSize: 7, color: '#555', fontWeight: 700 }}>{c.week?.split('-W')[1] ? 'W'+c.week.split('-W')[1] : ''}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sessions completed */}
+            <span style={C.lbl}>SESSIONS COMPLETED PER WEEK</span>
+            <div style={{ ...C.card, padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
+                {[...checkinHistory].reverse().map((c, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ fontSize: 9, color: '#ff3d00', fontWeight: 900 }}>{c.sessions_completed}</div>
+                    <div style={{ width: '100%', background: '#ff3d00', borderRadius: '3px 3px 0 0', height: `${(c.sessions_completed / 14) * 60}px`, minHeight: 4 }} />
+                    <div style={{ fontSize: 7, color: '#555', fontWeight: 700 }}>{c.week?.split('-W')[1] ? 'W'+c.week.split('-W')[1] : ''}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Averages */}
+            <span style={C.lbl}>YOUR AVERAGES</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {[
+                ['⚡', 'ENERGY', (checkinHistory.reduce((a,c)=>a+c.energy_level,0)/checkinHistory.length).toFixed(1)],
+                ['💪', 'CONFIDENCE', (checkinHistory.reduce((a,c)=>a+c.confidence_level,0)/checkinHistory.length).toFixed(1)],
+                ['🏃', 'SESSIONS', (checkinHistory.reduce((a,c)=>a+c.sessions_completed,0)/checkinHistory.length).toFixed(1)],
+              ].map(([icon, label, val]) => (
+                <div key={label} style={{ ...C.card, textAlign: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{icon}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#ff3d00' }}>{val}</div>
+                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 2, fontWeight: 700, marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Trend */}
+            {checkinHistory.length >= 2 && (() => {
+              const latest = checkinHistory[0]
+              const prev = checkinHistory[1]
+              const energyUp = latest.energy_level >= prev.energy_level
+              const confUp = latest.confidence_level >= prev.confidence_level
+              return (
+                <div style={{ ...C.card, borderColor: energyUp && confUp ? '#1a4a1a' : '#1e1e1e' }}>
+                  <span style={C.lbl}>WEEK OVER WEEK</span>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>
+                        {energyUp ? '⬆️' : '⬇️'} Energy {energyUp ? '+' : ''}{latest.energy_level - prev.energy_level}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#555' }}>vs last week</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>
+                        {confUp ? '⬆️' : '⬇️'} Confidence {confUp ? '+' : ''}{latest.confidence_level - prev.confidence_level}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#555' }}>vs last week</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Ball mastery progress */}
+            {ballHistory.length > 0 && <>
+              <span style={C.lbl}>BALL MASTERY SESSIONS</span>
+              <div style={{ ...C.card }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>Total Sessions</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#ff3d00' }}>{ballHistory.length}</div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>Total Reps</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#ff3d00' }}>{ballHistory.reduce((a,b)=>a+(b.total_reps||0),0)}</div>
+                </div>
+              </div>
+            </>}
+
+            {/* BADGES */}
+            {(() => {
+              const badges = [
+                { icon: '🦈', label: 'FIRST SHARK', desc: 'Submitted first action step', earned: submissions.length >= 1 },
+                { icon: '🔥', label: '7 DAY STREAK', desc: 'Logged 7 days in a row', earned: streak >= 7 },
+                { icon: '⚡', label: '30 DAY LEGEND', desc: 'Logged 30 days in a row', earned: streak >= 30 },
+                { icon: '⚽', label: 'BALL MASTER', desc: 'Logged 10 ball mastery sessions', earned: ballHistory.length >= 10 },
+                { icon: '📋', label: 'CHECK-IN PRO', desc: 'Completed 4 weekly check-ins', earned: checkinHistory.length >= 4 },
+                { icon: '💪', label: 'ACTION HERO', desc: 'Submitted 10 action steps', earned: submissions.length >= 10 },
+                { icon: '🏆', label: 'DSM ELITE', desc: 'Completed 8 weekly check-ins', earned: checkinHistory.length >= 8 },
+                { icon: '🧠', label: 'MINDSET ATHLETE', desc: 'Used all 4 mental tools', earned: submissions.some(s => s.shark_used && s.goldfish_used && s.selftalk_used && s.tuneout_used) },
+              ]
+              const earned = badges.filter(b => b.earned)
+              const locked = badges.filter(b => !b.earned)
+              return (
+                <>
+                  <span style={C.lbl}>🏅 YOUR BADGES ({earned.length}/{badges.length})</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                    {earned.map((b, i) => (
+                      <div key={i} style={{ ...C.card, borderColor: '#ff3d00', textAlign: 'center', padding: 14 }}>
+                        <div style={{ fontSize: 32, marginBottom: 6 }}>{b.icon}</div>
+                        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#ff3d00', marginBottom: 3 }}>{b.label}</div>
+                        <div style={{ fontSize: 9, color: '#555' }}>{b.desc}</div>
+                      </div>
+                    ))}
+                    {locked.map((b, i) => (
+                      <div key={i} style={{ ...C.card, textAlign: 'center', padding: 14, opacity: 0.35 }}>
+                        <div style={{ fontSize: 32, marginBottom: 6, filter: 'grayscale(1)' }}>🔒</div>
+                        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#555', marginBottom: 3 }}>{b.label}</div>
+                        <div style={{ fontSize: 9, color: '#444' }}>{b.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )
+            })()}
+
+          </> : (
+            <div style={{ ...C.card, textAlign: 'center', padding: 40 }}>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>📈</div>
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>NO DATA YET</div>
+              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>Complete your weekly check-ins to see your progress charts here. The more you log, the more you can see yourself improving! 🦈</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── COACH VALENTINO BOT ── */}
       {tab === 'bot' && (
         <div style={{ display:'flex',flexDirection:'column',height:'calc(100vh - 116px)' }} className="fade">
@@ -1044,6 +1256,299 @@ export default function Main({ user }) {
               {!voiceMode&&<button onClick={startVoice} style={{ background:'#1e1e1e',border:'none',borderRadius:10,padding:'0 13px',fontSize:17,cursor:'pointer' }}>🎙️</button>}
               <button onClick={()=>sendChat()} style={{ background:'#ff3d00',border:'none',borderRadius:10,padding:'0 15px',fontSize:17,cursor:'pointer' }}>→</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── COMPETE ── */}
+      {tab === 'compete' && (
+        <div style={C.scroll} className="fade">
+          <div style={C.title}>COMPETE</div>
+          <div style={C.sub}>CHALLENGES & LEADERBOARD</div>
+
+          {/* Tab switcher */}
+          <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+            {[['leaderboard','🏆 Leaderboard'],['challenges','⚡ Challenges'],['team','👥 Team']].map(([t,l])=>(
+              <button key={t} onClick={()=>setCompetitionTab(t)}
+                style={{ flex:1, background:competitionTab===t?'#ff3d00':'#1e1e1e', border:'none', borderRadius:10, padding:'9px 4px', fontSize:10, fontWeight:800, color:'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {/* LEADERBOARD */}
+          {competitionTab === 'leaderboard' && (
+            <>
+              <div style={C.orange}>
+                <span style={C.olbl}>DSM RANKINGS</span>
+                <div style={{ fontSize:14, fontWeight:800, lineHeight:1.4 }}>Points = Streak×3 + Ball Mastery×2 + Action Steps×2 + Check-ins×1 🦈</div>
+              </div>
+              {leaderboard.length === 0 ? (
+                <div style={{ ...C.card, textAlign:'center', padding:40 }}>
+                  <div style={{ fontSize:44, marginBottom:12 }}>🏆</div>
+                  <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO ATHLETES YET</div>
+                  <div style={{ fontSize:13, color:'#555' }}>Leaderboard fills up as athletes join and log their work!</div>
+                </div>
+              ) : leaderboard.map((a, i) => (
+                <div key={i} style={{ ...C.card, borderColor: i===0?'#ff3d00':i===1?'#888':i===2?'#cd7f32':'#1e1e1e', marginBottom:8 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                    <div style={{ fontSize: i<3?28:18, fontWeight:900, width:36, textAlign:'center', flexShrink:0 }}>
+                      {i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:800 }}>{a.full_name||a.email}</div>
+                      <div style={{ display:'flex', gap:10, marginTop:4, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:9, color:'#ff3d00', fontWeight:700 }}>🔥 {a.streak||0} streak</span>
+                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>⚽ {a.bmCount} BM</span>
+                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>✅ {a.asCount} AS</span>
+                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>📋 {a.ciCount} CI</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ fontSize:22, fontWeight:900, color:'#ff3d00' }}>{a.score}</div>
+                      <div style={{ fontSize:8, color:'#555', letterSpacing:2, fontWeight:700 }}>PTS</div>
+                    </div>
+                  </div>
+                  {a.id === user.id && <div style={{ marginTop:6, fontSize:9, color:'#ff3d00', fontWeight:800, letterSpacing:2 }}>← YOU</div>}
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* CHALLENGES */}
+          {competitionTab === 'challenges' && (
+            <>
+              {isCoach && (
+                <div style={{ ...C.card, marginBottom:14 }}>
+                  <span style={C.lbl}>CREATE CHALLENGE</span>
+                  <input style={{ ...C.inp, marginBottom:8 }} placeholder="Challenge title (e.g. 7-Day Shark)" value={newChallenge.title} onChange={e=>setNewChallenge(p=>({...p,title:e.target.value}))} />
+                  <textarea style={{ ...C.ta, height:60, marginBottom:8 }} placeholder="Description..." value={newChallenge.description} onChange={e=>setNewChallenge(p=>({...p,description:e.target.value}))} />
+                  <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+                    <div style={{ flex:1 }}>
+                      <span style={C.lbl}>TYPE</span>
+                      <select value={newChallenge.type} onChange={e=>setNewChallenge(p=>({...p,type:e.target.value}))}>
+                        <option value="weekly">Weekly</option>
+                        <option value="team">Team</option>
+                        <option value="h2h">Head to Head</option>
+                        <option value="auto">Auto</option>
+                      </select>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <span style={C.lbl}>TARGET</span>
+                      <input type="number" style={C.inp} value={newChallenge.target} onChange={e=>setNewChallenge(p=>({...p,target:parseInt(e.target.value)||1}))} />
+                    </div>
+                  </div>
+                  <button style={C.btn} disabled={savingChallenge||!newChallenge.title} onClick={async()=>{
+                    setSavingChallenge(true)
+                    await supabase.from('challenges').insert([{ ...newChallenge, created_by: user.id }])
+                    setNewChallenge({ title:'', description:'', type:'weekly', target:7, unit:'sessions' })
+                    const { data: ch } = await supabase.from('challenges').select('*, challenge_completions(user_id)').order('created_at',{ascending:false}).limit(20)
+                    if(ch) setChallenges(ch)
+                    setSavingChallenge(false)
+                  }}>
+                    {savingChallenge?'CREATING...':'⚡ CREATE CHALLENGE'}
+                  </button>
+                </div>
+              )}
+
+              {challenges.length === 0 ? (
+                <div style={{ ...C.card, textAlign:'center', padding:40 }}>
+                  <div style={{ fontSize:44, marginBottom:12 }}>⚡</div>
+                  <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO CHALLENGES YET</div>
+                  <div style={{ fontSize:13, color:'#555' }}>{isCoach?'Create the first challenge above!':'Coach Valentino will post challenges here. Stay ready! 🦈'}</div>
+                </div>
+              ) : challenges.map((ch, i) => {
+                const completed = ch.challenge_completions?.some(c => c.user_id === user.id)
+                const completedCount = ch.challenge_completions?.length || 0
+                return (
+                  <div key={i} style={{ ...C.card, borderColor: completed?'#1a4a1a':'#1e1e1e', marginBottom:10 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                          <div style={{ fontSize:9, background: ch.type==='weekly'?'#ff3d00':ch.type==='team'?'#0055aa':ch.type==='h2h'?'#aa0055':'#555', borderRadius:20, padding:'2px 8px', fontWeight:800, color:'#fff', letterSpacing:1 }}>
+                            {ch.type==='weekly'?'⚡ WEEKLY':ch.type==='team'?'👥 TEAM':ch.type==='h2h'?'⚔️ H2H':'🤖 AUTO'}
+                          </div>
+                          {completed && <div style={{ fontSize:9, background:'#1a4a1a', borderRadius:20, padding:'2px 8px', fontWeight:800, color:'#4aff4a', letterSpacing:1 }}>✅ DONE</div>}
+                        </div>
+                        <div style={{ fontSize:15, fontWeight:900, marginBottom:4 }}>{ch.title}</div>
+                        <div style={{ fontSize:12, color:'#888', lineHeight:1.5 }}>{ch.description}</div>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                      <div style={{ fontSize:10, color:'#555' }}>👥 {completedCount} completed</div>
+                      {!completed && !isCoach && (
+                        <button onClick={async()=>{
+                          await supabase.from('challenge_completions').insert([{ challenge_id:ch.id, user_id:user.id }])
+                          const { data: chd } = await supabase.from('challenges').select('*, challenge_completions(user_id)').order('created_at',{ascending:false}).limit(20)
+                          if(chd) setChallenges(chd)
+                        }} style={{ background:'#ff3d00', border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, fontWeight:900, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                          MARK COMPLETE ✅
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+
+          {/* TEAM CHALLENGE */}
+          {competitionTab === 'team' && (
+            <>
+              <div style={C.orange}>
+                <span style={C.olbl}>TEAM GOAL</span>
+                <div style={{ fontSize:14, fontWeight:800, lineHeight:1.4 }}>The whole DSM team working toward one goal. Every session counts. 🦈</div>
+              </div>
+              <div style={{ ...C.card, textAlign:'center', padding:24 }}>
+                <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM BALL MASTERY SESSIONS</div>
+                <div style={{ fontSize:48, fontWeight:900, color:'#ff3d00', marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.bmCount,0)}</div>
+                <div style={{ fontSize:11, color:'#555', marginBottom:16 }}>sessions logged by the whole team</div>
+                <div style={{ height:8, background:'#1e1e1e', borderRadius:5, overflow:'hidden', marginBottom:8 }}>
+                  <div style={{ height:'100%', width:`${Math.min((leaderboard.reduce((a,b)=>a+b.bmCount,0)/100)*100, 100)}%`, background:'linear-gradient(90deg,#ff3d00,#ff6d00)', borderRadius:5 }} />
+                </div>
+                <div style={{ fontSize:10, color:'#555' }}>Goal: 100 team sessions 🎯</div>
+              </div>
+              <div style={{ ...C.card, textAlign:'center', padding:24 }}>
+                <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM ACTION STEPS</div>
+                <div style={{ fontSize:48, fontWeight:900, color:'#ff3d00', marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.asCount,0)}</div>
+                <div style={{ height:8, background:'#1e1e1e', borderRadius:5, overflow:'hidden', marginBottom:8 }}>
+                  <div style={{ height:'100%', width:`${Math.min((leaderboard.reduce((a,b)=>a+b.asCount,0)/50)*100, 100)}%`, background:'linear-gradient(90deg,#ff3d00,#ff6d00)', borderRadius:5 }} />
+                </div>
+                <div style={{ fontSize:10, color:'#555' }}>Goal: 50 team action steps 🎯</div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── COMMUNITY ── */}
+      {tab === 'community' && (
+        <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 116px)' }} className="fade">
+          <div style={{ padding:'12px 20px 0' }}>
+            <div style={C.title}>COMMUNITY</div>
+            <div style={C.sub}>DSM ATHLETE & PARENT NETWORK</div>
+            <div style={{ display:'flex', gap:8, marginTop:10, marginBottom:0 }}>
+              {[['athletes','⚽ Athletes'], ['parents','👨‍👩‍👧 Parents']].map(([t,l])=>(
+                <button key={t} onClick={()=>setCommunityTab(t)}
+                  style={{ flex:1, background:communityTab===t?'#ff3d00':'#1e1e1e', border:'none', borderRadius:10, padding:'9px 8px', fontSize:11, fontWeight:800, color:'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex:1, overflowY:'auto', padding:'12px 20px' }}>
+
+            {/* NEW POST */}
+            {((communityTab==='athletes' && !isCoach && profile?.role!=='parent') || (communityTab==='parents' && profile?.role==='parent') || isCoach) && (
+              <div style={{ ...C.card, marginBottom:12 }}>
+                <span style={C.lbl}>SHARE WITH THE COMMUNITY</span>
+                <div style={{ display:'flex', gap:6, marginBottom:10, flexWrap:'wrap' }}>
+                  {[['win','🏆 Win'],['milestone','📈 Milestone'],['question','❓ Question']].map(([t,l])=>(
+                    <button key={t} onClick={()=>setNewPost(p=>({...p,type:t}))}
+                      style={{ background:newPost.type===t?'#ff3d00':'#1e1e1e', border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <textarea style={{ ...C.ta, height:70, marginBottom:8 }}
+                  placeholder={newPost.type==='win'?'Share your win with the team! 🏆':newPost.type==='milestone'?'What milestone did you hit? 📈':'Ask Coach Valentino or the community ❓'}
+                  value={newPost.content}
+                  onChange={e=>setNewPost(p=>({...p,content:e.target.value}))} />
+                <button style={C.btn} disabled={savingPost||!newPost.content.trim()}
+                  onClick={async()=>{
+                    if(!newPost.content.trim()) return
+                    setSavingPost(true)
+                    await supabase.from('community_posts').insert([{
+                      user_id: user.id,
+                      type: newPost.type,
+                      content: newPost.content,
+                      community: communityTab,
+                    }])
+                    setNewPost({type:'win',content:''})
+                    const { data: posts } = await supabase
+                      .from('community_posts')
+                      .select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))')
+                      .order('created_at', { ascending: false }).limit(50)
+                    if(posts) setCommunityPosts(posts)
+                    setSavingPost(false)
+                  }}>
+                  {savingPost?'POSTING...':'POST TO COMMUNITY 🔥'}
+                </button>
+              </div>
+            )}
+
+            {/* POSTS FEED */}
+            {communityPosts.filter(p=>p.community===communityTab).length === 0 ? (
+              <div style={{ ...C.card, textAlign:'center', padding:40 }}>
+                <div style={{ fontSize:44, marginBottom:12 }}>{communityTab==='athletes'?'⚽':'👨‍👩‍👧'}</div>
+                <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO POSTS YET</div>
+                <div style={{ fontSize:13, color:'#555' }}>Be the first to post in the {communityTab} community! 🔥</div>
+              </div>
+            ) : communityPosts.filter(p=>p.community===communityTab).map((post,i)=>(
+              <div key={i} style={{ ...C.card, marginBottom:10 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                  <div style={{ width:34, height:34, borderRadius:'50%', background:'#ff3d00', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, flexShrink:0 }}>
+                    {(post.profiles?.full_name||post.profiles?.email||'?')[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:800 }}>{post.profiles?.full_name||post.profiles?.email}</div>
+                    <div style={{ fontSize:9, color:'#555', marginTop:1 }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div style={{ background: post.type==='win'?'#1a3a0a':post.type==='milestone'?'#0a1a3a':'#2a1a0a', borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?'#4aff4a':post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
+                    {post.type==='win'?'🏆 WIN':post.type==='milestone'?'📈 MILESTONE':'❓ QUESTION'}
+                  </div>
+                </div>
+                <div style={{ fontSize:14, lineHeight:1.6, marginBottom:10 }}>{post.content}</div>
+
+                {/* Comments */}
+                {post.community_comments?.length > 0 && (
+                  <div style={{ borderTop:'1px solid #1e1e1e', paddingTop:8, marginBottom:8 }}>
+                    {post.community_comments.map((c,ci)=>(
+                      <div key={ci} style={{ display:'flex', gap:8, marginBottom:6 }}>
+                        <div style={{ width:24, height:24, borderRadius:'50%', background:'#1e1e1e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, flexShrink:0 }}>
+                          {(c.profiles?.full_name||c.profiles?.email||'?')[0].toUpperCase()}
+                        </div>
+                        <div style={{ flex:1, background:'#0d0d0d', borderRadius:8, padding:'6px 10px' }}>
+                          <div style={{ fontSize:10, fontWeight:800, color:'#ff3d00', marginBottom:2 }}>{c.profiles?.full_name||c.profiles?.email}</div>
+                          <div style={{ fontSize:12, lineHeight:1.5 }}>{c.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add comment */}
+                {postingComment===post.id ? (
+                  <div style={{ display:'flex', gap:6 }}>
+                    <input style={{ ...C.inp, flex:1, padding:'8px 12px', fontSize:12 }}
+                      placeholder="Add a comment..." value={newComment}
+                      onChange={e=>setNewComment(e.target.value)}
+                      onKeyDown={async e=>{
+                        if(e.key==='Enter' && newComment.trim()) {
+                          await supabase.from('community_comments').insert([{ post_id:post.id, user_id:user.id, content:newComment }])
+                          setNewComment('')
+                          setPostingComment(null)
+                          const { data: posts } = await supabase.from('community_posts').select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))').order('created_at',{ascending:false}).limit(50)
+                          if(posts) setCommunityPosts(posts)
+                        }
+                      }} />
+                    <button onClick={async()=>{
+                      if(!newComment.trim()) return
+                      await supabase.from('community_comments').insert([{ post_id:post.id, user_id:user.id, content:newComment }])
+                      setNewComment('')
+                      setPostingComment(null)
+                      const { data: posts } = await supabase.from('community_posts').select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))').order('created_at',{ascending:false}).limit(50)
+                      if(posts) setCommunityPosts(posts)
+                    }} style={{ background:'#ff3d00', border:'none', borderRadius:8, padding:'0 12px', fontSize:14, cursor:'pointer' }}>→</button>
+                  </div>
+                ) : (
+                  <button onClick={()=>{ setPostingComment(post.id); setNewComment('') }}
+                    style={{ background:'none', border:'1px solid #2a2a2a', borderRadius:8, padding:'5px 12px', fontSize:10, fontWeight:800, color:'#555', cursor:'pointer', fontFamily:'inherit' }}>
+                    💬 COMMENT
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
