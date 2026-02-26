@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel } from '../lib/supabase.js'
 
 const QUOTES = [
@@ -310,6 +310,42 @@ function getCoachVResponse(input) {
 }
 
 // ── STANDALONE ACTION FORM (fixes mobile typing) ──
+const StepCard = React.memo(({icon,title,desc,k,usedSteps,occasions,comments,onToggle,onOccasion,onComment}) => {
+  const [occ, setOcc] = useState(occasions[k]||'')
+  const [com, setCom] = useState(comments[k]||'')
+  const used = usedSteps[k]
+  return (
+    <div style={{background:'#111',borderRadius:12,padding:16,marginBottom:8,border:`1px solid ${used?'#ff3d00':'#1e1e1e'}`}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:used?10:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{fontSize:20}}>{icon}</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800}}>{title}</div>
+            <div style={{fontSize:10,color:'#555'}}>{desc}</div>
+          </div>
+        </div>
+        <button onClick={onToggle}
+          style={{background:used?'#ff3d00':'#1e1e1e',border:'none',borderRadius:20,padding:'5px 10px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+          {used?'✓ USED':'MARK'}
+        </button>
+      </div>
+      {used && (
+        <div>
+          <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>OCCASION</div>
+          <input style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box',marginBottom:8}}
+            placeholder="When did you use this?" value={occ}
+            autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
+            onChange={e=>{setOcc(e.target.value);onOccasion(k,e.target.value)}} />
+          <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>COMMENTS</div>
+          <textarea style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fff',fontFamily:'inherit',outline:'none',resize:'none',boxSizing:'border-box',height:55}}
+            placeholder="How did it help?" value={com}
+            onChange={e=>{setCom(e.target.value);onComment(k,e.target.value)}} />
+        </div>
+      )}
+    </div>
+  )
+})
+
 function ActionForm({ user, onSubmit, initialSubmissions }) {
   const WEEKDAYS2 = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
   const [form, setForm] = useState({
@@ -321,41 +357,6 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
   })
   const [saving, setSaving] = useState(false)
   const set = (k,v) => setForm(p=>({...p,[k]:v}))
-
-  const StepCard = ({icon,title,desc,k}) => {
-    const [occ, setOcc] = useState('')
-    const [com, setCom] = useState('')
-    return (
-      <div style={{background:'#111',borderRadius:12,padding:16,marginBottom:8,border:`1px solid ${form.usedSteps[k]?'#ff3d00':'#1e1e1e'}`}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:form.usedSteps[k]?10:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{fontSize:20}}>{icon}</div>
-            <div>
-              <div style={{fontSize:13,fontWeight:800}}>{title}</div>
-              <div style={{fontSize:10,color:'#555'}}>{desc}</div>
-            </div>
-          </div>
-          <button onClick={()=>set('usedSteps',{...form.usedSteps,[k]:!form.usedSteps[k]})}
-            style={{background:form.usedSteps[k]?'#ff3d00':'#1e1e1e',border:'none',borderRadius:20,padding:'5px 10px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
-            {form.usedSteps[k]?'✓ USED':'MARK'}
-          </button>
-        </div>
-        {form.usedSteps[k] && (
-          <div>
-            <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>OCCASION</div>
-            <input style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box',marginBottom:8}}
-              placeholder="When did you use this?" value={occ}
-              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
-              onChange={e=>{setOcc(e.target.value);set('occasions',{...form.occasions,[k]:e.target.value})}} />
-            <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>COMMENTS</div>
-            <textarea style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fff',fontFamily:'inherit',outline:'none',resize:'none',boxSizing:'border-box',height:55}}
-              placeholder="How did it help?" value={com}
-              onChange={e=>{setCom(e.target.value);set('comments',{...form.comments,[k]:e.target.value})}} />
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const handleSubmit = async () => {
     if(!form.playerName) return alert('Enter your name!')
@@ -416,10 +417,21 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
         </div>
       </div>
       <span style={lbl}>WHICH DID YOU USE?</span>
-      <StepCard icon="🦈" title="SHARK MENTALITY" desc="Taking risks, aggressive, fearless" k="shark" />
-      <StepCard icon="🐠" title="GOLDFISH MENTALITY" desc="Short term memory for mistakes" k="goldfish" />
-      <StepCard icon="💬" title="POSITIVE SELF TALK" desc="Control your inner voice" k="selftalk" />
-      <StepCard icon="🔇" title="TUNE OUT COACH YELLING" desc="Stay focused under pressure" k="tuneout" />
+      {[
+        {icon:"🦈",title:"SHARK MENTALITY",desc:"Taking risks, aggressive, fearless",k:"shark"},
+        {icon:"🐠",title:"GOLDFISH MENTALITY",desc:"Short term memory for mistakes",k:"goldfish"},
+        {icon:"💬",title:"POSITIVE SELF TALK",desc:"Control your inner voice",k:"selftalk"},
+        {icon:"🔇",title:"TUNE OUT COACH YELLING",desc:"Stay focused under pressure",k:"tuneout"},
+      ].map(s=>(
+        <StepCard key={s.k} {...s}
+          usedSteps={form.usedSteps}
+          occasions={form.occasions}
+          comments={form.comments}
+          onToggle={()=>set('usedSteps',{...form.usedSteps,[s.k]:!form.usedSteps[s.k]})}
+          onOccasion={(k,v)=>set('occasions',{...form.occasions,[k]:v})}
+          onComment={(k,v)=>set('comments',{...form.comments,[k]:v})}
+        />
+      ))}
       <div style={{...card,opacity:0.4,marginBottom:10}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -469,6 +481,7 @@ export default function Main({ user }) {
   const [submissions, setSubmissions] = useState([])
   const [messages, setMessages] = useState([{ role: 'assistant', content: "What's up! I'm Coach Valentinoalentino 🔥 Ask me anything about mindset, match prep, or your action steps!" }])
   const [chatInput, setChatInput] = useState('')
+  const chatInputRef = useRef('')
   const [chatLoading, setChatLoading] = useState(false)
   const [voiceMode, setVoiceMode] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -667,8 +680,9 @@ export default function Main({ user }) {
   }
 
   const sendChat = (msgOverride) => {
-    const msg = msgOverride || chatInput.trim()
+    const msg = msgOverride || (chatInputRef.current?.value || chatInput).trim()
     if (!msg) return
+    if (chatInputRef.current) chatInputRef.current.value = ''
     setChatInput('')
     setMessages(p => [...p, { role: 'user', content: msg }])
     setChatLoading(true)
@@ -1404,8 +1418,11 @@ export default function Main({ user }) {
               <div style={{ fontSize:9,color:isRecording?'#ff3d00':'#555',fontWeight:800,letterSpacing:2,marginTop:5 }}>{isRecording?'● RECORDING...':'TAP TO SPEAK'}</div>
             </div>}
             <div style={{ display:'flex',gap:8 }}>
-              <input style={{ ...C.inp,flex:1 }} placeholder="Ask Coach Valentino anything..." value={chatInput}
-                onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} />
+              <input style={{ ...C.inp,flex:1 }} placeholder="Ask Coach Valentino anything..."
+                defaultValue=""
+                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
+                ref={el => { if(el) chatInputRef.current = el }}
+                onKeyDown={e=>{if(e.key==='Enter'){const v=e.target.value;e.target.value='';sendChat(v)}}} />
               {!voiceMode&&<button onClick={startVoice} style={{ background:'#1e1e1e',border:'none',borderRadius:10,padding:'0 13px',fontSize:17,cursor:'pointer' }}>🎙️</button>}
               <button onClick={()=>sendChat()} style={{ background:'#ff3d00',border:'none',borderRadius:10,padding:'0 15px',fontSize:17,cursor:'pointer' }}>→</button>
             </div>
