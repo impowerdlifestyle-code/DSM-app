@@ -345,6 +345,7 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
             <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>OCCASION</div>
             <input style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box',marginBottom:8}}
               placeholder="When did you use this?" value={occ}
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
               onChange={e=>{setOcc(e.target.value);set('occasions',{...form.occasions,[k]:e.target.value})}} />
             <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>COMMENTS</div>
             <textarea style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fff',fontFamily:'inherit',outline:'none',resize:'none',boxSizing:'border-box',height:55}}
@@ -381,7 +382,7 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
       </div>
       <div style={card}>
         <span style={lbl}>PLAYER NAME</span>
-        <input style={{...inp,marginBottom:10}} placeholder="Your name" value={form.playerName} onChange={e=>set('playerName',e.target.value)} />
+        <input style={{...inp,marginBottom:10}} placeholder="Your name" value={form.playerName} onChange={e=>set('playerName',e.target.value)} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" />
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
           <div><span style={lbl}>SESSION</span>
             <select value={form.sessionType} onChange={e=>set('sessionType',e.target.value)}
@@ -815,6 +816,8 @@ export default function Main({ user }) {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         .fade { animation: fadeIn 0.2s ease; }
         input::placeholder, textarea::placeholder { color: #333; }
+        input, textarea, select { -webkit-user-select: text; user-select: text; }
+        input:focus, textarea:focus { outline: none; -webkit-tap-highlight-color: transparent; }
         input[type=range] { accent-color: #ff3d00; width: 100%; }
         a { text-decoration: none; }
         select { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 14px; color: #fff; font-family: inherit; font-size: 14px; outline: none; width: 100%; }
