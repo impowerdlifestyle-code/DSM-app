@@ -596,7 +596,7 @@ export default function Main({ user }) {
 
   async function loadAthleteProfile(athlete) {
     const [as, ci, bm, sn, msgs] = await Promise.all([
-      supabase.from('action_steps').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
+      supabase.from('action_steps').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20).catch(()=>({data:[]})),
       supabase.from('weekly_checkins').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('ball_mastery').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('session_notes').select('*').eq('athlete_id', athlete.id).order('created_at', {ascending:false}).limit(20),
@@ -636,7 +636,8 @@ export default function Main({ user }) {
       // Enrich with counts
       const enriched = await Promise.all(lb.map(async (a) => {
         const { count: bmCount } = await supabase.from('ball_mastery').select('id', { count: 'exact' }).eq('user_id', a.id)
-        const { count: asCount } = await supabase.from('action_steps').select('id', { count: 'exact' }).eq('user_id', a.id)
+        const asResult = await supabase.from('action_steps').select('id', { count: 'exact' }).eq('user_id', a.id).catch(()=>({count:0}))
+        const asCount = asResult?.count || 0
         const { count: ciCount } = await supabase.from('weekly_checkins').select('id', { count: 'exact' }).eq('user_id', a.id)
         const score = (a.streak||0)*3 + (bmCount||0)*2 + (asCount||0)*2 + (ciCount||0)*1
         return { ...a, bmCount: bmCount||0, asCount: asCount||0, ciCount: ciCount||0, score }
@@ -1178,7 +1179,7 @@ export default function Main({ user }) {
         <div className="fade">
           <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
             const { error } = await submitActionSteps(formData, user.id)
-            if (error) { alert('Error: ' + error.message); return }
+            if (error) { alert('Save error: ' + (error.message || JSON.stringify(error))); return }
             const { data: updated } = await getActionSteps(user.id)
             setSubmissions(updated || [])
             setTab('home')
