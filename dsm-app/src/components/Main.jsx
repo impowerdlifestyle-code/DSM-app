@@ -1512,6 +1512,71 @@ export default function Main({ user }) {
             </button>
           )}
 
+          {/* ACTION STEPS HISTORY - always visible */}
+          {submissions.length > 0 && <>
+            <span style={C.lbl}>✅ ACTION STEPS ({submissions.length} LOGGED)</span>
+            <div style={{ ...C.card, marginBottom:14 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <div style={{ fontSize:13, fontWeight:800 }}>Total Sessions</div>
+                <div style={{ fontSize:24, fontWeight:900, color:'#ff3d00' }}>{submissions.length}</div>
+              </div>
+              {/* Performance averages from action steps */}
+              {(() => {
+                const avg = (key) => (submissions.reduce((a,s)=>a+(s[key]||0),0)/submissions.length).toFixed(1)
+                return (
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:6, marginBottom:12 }}>
+                    {[['conditioning','💪','COND'],['strength','🏋️','STR'],['technical','⚽','TECH'],['mental','🧠','MNT']].map(([k,icon,lbl])=>(
+                      <div key={k} style={{ background:'#0a0a0a', borderRadius:8, padding:'8px 4px', textAlign:'center' }}>
+                        <div style={{ fontSize:14 }}>{icon}</div>
+                        <div style={{ fontSize:18, fontWeight:900, color:'#ff3d00' }}>{avg(k)}</div>
+                        <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+              {/* Mental tools usage */}
+              <div style={{ fontSize:9, color:'#555', fontWeight:700, letterSpacing:2, marginBottom:6 }}>MENTAL TOOLS USED</div>
+              <div style={{ display:'flex', gap:8 }}>
+                {[['shark','🦈','SHARK'],['goldfish','🐠','GOLDFISH'],['selftalk','💬','SELF TALK'],['tuneout','🔇','TUNE OUT']].map(([k,icon,lbl])=>{
+                  const count = submissions.filter(s=>s[k+'_used']).length
+                  const pct = Math.round((count/submissions.length)*100)
+                  return (
+                    <div key={k} style={{ flex:1, background:'#0a0a0a', borderRadius:8, padding:'6px 4px', textAlign:'center' }}>
+                      <div style={{ fontSize:14 }}>{icon}</div>
+                      <div style={{ fontSize:14, fontWeight:900, color:'#ff3d00' }}>{pct}%</div>
+                      <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>{lbl}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Recent action steps list */}
+            <span style={C.lbl}>RECENT SESSIONS</span>
+            {submissions.slice(0,10).map((s,i)=>(
+              <div key={i} style={{ ...C.card, marginBottom:8 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                  <div style={{ fontSize:10, color:'#ff3d00', fontWeight:700, letterSpacing:1 }}>{s.date} · {s.session_type||s.sessionType}</div>
+                  <div style={{ fontSize:11 }}>{s.did_action_steps==='Yes'||s.didSteps==='Yes'?'✅ Did steps':'❌ Missed'}</div>
+                </div>
+                <div style={{ display:'flex', gap:10, marginBottom:6 }}>
+                  {['conditioning','strength','technical','mental'].map(k=>(
+                    <div key={k} style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:15, fontWeight:900, color:'#ff3d00' }}>{s[k]}</div>
+                      <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                  {[['shark','🦈'],['goldfish','🐠'],['selftalk','💬'],['tuneout','🔇']].map(([k,icon])=>s[k+'_used']&&(
+                    <span key={k} style={{ background:'#1e1e1e', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#ff3d00' }}>{icon} {k.toUpperCase()}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>}
+
           {/* Energy & Confidence Chart */}
           {checkinHistory.length > 0 ? <>
             <span style={C.lbl}>ENERGY & CONFIDENCE (LAST 8 WEEKS)</span>
@@ -1651,11 +1716,14 @@ export default function Main({ user }) {
               )
             })()}
 
-          </> : (
+          </> : null}
+
+          {/* Only show NO DATA if nothing at all is logged */}
+          {checkinHistory.length === 0 && submissions.length === 0 && (
             <div style={{ ...C.card, textAlign: 'center', padding: 40 }}>
               <div style={{ fontSize: 44, marginBottom: 12 }}>📈</div>
               <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>NO DATA YET</div>
-              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>Complete your weekly check-ins to see your progress charts here. The more you log, the more you can see yourself improving! 🦈</div>
+              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>Log your action steps and weekly check-ins to see your progress here. The more you log, the more you grow! 🦈</div>
             </div>
           )}
         </div>
