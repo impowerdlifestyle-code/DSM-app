@@ -420,8 +420,12 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
     if(!form.playerName) return alert('Enter your name!')
     if(!form.didSteps) return alert('Did you do the action steps?')
     setSaving(true)
-    await onSubmit(form)
-    setForm({playerName:'',sessionType:'Practice',date:new Date().toISOString().split('T')[0],dayOfWeek:WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],didSteps:'',usedSteps:{},occasions:{},comments:{},conditioning:7,strength:7,technical:7,mental:7})
+    try {
+      await onSubmit(form)
+      setForm({playerName:'',sessionType:'Practice',date:new Date().toISOString().split('T')[0],dayOfWeek:WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],didSteps:'',usedSteps:{},occasions:{},comments:{},conditioning:7,strength:7,technical:7,mental:7})
+    } catch(e) {
+      alert('Something went wrong. Try again.')
+    }
     setSaving(false)
   }
 
@@ -738,7 +742,6 @@ export default function Main({ user }) {
 
   const handleSubmitCheckin = async () => {
     if (!checkin.biggestWin) return alert('Fill in your biggest win!')
-    if (!checkin.goalNextWeek) return alert('Set a goal for next week!')
     setSavingCheckin(true)
     const { error } = await supabase.from('weekly_checkins').insert([{
       user_id: user.id, week: currentWeek,
@@ -1414,9 +1417,14 @@ export default function Main({ user }) {
       {tab === 'actions' && (
         <div className="fade">
           <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
-            await submitActionSteps(formData, user.id)
+            const { data, error } = await submitActionSteps(formData, user.id)
+            if (error) {
+              alert('Error saving: ' + (error.message || JSON.stringify(error)))
+              return
+            }
             const { data: updated } = await getActionSteps(user.id)
             setSubmissions(updated || [])
+            alert('✅ Action steps submitted to Coach Valentino!')
             setTab('home')
           }} />
         </div>
