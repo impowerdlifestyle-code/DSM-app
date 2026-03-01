@@ -482,10 +482,11 @@ export default function Main({ user }) {
   const [habits, setHabits] = useState(HABITS_LIST.map(h => ({ label: h, days: [false,false,false,false,false,false,false] })))
   const [form, setForm] = useState(emptyForm)
   const [submissions, setSubmissions] = useState([])
-  const [messages, setMessages] = useState([{ role: 'assistant', content: "What's up! I'm Coach Valentinoalentino 🔥 Ask me anything about mindset, match prep, or your action steps!" }])
+  const [messages, setMessages] = useState([{ role: 'assistant', content: "Hey! I'm Coach Valentino 🔥 Ask me anything about mindset, match prep, or your training!" }])
   const [chatInput, setChatInput] = useState('')
   const chatInputRef = useRef('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [selectedAthlete, setSelectedAthlete] = useState(null)
@@ -742,10 +743,22 @@ export default function Main({ user }) {
     setChatLoading(true)
     setTimeout(() => {
       const reply = getCoachVResponse(msg)
-      setMessages(p => [...p, { role: 'assistant', content: reply }])
-      speakText(reply)
       setChatLoading(false)
-    }, 800)
+      // Word by word typing effect
+      const words = reply.split(' ')
+      let i = 0
+      setTypingMsg('')
+      const interval = setInterval(() => {
+        i++
+        setTypingMsg(words.slice(0, i).join(' '))
+        if (i >= words.length) {
+          clearInterval(interval)
+          setMessages(p => [...p, { role: 'assistant', content: reply }])
+          setTypingMsg('')
+          speakText(reply)
+        }
+      }, 60)
+    }, 600)
   }
 
   const startVoice = () => {
@@ -1751,6 +1764,13 @@ export default function Main({ user }) {
                 </div>
               </div>
             ))}
+            {typingMsg && (
+              <div style={{ display:'flex',justifyContent:'flex-start',marginBottom:8 }}>
+                <div style={{ maxWidth:'82%',background:'#1a1a1a',borderRadius:'18px 18px 18px 4px',padding:'10px 14px',fontSize:14,lineHeight:1.5,color:'#fff' }}>
+                  {typingMsg}<span style={{ display:'inline-block',width:8,height:14,background:'#ff3d00',marginLeft:3,borderRadius:2,animation:'blink 0.7s infinite' }}>|</span>
+                </div>
+              </div>
+            )}
             {chatLoading&&<div style={{ display:'flex',alignItems:'center',gap:7 }}>
               <div style={{ width:28,height:28,borderRadius:'50%',background:'#ff3d00',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13 }}>🤖</div>
               <div style={{ background:'#1a1a1a',padding:'10px 13px',borderRadius:13,fontSize:12,color:'#666' }}>Thinking... 💭</div>
