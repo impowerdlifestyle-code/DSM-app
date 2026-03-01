@@ -42,7 +42,7 @@ const RESOURCES = [
   { title: "Action Steps Feedback Form", desc: "Original form template", url: "https://docs.google.com/document/d/15LZfqewpb-BSPUx9eSyBzaNmkHRaSb-Bx3V3tckwMS0/edit?tab=t.0", locked: false },
 ]
 
-const AI_SYSTEM = `You are Coach Valentino -- the AI version of Valentino DiLorenzo, founder of DiLorenzo Soccer Mindset (DSM). You coach youth soccer athletes on mental performance. Your style is direct, energetic, and motivating. You believe mindset comes BEFORE skill. You teach: Shark Mentality (taking risks, aggressive, fearless), Goldfish Mentality (short term memory for mistakes -- forget and move on), and Positive Self Talk. Use phrases like "lock in", "dominate", "elite mindset", "process over outcome", "be a shark not a fish". Always end with an action step. You're tough but caring. Keep responses concise and punchy. Never say you're an AI -- you ARE Coach Valentino.`
+const AI_SYSTEM = `You are Coach Valentino -- the AI version of Valentino Di Lorenzo, founder of DiLorenzo Soccer Mindset (DSM). Your background: former semi-professional player from Italy with 26 years of experience. You had youth trials with Inter, Parma, and Modena. You played in the Serie A2 Futsal League in Italy. You came to the US and played with Morris Elite, then coached at the Juventus Academy. You are a Certified USSF State and National coach and a Certified Growth Mindset and Life Coach. You were that scared kid growing up -- a mentor changed everything for you and you became captain of multiple teams in Italy and the US. That is why you built DSM -- to give every young player the mentor you never had. You have transformed 500+ players in 90 days. The program uses: Shark Mentality (fearless, aggressive, forward), Goldfish Mentality (3 second memory for mistakes), Positive Self Talk, Visualization, and Goal Setting. Your style is direct, warm, and real. Keep responses concise and punchy. Never say you are an AI -- you ARE Coach Valentino.`
 
 const ELEVEN_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY
 const ELEVEN_VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID
@@ -273,8 +273,63 @@ function getCoachVResponse(input) {
     "Discipline beats motivation every time. Motivation comes and goes. Discipline shows up every day.",
   ])
 
+  if (matchMsg(msg, ['what team did you play','where did you play','your team','did you play soccer','you play','your career','you played','your club','what club','inter','parma','futsal','semi pro','morris','juventus'])) return randomMsg([
+    "I am a former semi-professional player from Italy with over 26 years of experience. I had youth trials with Inter, Parma, and Modena. Then I came to the US and built my pro career with Morris Elite. After that I coached at the Juventus Academy here in the US -- focusing on mindset and building confidence. That whole journey is what DSM is built on. 🦈",
+    "I grew up in Italy, had trials with Inter, Parma, and Modena youth teams. Came to the US, played with Morris Elite, then coached at the Juventus Academy. 26 years in the game. I know what it takes -- technically and mentally. 🦈",
+    "Started as a scared kid in Italy -- I know that feeling personally. Had trials with Inter, Parma, and Modena. Made it to the Serie A2 Futsal League. Then Morris Elite in the US. Then Juventus Academy as a coach. Everything I teach comes from that journey. 🦈",
+  ])
+
+  if (matchMsg(msg, ['where are you from','your background','about you','who are you','tell me about yourself','valentino','coach valentino','your story'])) return randomMsg([
+    "I was that kid playing scared. Thanks to a mentor who believed in me I overcame my fears and became captain of multiple teams in Italy and the US. Former semi-pro from Italy -- trials with Inter, Parma, and Modena. Played in the Serie A2 Futsal League. Morris Elite in the US. Juventus Academy coach. Now I am a certified USSF coach and Growth Mindset and Life Coach. I built DSM to give every young player the mentor I wish I had. 🦈",
+    "Born in Italy, grew up playing scared. A mentor changed everything for me -- I went on to have trials with Inter, Parma, and Modena youth teams, played Serie A2 Futsal, came to the US with Morris Elite, coached at Juventus Academy. 26 years in the game. Now I help young players build the mental game I had to figure out the hard way.",
+  ])
+
+  if (matchMsg(msg, ['are you certified','your credentials','life coach','mindset coach','qualification','certified','ussf'])) return randomMsg([
+    "Yes -- I am a Certified USSF State and National coach, and a Certified Growth Mindset and Life Coach. That combined with 26 years on the field as a player and coach. This program is built on real psychology AND real soccer experience. 🦈",
+  ])
+
+  if (matchMsg(msg, ['scared','playing scared','fear','i was scared','scared kid'])) return randomMsg([
+    "You know what -- I was that kid too. Playing scared, afraid to make mistakes, freezing in big moments. A mentor believed in me and changed everything. I went on to become captain of multiple teams. That is exactly why I built DSM -- so no player has to figure this out alone. 🦈",
+    "I was the scared kid. Seriously. I know exactly what that feels like. And I know exactly how to fix it -- because I lived it. That is not just a program. That is my story. 🦈",
+  ])
+
+  if (matchMsg(msg, ['guarantee','results','does it work','proof','does dsm work'])) return randomMsg([
+    "We are so confident in this program it comes with a guarantee. If you do everything we ask -- complete 90% of daily tasks -- and do not see results, we will work with you 1-on-1 until you do. The program works. But YOU have to show up. 🦈",
+    "The results speak for themselves. 90% of success is mental. Most programs focus only on technical. We train the full player -- mental toughness, belief, self talk, visualization, goal setting. Do the work and the results follow.",
+  ])
+
+  if (matchMsg(msg, ['90 days','how long','program length','duration','how many weeks'])) return randomMsg([
+    "The core program is 90 days. That is enough time to build real habits, real mental toughness, and see real results on the field. After 90 days we recommend continuing with the group program to maintain and build on what you have achieved.",
+    "90 days to transform your mental game. But honestly the habits you build -- ball mastery daily, action steps after every session, weekly check-ins -- those stay with you for life. 🦈",
+  ])
+
   if (matchMsg(msg, ['what is dsm','about this program','how does this work','explain the program'])) return randomMsg([
     "DSM -- DiLorenzo Soccer Mindset -- is a mental performance program for youth soccer players. We train the mental game: Shark Mentality, Goldfish Mentality, Self Talk, Visualization, and Goal Setting. The mental game is what separates good players from great ones.",
+  ])
+
+  if (matchMsg(msg, ['do i need to submit','submit feedback','when do i submit','when to submit','do i have to submit'])) return randomMsg([
+    "Yes! Submit your Action Steps feedback after EVERY practice and game. That goes straight to me and your coach. Then do your Ball Mastery daily. And once a week fill out your Weekly Check-In. Those three things are the foundation of the program. 🦈",
+    "Three things you need to do: 1) Submit Action Steps after every practice and game. 2) Log your Ball Mastery every day. 3) Complete your Weekly Check-In once a week. Do those consistently and you will see real results.",
+  ])
+
+  if (matchMsg(msg, ['feedback','action steps','when to log','after practice','after game','submit after'])) return randomMsg([
+    "Submit your Action Steps after EVERY practice and game -- no exceptions. Rate your conditioning, strength, technical, and mental performance. Log which tools you used: Shark, Goldfish, Self Talk. That data goes to your coach and helps us track your growth. 🦈",
+    "After every single practice and game -- open the app, go to Action Steps, and submit your feedback. Your coach reviews it. It takes 2 minutes and it makes a huge difference.",
+  ])
+
+  if (matchMsg(msg, ['ball mastery','how often ball mastery','when ball mastery','daily ball','do ball mastery'])) return randomMsg([
+    "Ball mastery is DAILY. Every single day. Even 15 minutes counts. Go to the Ball Mastery tab, pick your skills, log your reps. Consistency is the key -- a little every day beats a lot once a week.",
+    "Every day. No days off on ball mastery. 15-20 minutes minimum. Open the Ball Mastery tab, work your skills, log it. Your weak foot especially -- that is where the biggest gains are hiding.",
+  ])
+
+  if (matchMsg(msg, ['weekly check','check in','checkin','how often check in','when check in'])) return randomMsg([
+    "Weekly Check-In is once per week. Every week, reflect on your energy, confidence, sessions completed, biggest win, biggest challenge, and your goal for next week. It takes 5 minutes and it keeps you locked in on your growth. 📋",
+    "Once a week -- that is your Weekly Check-In. Rate your energy and confidence, log your wins and challenges, set your goal for next week. Your coach reads every single one.",
+  ])
+
+  if (matchMsg(msg, ['what do i do','what should i do every day','daily routine','program routine','how to use the app'])) return randomMsg([
+    "Here is your daily routine: Every day -- Ball Mastery. After every practice and game -- Action Steps feedback. Once a week -- Weekly Check-In. Plus whenever you need me, I am right here. That is the full program. 🦈",
+    "Simple: Ball Mastery every day. Action Steps after every practice and game. Weekly Check-In once a week. Do those three things consistently and the mental and technical growth will follow. Trust the process.",
   ])
 
   if (matchMsg(msg, ['how are you','how r you','you good','whats up'])) return randomMsg([
@@ -459,7 +514,7 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
         ))}
       </div>
       <button style={btn} onClick={handleSubmit} disabled={saving}>
-        {saving?'SAVING...':'📤 SUBMIT & DOWNLOAD'}
+        {saving?'SAVING...':'📤 SUBMIT'}
       </button>
       {initialSubmissions?.length > 0 && <>
         <span style={{...lbl,marginTop:16}}>PAST SUBMISSIONS</span>
@@ -655,17 +710,12 @@ export default function Main({ user }) {
     setSavingForm(true)
     const { error } = await submitActionSteps(form, user.id)
     if (error) { alert('Error: ' + error.message); setSavingForm(false); return }
-    const steps = ['shark','goldfish','selftalk','tuneout'].filter(k => form.usedSteps[k])
-    const txt = `DSM ACTION STEPS\n${'='.repeat(40)}\nPLAYER: ${form.playerName}\nDAY: ${form.dayOfWeek}, ${form.date}\nSESSION: ${form.sessionType}\nDID STEPS: ${form.didSteps}\n\n${steps.map(k=>`✅ ${k.toUpperCase()}\n  Occasion: ${form.occasions[k]||'--'}\n  Comments: ${form.comments[k]||'--'}`).join('\n\n')}\n\nPERFORMANCE:\nConditioning: ${form.conditioning}/10\nStrength: ${form.strength}/10\nTechnical: ${form.technical}/10\nMental: ${form.mental}/10`
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }))
-    a.download = `DSM-${form.playerName}-${form.date}.txt`
-    a.click()
     const { data: updated } = await getActionSteps(user.id)
     setSubmissions(updated || [])
     setForm(emptyForm)
     setSavingForm(false)
-    alert('✅ Saved & downloaded!')
+    setTodayActionLogged(true)
+    setTab('home')
   }
 
   const handleSaveBall = async () => {
@@ -961,15 +1011,10 @@ export default function Main({ user }) {
           <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
             const { error } = await submitActionSteps(formData, user.id)
             if (error) { alert('Error: ' + error.message); return }
-            const steps = ['shark','goldfish','selftalk','tuneout'].filter(k => formData.usedSteps[k])
-            const txt = 'DSM ACTION STEPS\n' + '='.repeat(40) + '\nPLAYER: ' + formData.playerName + '\nDAY: ' + formData.dayOfWeek + ', ' + formData.date + '\nSESSION: ' + formData.sessionType + '\nDID STEPS: ' + formData.didSteps + '\n\n' + steps.map(k=>'✅ ' + k.toUpperCase() + '\n  Occasion: ' + (formData.occasions[k]||'--') + '\n  Comments: ' + (formData.comments[k]||'--')).join('\n\n') + '\n\nPERFORMANCE:\nConditioning: ' + formData.conditioning + '/10\nStrength: ' + formData.strength + '/10\nTechnical: ' + formData.technical + '/10\nMental: ' + formData.mental + '/10'
-            const a = document.createElement('a')
-            a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }))
-            a.download = 'DSM-' + formData.playerName + '-' + formData.date + '.txt'
-            a.click()
             const { data: updated } = await getActionSteps(user.id)
             setSubmissions(updated || [])
-            alert('✅ Saved & downloaded!')
+            setTodayActionLogged(true)
+            setTab('home')
           }} />
           <div style={C.card}>
             <span style={C.lbl}>PLAYER NAME</span>
@@ -1035,7 +1080,7 @@ export default function Main({ user }) {
             ))}
           </div>
           <button style={C.btn} onClick={handleSubmitForm} disabled={savingForm}>
-            {savingForm ? 'SAVING...' : '📤 SUBMIT & DOWNLOAD'}
+            {savingForm ? 'SAVING...' : '📤 SUBMIT'}
           </button>
         </div>
       )}
