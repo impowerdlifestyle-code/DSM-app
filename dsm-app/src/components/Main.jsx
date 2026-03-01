@@ -958,10 +958,6 @@ export default function Main({ user }) {
             setSubmissions(updated || [])
             alert('✅ Saved & downloaded!')
           }} />
-          {false && <div style={{ ...C.orange }}>
-            <span style={C.olbl}>⚠️ REQUIRED -- NO EXCEPTIONS</span>
-            <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
-          </div>
           <div style={C.card}>
             <span style={C.lbl}>PLAYER NAME</span>
             <input style={{ ...C.inp, marginBottom: 10 }} placeholder="Your name"
@@ -2685,4 +2681,4 @@ export default function Main({ user }) {
     </div>
   )
 }
-}
+
