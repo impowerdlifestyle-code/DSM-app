@@ -401,10 +401,11 @@ const StepCard = React.memo(({icon,title,desc,k,usedSteps,occasions,comments,onT
   )
 })
 
-function ActionForm({ user, onSubmit, initialSubmissions }) {
+function ActionForm({ user, playerName, onSubmit, initialSubmissions }) {
   const WEEKDAYS2 = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
   const [form, setForm] = useState({
-    playerName:'', sessionType:'Practice',
+    playerName: playerName || '',
+    sessionType:'Practice',
     date: new Date().toISOString().split('T')[0],
     dayOfWeek: WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],
     didSteps:'', usedSteps:{}, occasions:{}, comments:{},
@@ -417,12 +418,11 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
   const handleComment = useCallback((k,v) => setForm(p=>({...p,comments:{...p.comments,[k]:v}})), [])
 
   const handleSubmit = async () => {
-    if(!form.playerName) return alert('Enter your name!')
     if(!form.didSteps) return alert('Did you do the action steps?')
     setSaving(true)
     try {
-      await onSubmit(form)
-      setForm({playerName:'',sessionType:'Practice',date:new Date().toISOString().split('T')[0],dayOfWeek:WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1],didSteps:'',usedSteps:{},occasions:{},comments:{},conditioning:7,strength:7,technical:7,mental:7})
+      await onSubmit({ ...form, playerName: playerName || form.playerName })
+      setForm({ playerName: playerName||'', sessionType:'Practice', date:new Date().toISOString().split('T')[0], dayOfWeek:WEEKDAYS2[new Date().getDay()===0?6:new Date().getDay()-1], didSteps:'', usedSteps:{}, occasions:{}, comments:{}, conditioning:7, strength:7, technical:7, mental:7 })
     } catch(e) {
       alert('Something went wrong. Try again.')
     }
@@ -444,8 +444,10 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
         <div style={{fontSize:14,fontWeight:800,lineHeight:1.4}}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
       </div>
       <div style={card}>
-        <span style={lbl}>PLAYER NAME</span>
-        <input style={{...inp,marginBottom:10}} placeholder="Your name" value={form.playerName} onChange={e=>set('playerName',e.target.value)} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false" />
+        <span style={lbl}>PLAYER</span>
+        <div style={{...inp, color:'#ff3d00', fontWeight:800, background:'#0d0d0d', cursor:'default', marginBottom:10}}>
+          {playerName || '—'}
+        </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
           <div><span style={lbl}>SESSION</span>
             <select value={form.sessionType} onChange={e=>set('sessionType',e.target.value)}
@@ -743,7 +745,7 @@ export default function Main({ user }) {
   const handleSubmitCheckin = async () => {
     if (!checkin.biggestWin) return alert('Fill in your biggest win!')
     setSavingCheckin(true)
-    const { error } = await supabase.from('weekly_checkins').insert([{
+    const { error } = await supabase.from('weekly_checkins').upsert([{
       user_id: user.id, week: currentWeek,
       biggest_win: checkin.biggestWin,
       biggest_challenge: checkin.biggestChallenge,
@@ -1416,7 +1418,7 @@ export default function Main({ user }) {
       {/* ── ACTION STEPS ── */}
       {tab === 'actions' && (
         <div className="fade">
-          <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
+          <ActionForm user={user} playerName={profile?.full_name || user?.email} initialSubmissions={submissions} onSubmit={async (formData) => {
             const { data, error } = await submitActionSteps(formData, user.id)
             if (error) {
               alert('Error saving: ' + (error.message || JSON.stringify(error)))
@@ -1523,7 +1525,11 @@ export default function Main({ user }) {
               <div style={{ ...C.card,borderColor:'#1a4a1a',textAlign:'center',padding:36,marginBottom:16 }}>
                 <div style={{ fontSize:44,marginBottom:10 }}>✅</div>
                 <div style={{ fontSize:18,fontWeight:800,marginBottom:6 }}>THIS WEEK SUBMITTED!</div>
-                <div style={{ fontSize:13,color:'#555' }}>Coach Valentino has your check-in. See you next week. 🔥</div>
+                <div style={{ fontSize:13,color:'#555',marginBottom:16 }}>Coach Valentino has your check-in. See you next week. 🔥</div>
+                <button onClick={()=>setCheckinDone(false)}
+                  style={{ background:'#1e1e1e',border:'1px solid #333',borderRadius:10,padding:'10px 18px',fontSize:11,fontWeight:800,color:'#aaa',cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                  ✏️ EDIT / RE-SUBMIT THIS WEEK
+                </button>
               </div>
               {checkinHistory.length > 0 && <>
                 <span style={C.lbl}>PAST CHECK-INS</span>
