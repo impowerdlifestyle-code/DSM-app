@@ -714,7 +714,6 @@ export default function Main({ user }) {
     setSubmissions(updated || [])
     setForm(emptyForm)
     setSavingForm(false)
-    setTodayActionLogged(true)
     setTab('home')
   }
 
@@ -1013,7 +1012,6 @@ export default function Main({ user }) {
             if (error) { alert('Error: ' + error.message); return }
             const { data: updated } = await getActionSteps(user.id)
             setSubmissions(updated || [])
-            setTodayActionLogged(true)
             setTab('home')
           }} />
           <div style={C.card}>
