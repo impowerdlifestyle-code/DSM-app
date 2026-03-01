@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel } from '../lib/supabase.js'
 
 const QUOTES = [
   "The body achieves what the mind believes. Train your mind first.",
-  "Champions aren't born. They're built — one mental rep at a time.",
+  "Champions aren't born. They're built -- one mental rep at a time.",
   "Pressure is a privilege. You're in a game worth playing.",
   "Process over outcome. Lock in, and the scoreboard takes care of itself.",
   "Mistakes are feedback, not failure. Learn and move forward.",
@@ -31,8 +31,8 @@ const PARENT_GUIDE = [
   { icon: "⚽", title: "Before The Match", content: "Say: 'I love watching you play.' Avoid adding pressure about performance. Your child needs unconditional support, not conditional love based on results." },
   { icon: "🏁", title: "After The Match", content: "Wait 30 minutes before discussing the game. Start with: 'How did YOU feel out there?' Let them lead. Avoid immediately pointing out mistakes." },
   { icon: "💪", title: "Handling Losses", content: "Losses are the greatest teachers. Ask: 'What did you learn today?' Never blame teammates, referees, or coaches. Model resilience and perspective." },
-  { icon: "🔥", title: "Building Confidence", content: "Catch them doing things RIGHT. Praise effort over outcome. Say: 'I noticed how hard you worked on that' — not just 'great game.'" },
-  { icon: "🧠", title: "Avoiding Pressure", content: "Your child can feel your anxiety. Stay calm in the stands. Cheering is great — coaching from the sidelines creates confusion and anxiety." },
+  { icon: "🔥", title: "Building Confidence", content: "Catch them doing things RIGHT. Praise effort over outcome. Say: 'I noticed how hard you worked on that' -- not just 'great game.'" },
+  { icon: "🧠", title: "Avoiding Pressure", content: "Your child can feel your anxiety. Stay calm in the stands. Cheering is great -- coaching from the sidelines creates confusion and anxiety." },
   { icon: "📋", title: "Weekly Check-In", content: "Ask every week: 'What's one thing you're proud of?' and 'What's one thing you want to improve?' Keep it positive and forward-focused." },
 ]
 
@@ -42,7 +42,7 @@ const RESOURCES = [
   { title: "Action Steps Feedback Form", desc: "Original form template", url: "https://docs.google.com/document/d/15LZfqewpb-BSPUx9eSyBzaNmkHRaSb-Bx3V3tckwMS0/edit?tab=t.0", locked: false },
 ]
 
-const AI_SYSTEM = `You are Coach Valentino — the AI version of Valentino DiLorenzo, founder of DiLorenzo Soccer Mindset (DSM). You coach youth soccer athletes on mental performance. Your style is direct, energetic, and motivating. You believe mindset comes BEFORE skill. You teach: Shark Mentality (taking risks, aggressive, fearless), Goldfish Mentality (short term memory for mistakes — forget and move on), and Positive Self Talk. Use phrases like "lock in", "dominate", "elite mindset", "process over outcome", "be a shark not a fish". Always end with an action step. You're tough but caring. Keep responses concise and punchy. Never say you're an AI — you ARE Coach Valentino.`
+const AI_SYSTEM = `You are Coach Valentino -- the AI version of Valentino DiLorenzo, founder of DiLorenzo Soccer Mindset (DSM). You coach youth soccer athletes on mental performance. Your style is direct, energetic, and motivating. You believe mindset comes BEFORE skill. You teach: Shark Mentality (taking risks, aggressive, fearless), Goldfish Mentality (short term memory for mistakes -- forget and move on), and Positive Self Talk. Use phrases like "lock in", "dominate", "elite mindset", "process over outcome", "be a shark not a fish". Always end with an action step. You're tough but caring. Keep responses concise and punchy. Never say you're an AI -- you ARE Coach Valentino.`
 
 const ELEVEN_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY
 const ELEVEN_VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID
@@ -101,7 +101,7 @@ function getCoachVResponse(input) {
   
   // FEELING LOW / SAD / UPSET
   if (matchMsg(msg, ['sad','upset','crying','down','depressed','feel bad','feel terrible','awful','hate this','want to quit','giving up','cant do this','can't do this'])) return randomMsg([
-    "Hey — I hear you. What's going on? Talk to me. 💙",
+    "Hey -- I hear you. What's going on? Talk to me. 💙",
     "That's real and I'm not gonna brush past it. What happened? Tell me everything.",
     "I got you. What's going on? Sometimes just getting it out helps. I'm listening.",
   ])
@@ -115,29 +115,29 @@ function getCoachVResponse(input) {
 
   // NERVOUS / ANXIOUS  
   if (matchMsg(msg, ['nervous','scared','anxious','worried','butterflies','shaking','freaking out'])) return randomMsg([
-    "Okay first — breathe. That feeling? That's just your body getting ready to compete. It means you care. Now tell me what's coming up and we'll prep for it together 💪",
-    "Those nerves are actually a good sign — means you're about to do something that matters. What's the situation?",
-    "I feel you. Quick thing — do this right now: big inhale through your nose, then one strong exhale out your mouth. Do it twice. Then tell me what's going on.",
+    "Okay first -- breathe. That feeling? That's just your body getting ready to compete. It means you care. Now tell me what's coming up and we'll prep for it together 💪",
+    "Those nerves are actually a good sign -- means you're about to do something that matters. What's the situation?",
+    "I feel you. Quick thing -- do this right now: big inhale through your nose, then one strong exhale out your mouth. Do it twice. Then tell me what's going on.",
   ])
 
   // FRUSTRATED WITH COACH
   if (matchMsg(msg, ['my coach','the coach','coach yelled','coach benched','coach doesn't','coach is','hate my coach','coach hates me'])) return randomMsg([
-    "Okay I hear you. Coach stuff can be tough. Remember though — when a coach gets on you, it usually means they see something in you worth pushing. What happened exactly?",
-    "That's frustrating, I get it. Here's the thing — you can only control YOUR reaction. How did you respond in the moment?",
+    "Okay I hear you. Coach stuff can be tough. Remember though -- when a coach gets on you, it usually means they see something in you worth pushing. What happened exactly?",
+    "That's frustrating, I get it. Here's the thing -- you can only control YOUR reaction. How did you respond in the moment?",
     "Tell me what went down. And let's think about how to use the mental tools to handle it next time 💪",
   ])
 
   // BAD TRAINING SESSION
   if (matchMsg(msg, ['bad training','bad practice','terrible practice','practice was rough','didn't go well','messed up in training'])) return randomMsg([
     "Rough one today huh. What happened? Walk me through it.",
-    "Those days happen to everyone — even the pros. What part felt hardest?",
-    "Got it. First — goldfish it. It's done. Now tell me one thing you can take from it and actually use next session.",
+    "Those days happen to everyone -- even the pros. What part felt hardest?",
+    "Got it. First -- goldfish it. It's done. Now tell me one thing you can take from it and actually use next session.",
   ])
 
   // ASKING FOR ADVICE GENERALLY
   if (matchMsg(msg, ['what should i do','can you help','need help','need advice','don't know what to do','help me'])) return randomMsg([
-    "Of course — that's what I'm here for. Tell me what's going on and we'll figure it out together 💪",
-    "Always. Give me the full picture — what's happening?",
+    "Of course -- that's what I'm here for. Tell me what's going on and we'll figure it out together 💪",
+    "Always. Give me the full picture -- what's happening?",
     "Yeah let's work through it. What's the situation?",
   ])
 
@@ -160,13 +160,13 @@ function getCoachVResponse(input) {
     "Just vibing and ready to coach. What's on your mind? 🦈",
   ])
   if (matchMsg(msg, ['good morning','morning'])) return randomMsg([
-    "Good morning! Big day ahead — what's the plan? ⚽",
+    "Good morning! Big day ahead -- what's the plan? ⚽",
     "Morning! Did you do your visualization yet? 👁️",
     "Morning! How are you feeling today?",
   ])
   if (matchMsg(msg, ['good night','goodnight','going to sleep','going to bed'])) return randomMsg([
-    "Good night! Get some rest — recovery is part of the process 💪",
-    "Sleep well! Quick thing before you knock out — visualize one great moment from today or tomorrow's game. Sleep on it 👁️",
+    "Good night! Get some rest -- recovery is part of the process 💪",
+    "Sleep well! Quick thing before you knock out -- visualize one great moment from today or tomorrow's game. Sleep on it 👁️",
   ])
   if (matchMsg(msg, ['bored','nothing to do','chilling'])) return randomMsg([
     "Bored?? That's 15 minutes of ball mastery calling your name 😂⚽",
@@ -178,7 +178,7 @@ function getCoachVResponse(input) {
   ])
   if (matchMsg(msg, ['thank','thanks','thank you','appreciate'])) return randomMsg([
     "Always! Come back and tell me how it goes 💪",
-    "Of course. Now go apply it — that's where the real work happens 🦈",
+    "Of course. Now go apply it -- that's where the real work happens 🦈",
     "Anytime. You've got this 🔥",
   ])
   if (matchMsg(msg, ['hello','hi','hey','sup','coach','yo'])) return randomMsg([
@@ -188,20 +188,20 @@ function getCoachVResponse(input) {
     "Hey! Good to hear from you. What's on your mind? 😎",
   ])
   if (matchMsg(msg, ['how are you','how r you','you good','hows it going','how you doing','how have you been'])) return randomMsg([
-    "I'm great man, locked in as always! How about you — how's training been going? 🔥",
+    "I'm great man, locked in as always! How about you -- how's training been going? 🔥",
     "Doing well! Honestly just happy to be working with athletes who care about getting better. How are YOU doing? 💪",
-    "All good on my end! More importantly — how are you feeling mentally this week? 🦈",
+    "All good on my end! More importantly -- how are you feeling mentally this week? 🦈",
     "Good good! Can't complain. How's the game been treating you lately? 😎",
   ])
   if (matchMsg(msg, ['what are you doing','what you up to','what you doing','whatcha doing'])) return randomMsg([
     "Just here waiting to coach you up! What do you need? 🔥",
-    "Thinking about soccer mindset 24/7 — that's just how I'm built 😂 What's going on with you? 💪",
+    "Thinking about soccer mindset 24/7 -- that's just how I'm built 😂 What's going on with you? 💪",
     "Honestly? Just vibing and ready to help. What's on your mind? 🦈",
   ])
   if (matchMsg(msg, ['good morning','morning','good night','goodnight','good evening'])) return randomMsg([
-    "Good morning! Big day ahead — what's the plan? 🔥",
+    "Good morning! Big day ahead -- what's the plan? 🔥",
     "Morning! Did you do your visualization yet? 👁️",
-    "Good night! Get some rest — recovery is part of the process. See you tomorrow. 💪",
+    "Good night! Get some rest -- recovery is part of the process. See you tomorrow. 💪",
   ])
   if (matchMsg(msg, ['haha','lol','lmao','funny','joke'])) return randomMsg([
     "Ha! Glad you're in a good mood 😂 Now let's channel that energy into training. What are we working on? 🔥",
@@ -212,34 +212,34 @@ function getCoachVResponse(input) {
     "Bored = opportunity! Pull out the ball and get some touches in. Or do your visualization. Champions don't have off days mentally. 🦈",
   ])
   if (matchMsg(msg, ['mental loop','loop','system','process'])) return randomMsg([
-    "The Mental Loop is your reset system:\n\n1️⃣ SHARK MENTALITY — go in aggressive, fearless, hungry\n2️⃣ GOLDFISH MENTALITY — mistake? Gone in 1-2 seconds\n3️⃣ POSITIVE SELF TALK — say next play and mean it\n4️⃣ Back to SHARK — re-engage, attack again\n\nRuns on repeat the entire game. Master it and nothing can stop you. 🦈",
+    "The Mental Loop is your reset system:\n\n1️⃣ SHARK MENTALITY -- go in aggressive, fearless, hungry\n2️⃣ GOLDFISH MENTALITY -- mistake? Gone in 1-2 seconds\n3️⃣ POSITIVE SELF TALK -- say next play and mean it\n4️⃣ Back to SHARK -- re-engage, attack again\n\nRuns on repeat the entire game. Master it and nothing can stop you. 🦈",
   ])
   if (matchMsg(msg, ['1v1','scared','afraid','fear','bigger','defender','physical','tackle','challenge'])) return randomMsg([
-    "I hear this all the time. Bigger defender and your brain says don't do it. That's your amygdala firing. Here's the truth: when you go in HESITANT, you're more likely to get hurt. When you commit fully — shark mentality — you're in control. Aggressive is safe. Hesitant is dangerous. Action step: Next 1v1, commit fully before you even touch the ball. 🦈",
+    "I hear this all the time. Bigger defender and your brain says don't do it. That's your amygdala firing. Here's the truth: when you go in HESITANT, you're more likely to get hurt. When you commit fully -- shark mentality -- you're in control. Aggressive is safe. Hesitant is dangerous. Action step: Next 1v1, commit fully before you even touch the ball. 🦈",
     "Fear in 1v1s comes from focusing on what you DON'T want. Flip it. Focus on winning the ball. Shark mentality means you WANT the 1v1. Action step: In your next practice, seek out 1v1 situations instead of avoiding them.",
-    "Bigger defenders aren't scarier — they're just bigger. Speed beats size. Confidence beats size. The only thing holding you back is the story you're telling yourself. Change the story. You're a shark. 🦈",
+    "Bigger defenders aren't scarier -- they're just bigger. Speed beats size. Confidence beats size. The only thing holding you back is the story you're telling yourself. Change the story. You're a shark. 🦈",
   ])
   if (matchMsg(msg, ['shark','aggressive','fearless','attack','risk'])) return randomMsg([
     "Shark Mentality means one thing: you keep moving forward. Sharks don't swim backwards. They don't hesitate. On that pitch, you take risks. You challenge for balls you're not sure you'll win. Action step: Make 3 aggressive decisions you'd normally avoid in your next session. 🦈",
-    "Shark Mentality is an identity, not just a strategy. You don't DO shark mentality — you ARE a shark. Before your next game say out loud: I am a shark. I am aggressive. I am fearless. I move forward. Say it 3 times. 🦈",
+    "Shark Mentality is an identity, not just a strategy. You don't DO shark mentality -- you ARE a shark. Before your next game say out loud: I am a shark. I am aggressive. I am fearless. I move forward. Say it 3 times. 🦈",
   ])
   if (matchMsg(msg, ['goldfish','mistake','forget','error','bad pass','miss','messed up','reset'])) return randomMsg([
-    "Goldfish forget in 1-2 seconds. That's your superpower. Bad touch? Gone. Missed shot? Gone. Lost the 1v1? GONE. The best players in the world have short memories. Action step: Every mistake today — shake your hands out and say next play. 🐠",
+    "Goldfish forget in 1-2 seconds. That's your superpower. Bad touch? Gone. Missed shot? Gone. Lost the 1v1? GONE. The best players in the world have short memories. Action step: Every mistake today -- shake your hands out and say next play. 🐠",
     "The mistake already happened. You can't change it. The ONLY thing you control is the next play. 1-2 seconds to process, then switch fully to what's in front of you. Goldfish mentality is elite mental skill. 🐠",
   ])
   if (matchMsg(msg, ['self talk','voice','head','negative','positive','inner'])) return randomMsg([
     "Your inner voice is either coaching you or destroying you. Replace I can't do this with next play and I'm a shark. Simple phrases that reset your brain. Action step: Write down 3 power phrases you'll use in your next game. 💬",
   ])
   if (matchMsg(msg, ['growth','fixed','mindset','improve','better','develop'])) return randomMsg([
-    "Fixed mindset: I'm either good at this or I'm not. Growth mindset: I'm not good at this YET. That one word — YET — changes everything. Your abilities grow with effort. Every rep of ball mastery, every action step you log — that's you growing. 💪",
+    "Fixed mindset: I'm either good at this or I'm not. Growth mindset: I'm not good at this YET. That one word -- YET -- changes everything. Your abilities grow with effort. Every rep of ball mastery, every action step you log -- that's you growing. 💪",
   ])
   if (matchMsg(msg, ['confidence','confident','believe','doubt','unsure'])) return randomMsg([
-    "Confidence isn't something you wait to feel — it's something you BUILD. Every rep of ball mastery. Every action step you complete. You're building confidence brick by brick. You don't find it. You earn it. 💪",
+    "Confidence isn't something you wait to feel -- it's something you BUILD. Every rep of ball mastery. Every action step you complete. You're building confidence brick by brick. You don't find it. You earn it. 💪",
     "Your brain focuses on what you tell it. Flip it. I am a shark. I take risks. I move forward. Your body follows your mind. Train your mind first.",
   ])
   if (matchMsg(msg, ['nervous','nerves','anxiety','worried','stress','pressure'])) return randomMsg([
     "Nerves mean you care. Use them. Channel that energy into aggression, into your pre-match routine. 5 deep breaths. Shark mentality phrase. Visualize one aggressive action in the first 5 minutes. Then go compete. 🔥",
-    "Reframe the nerves. Instead of I'm so nervous say I'm so ready. Same physical feeling — completely different mental response. Your brain believes what you tell it. Tell it you're a shark.",
+    "Reframe the nerves. Instead of I'm so nervous say I'm so ready. Same physical feeling -- completely different mental response. Your brain believes what you tell it. Tell it you're a shark.",
   ])
   if (matchMsg(msg, ['lost','lose','bad game','terrible','played bad'])) return randomMsg([
     "One bad game doesn't define you. What defines you is how you RESPOND. Goldfish mentality applies to games too. Process it, learn from it, move on. What's one thing you'll fix this week? 🐠",
@@ -247,190 +247,190 @@ function getCoachVResponse(input) {
   ])
   if (matchMsg(msg, ['ball mastery','weak foot','technical','skills','training'])) return randomMsg([
     "15 minutes of ball mastery every single day. No exceptions. Daily technical work on weak foot, first touch, moves. It compounds. 15 mins for 6 months straight? That's elite technical ability. Log it. ⚽",
-    "Weak foot work is non-negotiable. Your strong foot is already good — your weak foot is where your next level lives. Every day, at least 50% of your ball mastery should be weak foot. That discomfort is growth. 🔥",
+    "Weak foot work is non-negotiable. Your strong foot is already good -- your weak foot is where your next level lives. Every day, at least 50% of your ball mastery should be weak foot. That discomfort is growth. 🔥",
   ])
   if (matchMsg(msg, ['downshift','downshifting breath','calm breath','4 second','inhale 4','box breath','breathing technique'])) return randomMsg([
-    "The downshifting breath is for when you need to CALM DOWN — too amped, too frustrated, too in your head:\n\nInhale for 4 seconds — clench your fists\nHold for 2 seconds\nExhale for 6 seconds — release your fists\n\nDo this once or twice and your nervous system physically calms down. Use it before big moments, at halftime, or when frustration is building. Practice it in ball mastery so it is automatic. 💨",
+    "The downshifting breath is for when you need to CALM DOWN -- too amped, too frustrated, too in your head:\n\nInhale for 4 seconds -- clench your fists\nHold for 2 seconds\nExhale for 6 seconds -- release your fists\n\nDo this once or twice and your nervous system physically calms down. Use it before big moments, at halftime, or when frustration is building. Practice it in ball mastery so it is automatic. 💨",
   ])
   if (matchMsg(msg, ['energizing breath','energy breath','pump up','fire up','wake up','get going','fast exhale'])) return randomMsg([
-    "The energizing breath is for when you need to WAKE UP — flat, low energy, not switched on:\n\nStrong inhale through the nose\nFast forceful exhale through the mouth\n\nOne or two of these and your body gets a shot of energy. Use it before kickoff, coming off the bench, or when you feel flat in the second half. Quick inhale, BOOM exhale. Fire yourself up. 🔥",
+    "The energizing breath is for when you need to WAKE UP -- flat, low energy, not switched on:\n\nStrong inhale through the nose\nFast forceful exhale through the mouth\n\nOne or two of these and your body gets a shot of energy. Use it before kickoff, coming off the bench, or when you feel flat in the second half. Quick inhale, BOOM exhale. Fire yourself up. 🔥",
   ])
   if (matchMsg(msg, ['reactive','responsive','reactive self talk','responsive self talk','respond not react'])) return randomMsg([
-    "There are two types of self-talk after a mistake:\n\nREACTIVE — automatic, negative, self-defeating. I am trash. Why did I do that. I suck.\nRESPONSIVE — chosen, positive, constructive. Forget it. Lock in. Next play.\n\nYou cannot stop the reactive thought from firing. But you CAN choose the responsive one that follows. That choice is your superpower. Train it every day in ball mastery. 💬",
+    "There are two types of self-talk after a mistake:\n\nREACTIVE -- automatic, negative, self-defeating. I am trash. Why did I do that. I suck.\nRESPONSIVE -- chosen, positive, constructive. Forget it. Lock in. Next play.\n\nYou cannot stop the reactive thought from firing. But you CAN choose the responsive one that follows. That choice is your superpower. Train it every day in ball mastery. 💬",
   ])
   if (matchMsg(msg, ['rate mental','mental performance','1 to 10','mental score','rate yourself','felt in the zone','got distracted'])) return randomMsg([
-    "When you fill in your action steps, rate your MENTAL performance 1-10 — not just your physical. And write a note explaining the score. Felt in the zone? What created that? Got distracted? What triggered it? The more detail you give, the better I can coach you. This data is how we track your real progress. 📊",
+    "When you fill in your action steps, rate your MENTAL performance 1-10 -- not just your physical. And write a note explaining the score. Felt in the zone? What created that? Got distracted? What triggered it? The more detail you give, the better I can coach you. This data is how we track your real progress. 📊",
   ])
   if (matchMsg(msg, ['forget it','lock in','cue','cue word','trigger word','keyword','phrase'])) return randomMsg([
-    "Your cue words are the triggers for your reset routine. Forget it — that is your goldfish cue. The mistake is gone. Lock in — that is your shark cue. You are back, aggressive, focused. Two words. That is the whole system. Use them EVERY time in ball mastery so they are completely automatic by game day. 🦈",
+    "Your cue words are the triggers for your reset routine. Forget it -- that is your goldfish cue. The mistake is gone. Lock in -- that is your shark cue. You are back, aggressive, focused. Two words. That is the whole system. Use them EVERY time in ball mastery so they are completely automatic by game day. 🦈",
     "Pick your cue words and stick with them. Forget it. Next play. Let it go. Whatever goldfish phrase snaps you out of the past. Then Lock in. Be hungry. I got this. Whatever shark phrase fires you back up. Same words every time. Repetition builds the habit. The habit saves you in big moments. 🔥",
   ])
   if (matchMsg(msg, ['spiral','prevent spiral','stop spiraling','one mistake leads','snowball'])) return randomMsg([
-    "The reset routine exists for one reason — to prevent the spiral. Mistake happens. You react. If you do NOT reset, the frustration carries into the next play. Then the next. Suddenly one bad touch turned into five bad minutes. The reset routine BREAKS that chain at step one. Goldfish it. Breathe. Shark back. Done. Do not let one mistake become five. 🦈",
-    "Spiraling after mistakes is almost never physical — it is mental. Your technique does not suddenly get worse. Your FOCUS does. The reset routine brings your focus back to the present play where it belongs. Practice it after every mistake in ball mastery. Even the tiny ones. Build the habit when the pressure is low so it fires automatically when the pressure is high. 🔥",
+    "The reset routine exists for one reason -- to prevent the spiral. Mistake happens. You react. If you do NOT reset, the frustration carries into the next play. Then the next. Suddenly one bad touch turned into five bad minutes. The reset routine BREAKS that chain at step one. Goldfish it. Breathe. Shark back. Done. Do not let one mistake become five. 🦈",
+    "Spiraling after mistakes is almost never physical -- it is mental. Your technique does not suddenly get worse. Your FOCUS does. The reset routine brings your focus back to the present play where it belongs. Practice it after every mistake in ball mastery. Even the tiny ones. Build the habit when the pressure is low so it fires automatically when the pressure is high. 🔥",
   ])
   if (matchMsg(msg, ['helpful','unhelpful','resetting statement','reset statement','helpful self talk','check focus','awareness','notice'])) return randomMsg([
-    "Stop thinking about self-talk as positive vs negative. Think about it as HELPFUL vs UNHELPFUL. The question is not: is this thought positive? The question is: is this thought helping me focus on the right things RIGHT NOW? If not — replace it with a resetting statement and get back in the game. 💬",
-    "Here is the 4-step reset process for on-field self-talk:\n\n1 TRIGGER — mistake happens\n2 SELF-TALK 1 — automatic reaction fires (I suck, why did I do that)\n3 CHECK FOCUS — ask yourself: is this helping me right now?\n4 REFOCUS — use your resetting statement to get back to the present\n\nThe first step is just AWARENESS. Notice the unhelpful thought. That is it. You cannot replace what you cannot catch. Start there. 🔥",
-    "Your brain will always have automatic reactions to mistakes — that is Self-Talk 1 and you cannot stop it. What you CAN control is Self-Talk 2 — your chosen resetting statement that brings you back to the present. Next play. Lock in. I got this. Pick yours. Practice it. Make it automatic. 💪",
+    "Stop thinking about self-talk as positive vs negative. Think about it as HELPFUL vs UNHELPFUL. The question is not: is this thought positive? The question is: is this thought helping me focus on the right things RIGHT NOW? If not -- replace it with a resetting statement and get back in the game. 💬",
+    "Here is the 4-step reset process for on-field self-talk:\n\n1 TRIGGER -- mistake happens\n2 SELF-TALK 1 -- automatic reaction fires (I suck, why did I do that)\n3 CHECK FOCUS -- ask yourself: is this helping me right now?\n4 REFOCUS -- use your resetting statement to get back to the present\n\nThe first step is just AWARENESS. Notice the unhelpful thought. That is it. You cannot replace what you cannot catch. Start there. 🔥",
+    "Your brain will always have automatic reactions to mistakes -- that is Self-Talk 1 and you cannot stop it. What you CAN control is Self-Talk 2 -- your chosen resetting statement that brings you back to the present. Next play. Lock in. I got this. Pick yours. Practice it. Make it automatic. 💪",
   ])
   if (matchMsg(msg, ['resetting','reset statement','refocus','present play','past mistake','focus on present'])) return randomMsg([
-    "Unhelpful self-talk after a mistake does one thing: it pulls your focus to the PAST. But the game is happening RIGHT NOW. Your resetting statement is what snaps you back to the present. It does not have to be positive — it just has to redirect your focus. Next play. Here. Now. That is all you need. 🦈",
-    "Pair your resetting statement with a physical cue — deep breath, clap your hands, tap your chest. The physical action makes the reset more powerful and more automatic. Over time your brain learns: physical cue means reset. It fires without thinking. That is the goal. 🔥",
+    "Unhelpful self-talk after a mistake does one thing: it pulls your focus to the PAST. But the game is happening RIGHT NOW. Your resetting statement is what snaps you back to the present. It does not have to be positive -- it just has to redirect your focus. Next play. Here. Now. That is all you need. 🦈",
+    "Pair your resetting statement with a physical cue -- deep breath, clap your hands, tap your chest. The physical action makes the reset more powerful and more automatic. Over time your brain learns: physical cue means reset. It fires without thinking. That is the goal. 🔥",
   ])
   if (matchMsg(msg, ['i suck','why did i','hate myself','so bad','terrible player','useless'])) return randomMsg([
-    "That automatic reaction after a mistake — I suck, why did I do that — is Self-Talk 1. It is automatic. You cannot stop it firing. But you CAN stop it running the show. The moment you notice it, ask: is this helping me right now? The answer is no. So use your resetting statement. Next play. Back to the present. That is the move. 💬",
+    "That automatic reaction after a mistake -- I suck, why did I do that -- is Self-Talk 1. It is automatic. You cannot stop it firing. But you CAN stop it running the show. The moment you notice it, ask: is this helping me right now? The answer is no. So use your resetting statement. Next play. Back to the present. That is the move. 💬",
   ])
   if (matchMsg(msg, ['complacent','complacency','after a goal','too excited','celebrate too much','high after goal'])) return randomMsg([
-    "Self-talk is not just for bad moments — it is for good ones too. Scored a great goal? Awesome. Enjoy it for 2 seconds. Then reset. Complacency after success is just as dangerous as frustration after mistakes. Stay locked in. The game is not over. Shark mentality does not take plays off. 🦈",
+    "Self-talk is not just for bad moments -- it is for good ones too. Scored a great goal? Awesome. Enjoy it for 2 seconds. Then reset. Complacency after success is just as dangerous as frustration after mistakes. Stay locked in. The game is not over. Shark mentality does not take plays off. 🦈",
   ])
   if (matchMsg(msg, ['scanning','check shoulder','awareness','see the field','look before'])) return randomMsg([
     "Scanning before you receive the ball is one of the most underrated skills in football. Check your shoulder BEFORE the ball comes to you. Know where the pressure is. Know where your options are. By the time the ball arrives, your decision is already made. That is elite decision making. Build it into your ball mastery habit. ⚽",
   ])
   if (matchMsg(msg, ['smart goal','smart','specific','measurable','achievable','relevant','time bound','deadline'])) return randomMsg([
-    "SMART goals turn vague wishes into a real plan:\n\nSPECIFIC — what, when, where\nMEASURABLE — how do you track it?\nACHIEVABLE — is it realistic?\nRELEVANT — does it matter to your game?\nTIME-BOUND — what is the deadline?\n\nExample: Practice right-foot passes 20 times, 3x per week, for 1 month. That is a SMART goal. Not just get better at passing. Be specific. Track it. Do it. 💪",
+    "SMART goals turn vague wishes into a real plan:\n\nSPECIFIC -- what, when, where\nMEASURABLE -- how do you track it?\nACHIEVABLE -- is it realistic?\nRELEVANT -- does it matter to your game?\nTIME-BOUND -- what is the deadline?\n\nExample: Practice right-foot passes 20 times, 3x per week, for 1 month. That is a SMART goal. Not just get better at passing. Be specific. Track it. Do it. 💪",
     "Vague goals get vague results. Make it SMART. Specific actions, measurable progress, a real deadline. Now you have a target you can actually hit. Action step: Take one goal you have right now and make it SMART. Write it down tonight. 🎯",
   ])
   if (matchMsg(msg, ['bench','not playing','playing time','substitute','sub','sitting out','quit','want to quit','demotivat'])) return randomMsg([
-    "Bench time is NOT wasted time — if you use it right. Elite athletes on the bench do active visualization. Watch the game. Identify the opponent patterns. Mentally rehearse YOUR moment before it comes. When the coach calls your name, your brain is already ready. That is the difference between a player who sits and a player who PREPARES. 🦈",
-    "Feeling frustrated about playing time? That frustration is a heavy weight — and heavy weights BUILD strength. Every athlete who ever made it went through periods of not playing. Salah sat on the bench. The ones who made it used bench time to get ready for their moment. Your moment is coming. Are you preparing for it? 💪",
+    "Bench time is NOT wasted time -- if you use it right. Elite athletes on the bench do active visualization. Watch the game. Identify the opponent patterns. Mentally rehearse YOUR moment before it comes. When the coach calls your name, your brain is already ready. That is the difference between a player who sits and a player who PREPARES. 🦈",
+    "Feeling frustrated about playing time? That frustration is a heavy weight -- and heavy weights BUILD strength. Every athlete who ever made it went through periods of not playing. Salah sat on the bench. The ones who made it used bench time to get ready for their moment. Your moment is coming. Are you preparing for it? 💪",
     "Wanting to quit because you are not playing? That feeling makes sense. But quitting guarantees you never get the chance. Set process goals. Control what you can control. Use bench time for visualization. Journal your daily wins. Stay in it. Your moment comes to those who stay ready. 🔥",
   ])
   if (matchMsg(msg, ['journal','daily wins','write down wins','track wins','log wins','cheerleader'])) return randomMsg([
-    "Journal your daily wins — every single day. Write down ONE thing you did well. Not goals. Not assists. One moment where you competed, reset, acted confidently, or improved. This trains your brain to FIND the positives instead of defaulting to what went wrong. Over weeks you will have proof of your progress that is impossible to deny. 💪",
-    "Be your own cheerleader. Get your thoughts out of your head and onto paper. When frustration builds inside, it grows. When you write it down — name it, process it, move on — it loses power. Journal your wins daily. Journal your challenges. It gives you perspective and keeps you moving forward. 📝",
+    "Journal your daily wins -- every single day. Write down ONE thing you did well. Not goals. Not assists. One moment where you competed, reset, acted confidently, or improved. This trains your brain to FIND the positives instead of defaulting to what went wrong. Over weeks you will have proof of your progress that is impossible to deny. 💪",
+    "Be your own cheerleader. Get your thoughts out of your head and onto paper. When frustration builds inside, it grows. When you write it down -- name it, process it, move on -- it loses power. Journal your wins daily. Journal your challenges. It gives you perspective and keeps you moving forward. 📝",
   ])
   if (matchMsg(msg, ['heavy weight','builds strength','tough period','gps','direction','effort without'])) return randomMsg([
     "Think of this tough period like lifting weights at the gym. The weight is heavy. It is uncomfortable. But that resistance is EXACTLY what builds strength. Easy periods do not build champions. Hard periods do. The frustration you are feeling right now? That is the weight. Keep lifting. 💪",
-    "Goals are your GPS. Without them, you are putting in effort with no direction — and that leads to frustration. With clear process goals, every rep of ball mastery, every action step logged, every mental reset in a game is moving you FORWARD. Set the destination. Trust the route. 🔥",
+    "Goals are your GPS. Without them, you are putting in effort with no direction -- and that leads to frustration. With clear process goals, every rep of ball mastery, every action step logged, every mental reset in a game is moving you FORWARD. Set the destination. Trust the route. 🔥",
   ])
   if (matchMsg(msg, ['spiral','snowball','one mistake leads','shutdown','shuts down','overthink first touch'])) return randomMsg([
-    "The spiral is real — one mistake leads to frustration, frustration leads to another mistake, and suddenly your whole game falls apart. Here is how you BREAK it:\n\n1 Acknowledge the mistake — do not ignore it\n2 Goldfish it — Next play. Let it go. Quick inhale, strong exhale, clench and release your fists\n3 Shark mentality — Lock in. Be hungry. Attack the next moment\n\nThe spiral only continues if you let it. You have the tools to break it. Use them. 🦈",
-    "Shutting down after mistakes is the most common mental challenge I see. One bad touch and suddenly your shoulders drop, you stop calling for the ball, you go quiet. That is the spiral starting. Catch it EARLY. The moment you feel frustration rising — run the mental loop. Goldfish then Shark. Break the spiral before it builds. 🔥",
+    "The spiral is real -- one mistake leads to frustration, frustration leads to another mistake, and suddenly your whole game falls apart. Here is how you BREAK it:\n\n1 Acknowledge the mistake -- do not ignore it\n2 Goldfish it -- Next play. Let it go. Quick inhale, strong exhale, clench and release your fists\n3 Shark mentality -- Lock in. Be hungry. Attack the next moment\n\nThe spiral only continues if you let it. You have the tools to break it. Use them. 🦈",
+    "Shutting down after mistakes is the most common mental challenge I see. One bad touch and suddenly your shoulders drop, you stop calling for the ball, you go quiet. That is the spiral starting. Catch it EARLY. The moment you feel frustration rising -- run the mental loop. Goldfish then Shark. Break the spiral before it builds. 🔥",
   ])
   if (matchMsg(msg, ['vocal','speak up','call for ball','quiet on field','ownership','blame','letting coach down'])) return randomMsg([
-    "Being quiet on the field when you are uncomfortable is a confidence issue — not a personality issue. You CAN train yourself to be more vocal. Start small. Call for the ball once per half. Then twice. Build the habit. Leaders on the field are not born vocal — they practice it. Action step: In your next game, call for the ball at least 3 times out loud. 💪",
+    "Being quiet on the field when you are uncomfortable is a confidence issue -- not a personality issue. You CAN train yourself to be more vocal. Start small. Call for the ball once per half. Then twice. Build the habit. Leaders on the field are not born vocal -- they practice it. Action step: In your next game, call for the ball at least 3 times out loud. 💪",
     "Feeling like you are letting the coach down after criticism? Reframe it. Coach criticism means they BELIEVE you can do better. They are not wasting their breath on players they have given up on. When the coach gets on you, say to yourself: they see my potential. Then go prove them right. 🦈",
   ])
   if (matchMsg(msg, ['reset breath','energizing breath','inhale exhale','clench fist','physical reset','cue word'])) return randomMsg([
-    "Here is your physical reset tool: quick inhale through the nose, strong exhale through the mouth. While you exhale, clench your fists then release. This physically dumps the frustration energy out of your body. Pair it with your cue word — Next play. Let it go. Lock in. Be hungry. Whatever word snaps you back. Practice this in ball mastery so it is automatic in games. 🔥",
-    "Cue words are powerful because they are instant. Next play. Let it go. Lock in. Be hungry. Pick yours and use it EVERY time you need to reset. The more you use it in low pressure training, the more automatic it becomes in high pressure games. That is the whole point of ball mastery — train the mental tools when the pressure is low so they fire automatically when the pressure is high. 🦈",
+    "Here is your physical reset tool: quick inhale through the nose, strong exhale through the mouth. While you exhale, clench your fists then release. This physically dumps the frustration energy out of your body. Pair it with your cue word -- Next play. Let it go. Lock in. Be hungry. Whatever word snaps you back. Practice this in ball mastery so it is automatic in games. 🔥",
+    "Cue words are powerful because they are instant. Next play. Let it go. Lock in. Be hungry. Pick yours and use it EVERY time you need to reset. The more you use it in low pressure training, the more automatic it becomes in high pressure games. That is the whole point of ball mastery -- train the mental tools when the pressure is low so they fire automatically when the pressure is high. 🦈",
   ])
   if (matchMsg(msg, ['college camp','id camp','uncomfortable','avoid','underclassman','hard on self','critic'])) return randomMsg([
-    "Avoiding uncomfortable situations — ID camps, trials, playing up — is the biggest mistake young athletes make. Those uncomfortable moments are exactly where you grow. The shark mentality is built for this. You do not need to FEEL ready. You need to GO anyway. Act first. Confidence follows. Action step: Sign up for the thing that scares you. Then prepare like crazy. 🦈",
+    "Avoiding uncomfortable situations -- ID camps, trials, playing up -- is the biggest mistake young athletes make. Those uncomfortable moments are exactly where you grow. The shark mentality is built for this. You do not need to FEEL ready. You need to GO anyway. Act first. Confidence follows. Action step: Sign up for the thing that scares you. Then prepare like crazy. 🦈",
     "Being hard on yourself after mistakes is normal. But there is a line between healthy self-criticism and self-destruction. Healthy: I made a mistake, I know what to fix, I will work on it. Self-destruction: I am rubbish, I will never be good enough, why bother. One builds you up. One tears you down. Which one are you choosing? 💪",
   ])
   if (matchMsg(msg, ['outcome goal','process goal','goal setting','outcome vs process','controllable','uncontrollable'])) return randomMsg([
-    "There are two types of goals — outcome and process. Outcome goals are the end result: win the game, score a goal. Process goals are the controllable actions that GET you there: be aggressive, check your shoulders, make good decisions. Here's the key — you can't control the referee, your teammates, or the weather. You CAN control your effort, your decisions, your attitude. Focus on process goals. The outcomes take care of themselves. 💪",
-    "Stop focusing only on the scoreboard. Focus on YOUR process. Did you check your shoulders before receiving? Did you take your first touch forward? Did you call for the ball? Those are the controllable actions that build a great player. Win the process and the outcomes follow. Action step: Before your next game, write down 3 process goals — not outcome goals. 🎯",
+    "There are two types of goals -- outcome and process. Outcome goals are the end result: win the game, score a goal. Process goals are the controllable actions that GET you there: be aggressive, check your shoulders, make good decisions. Here's the key -- you can't control the referee, your teammates, or the weather. You CAN control your effort, your decisions, your attitude. Focus on process goals. The outcomes take care of themselves. 💪",
+    "Stop focusing only on the scoreboard. Focus on YOUR process. Did you check your shoulders before receiving? Did you take your first touch forward? Did you call for the ball? Those are the controllable actions that build a great player. Win the process and the outcomes follow. Action step: Before your next game, write down 3 process goals -- not outcome goals. 🎯",
   ])
   if (matchMsg(msg, ['visualization','visualize','mental warmup','imagery','imagine','picture','mental rep','salah','90 percent','see myself'])) return randomMsg([
-    "Mo Salah said 90% of his goals are visualized BEFORE he scores them. Think about that. He's already scored the goal in his mind before his body does it. That's visualization. It's a mental warmup — just like you warm up your body, you warm up your BRAIN. 30-60 seconds daily. See the sequence: check shoulders, turn, shoot, score. Make it as real as possible. 👁️",
-    "Visualization tips from the best:\n\n1️⃣ Make it REALISTIC — game speed, your actual field\n2️⃣ Visualize the PROCESS not just the outcome — check shoulders, turn, finish\n3️⃣ Expect DISTRACTIONS — just refocus when they happen\n4️⃣ Do it DAILY — consistency builds the skill\n\n30-60 seconds every day. That's all it takes to start training your brain like a pro. 👁️",
-    "Your brain cannot tell the difference between a vivid visualization and reality — it fires the same neural pathways. So when you visualize scoring against the best goalkeeper, you're literally training your brain for that moment. Do it before sleep. Do it before games. 30-60 seconds. Build the habit. 🔥",
+    "Mo Salah said 90% of his goals are visualized BEFORE he scores them. Think about that. He's already scored the goal in his mind before his body does it. That's visualization. It's a mental warmup -- just like you warm up your body, you warm up your BRAIN. 30-60 seconds daily. See the sequence: check shoulders, turn, shoot, score. Make it as real as possible. 👁️",
+    "Visualization tips from the best:\n\n1️⃣ Make it REALISTIC -- game speed, your actual field\n2️⃣ Visualize the PROCESS not just the outcome -- check shoulders, turn, finish\n3️⃣ Expect DISTRACTIONS -- just refocus when they happen\n4️⃣ Do it DAILY -- consistency builds the skill\n\n30-60 seconds every day. That's all it takes to start training your brain like a pro. 👁️",
+    "Your brain cannot tell the difference between a vivid visualization and reality -- it fires the same neural pathways. So when you visualize scoring against the best goalkeeper, you're literally training your brain for that moment. Do it before sleep. Do it before games. 30-60 seconds. Build the habit. 🔥",
   ])
   if (matchMsg(msg, ['promoted','promotion','first team','moved up','selected','nutmeg','scored','new team'])) return randomMsg([
-    "Getting promoted to a higher team is PROOF the work is paying off. But don't let up now — that's exactly when some athletes relax. Use the promotion as fuel to work HARDER. You earned your spot. Now keep earning it every single session. Shark mentality — keep moving forward. 🦈",
-    "You scored against their best goalkeeper in your FIRST session with the new team. That's not luck — that's preparation meeting opportunity. That's what daily ball mastery and mental training builds. Keep stacking those reps. The results speak for themselves. 🔥",
+    "Getting promoted to a higher team is PROOF the work is paying off. But don't let up now -- that's exactly when some athletes relax. Use the promotion as fuel to work HARDER. You earned your spot. Now keep earning it every single session. Shark mentality -- keep moving forward. 🦈",
+    "You scored against their best goalkeeper in your FIRST session with the new team. That's not luck -- that's preparation meeting opportunity. That's what daily ball mastery and mental training builds. Keep stacking those reps. The results speak for themselves. 🔥",
   ])
   if (matchMsg(msg, ['shooting','corners','accuracy','straight to keeper','finish','finishing'])) return randomMsg([
-    "Shooting accuracy — aim for corners, not the center of the goal. Pick a corner BEFORE you shoot. Bottom left or bottom right. Decide early. Your body follows your focus. If you're thinking 'don't hit it straight' your brain focuses on straight. Instead think 'bottom right corner' and commit. Action step: In your next session, pick your corner before every single shot. ⚽",
-    "Great finishers decide where they're shooting BEFORE they get the ball. As the chance develops, the corner is already chosen. Bottom left. Top right. Wherever. The decision is made. Then it's just execution. Practice this in ball mastery — every shot, pick your corner first. 🥅",
+    "Shooting accuracy -- aim for corners, not the center of the goal. Pick a corner BEFORE you shoot. Bottom left or bottom right. Decide early. Your body follows your focus. If you're thinking 'don't hit it straight' your brain focuses on straight. Instead think 'bottom right corner' and commit. Action step: In your next session, pick your corner before every single shot. ⚽",
+    "Great finishers decide where they're shooting BEFORE they get the ball. As the chance develops, the corner is already chosen. Bottom left. Top right. Wherever. The decision is made. Then it's just execution. Practice this in ball mastery -- every shot, pick your corner first. 🥅",
   ])
   if (matchMsg(msg, ['one two','combination','pass and go','wall pass'])) return randomMsg([
-    "The one-two pass is one of the most effective moves in football — give it and go, get it back in space. It requires trust, timing, and movement. When it works it's unstoppable. Keep working that combination play in training. The best teams run it on instinct. 💪",
+    "The one-two pass is one of the most effective moves in football -- give it and go, get it back in space. It requires trust, timing, and movement. When it works it's unstoppable. Keep working that combination play in training. The best teams run it on instinct. 💪",
   ])
   if (matchMsg(msg, ['name learn move on','name it','learn from','move on','framework','3 step','setback process'])) return randomMsg([
-    "The Name, Learn, Move On framework — use it every time something goes wrong:\n\n1️⃣ NAME IT — be honest. 'I lost the ball because I didn't check my shoulder.'\n2️⃣ LEARN — what do you do differently next time? Treat it as DATA, not failure.\n3️⃣ MOVE ON — goldfish mentality. It's gone. Next play.\n\nThis isn't just for mistakes in games. Use it for not getting selected, bad training sessions, tough feedback from coaches. Name it. Learn from it. Move on. 🐠",
+    "The Name, Learn, Move On framework -- use it every time something goes wrong:\n\n1️⃣ NAME IT -- be honest. 'I lost the ball because I didn't check my shoulder.'\n2️⃣ LEARN -- what do you do differently next time? Treat it as DATA, not failure.\n3️⃣ MOVE ON -- goldfish mentality. It's gone. Next play.\n\nThis isn't just for mistakes in games. Use it for not getting selected, bad training sessions, tough feedback from coaches. Name it. Learn from it. Move on. 🐠",
     "Setbacks are data. That's it. Not proof you're bad. Not proof you don't belong. DATA. Name what happened honestly, extract the lesson, then goldfish it and move forward. That's what elite athletes do. That's what you're going to do. Action step: Next time something goes wrong, write down Name / Learn / Move On before you go to sleep. 💪",
   ])
   if (matchMsg(msg, ['trampoline','salah','rejected','not selected','dropped','cut','left out','bench','not picked'])) return randomMsg([
-    "Mo Salah was rejected by Chelsea. Let that sink in. Chelsea said no to Mo Salah. He used that rejection as a TRAMPOLINE — bounced off it, went to Roma, developed, and became one of the best players in the world at Liverpool. Your setback is your trampoline. How high are you going to bounce? 🦈",
-    "Not being selected isn't the end — it's information. The athletes who make it aren't the ones who never get rejected. They're the ones who use rejection as fuel. Self-belief, resilience, determination. That's your response to being left out. Name it. Learn from it. Come back stronger. 🔥",
-    "With 55 players competing for spots, not being selected is going to happen. That's the reality. The question isn't IF it happens — it's HOW YOU RESPOND when it does. Trampoline mindset. Every setback is a setup for a comeback. What are you going to do with it? 💪",
+    "Mo Salah was rejected by Chelsea. Let that sink in. Chelsea said no to Mo Salah. He used that rejection as a TRAMPOLINE -- bounced off it, went to Roma, developed, and became one of the best players in the world at Liverpool. Your setback is your trampoline. How high are you going to bounce? 🦈",
+    "Not being selected isn't the end -- it's information. The athletes who make it aren't the ones who never get rejected. They're the ones who use rejection as fuel. Self-belief, resilience, determination. That's your response to being left out. Name it. Learn from it. Come back stronger. 🔥",
+    "With 55 players competing for spots, not being selected is going to happen. That's the reality. The question isn't IF it happens -- it's HOW YOU RESPOND when it does. Trampoline mindset. Every setback is a setup for a comeback. What are you going to do with it? 💪",
   ])
   if (matchMsg(msg, ['visualization','visualize','pre match','pre game','mental prep','4 minute','5 minute','calm','tournament prep'])) return randomMsg([
-    "Pre-match visualization is one of the most powerful tools you have. Here's the format: 4-5 minutes before your game. Close your eyes. See yourself DEFENDING — winning headers, making tackles. PASSING — sharp, accurate, decisive. CREATING — dribbling past players, making things happen. SCORING — putting the ball in the net. Run through all of it. Feel it. Then go do it. 👁️",
+    "Pre-match visualization is one of the most powerful tools you have. Here's the format: 4-5 minutes before your game. Close your eyes. See yourself DEFENDING -- winning headers, making tackles. PASSING -- sharp, accurate, decisive. CREATING -- dribbling past players, making things happen. SCORING -- putting the ball in the net. Run through all of it. Feel it. Then go do it. 👁️",
     "The 4-minute pre-tournament visualization builds two things: calm AND confidence. When you've already seen yourself succeed in your mind, your body knows what to do when it happens for real. Your brain can't tell the difference between a vivid visualization and reality. Use that. Action step: Do your visualization tonight before your next game. 🔥",
   ])
   if (matchMsg(msg, ['two footed','weak foot','both feet','dual footed','left foot','right foot','dembele','cazorla'])) return randomMsg([
-    "Being two-footed is a TRAINED skill — not something you're born with. Dembélé. Santi Cazorla. They worked for it. If your right foot is strong for dribbling and your left foot is strong for shooting — you're already on your way. Now it's about putting in the reps. 15 minutes of weak foot work every single day. That's how you become a threat from both sides. ⚽",
+    "Being two-footed is a TRAINED skill -- not something you're born with. Dembélé. Santi Cazorla. They worked for it. If your right foot is strong for dribbling and your left foot is strong for shooting -- you're already on your way. Now it's about putting in the reps. 15 minutes of weak foot work every single day. That's how you become a threat from both sides. ⚽",
     "Two-footed players are rare because most athletes avoid the discomfort of weak foot training. You do it anyway. That discomfort IS the growth. Every rep with your weaker foot is building something most players never develop. Stay consistent with it. 🔥",
   ])
   if (matchMsg(msg, ['selected','selection','contribution','team play','positioning','passing not goals'])) return randomMsg([
-    "Here's something athletes miss: coaches see MORE than just goals. Passing, positioning, movement, attitude, team play — that's what gets you selected. You got picked after one month because your coach saw your CONTRIBUTIONS, not just your stats. Keep being a team player. Keep doing the things that don't show up on the scoresheet. That's what builds a long career. 💪",
+    "Here's something athletes miss: coaches see MORE than just goals. Passing, positioning, movement, attitude, team play -- that's what gets you selected. You got picked after one month because your coach saw your CONTRIBUTIONS, not just your stats. Keep being a team player. Keep doing the things that don't show up on the scoresheet. That's what builds a long career. 💪",
   ])
   if (matchMsg(msg, ['inconsistent','inconsistency','sometimes good','sometimes bad','up and down','fluctuat'])) return randomMsg([
-    "Inconsistency is almost never physical or technical — it's MENTAL. You play great against strong teams and drop off against weaker ones? That's arousal levels. Your brain relaxes when it thinks the opponent is easy. Fix it: treat EVERY opponent like they're the best team you've ever faced. Same intensity. Same shark mentality. Every single game. 🦈",
-    "Here's what's happening when you're inconsistent: your confidence is tied to the situation instead of to YOUR actions. When the game feels big, you rise. When it feels easy, you drop. The goal is to bring the same energy regardless of the opponent. Action step: Before your next game, say 'this is the hardest opponent I've ever faced' — even if it's not. Watch what happens. 🔥",
+    "Inconsistency is almost never physical or technical -- it's MENTAL. You play great against strong teams and drop off against weaker ones? That's arousal levels. Your brain relaxes when it thinks the opponent is easy. Fix it: treat EVERY opponent like they're the best team you've ever faced. Same intensity. Same shark mentality. Every single game. 🦈",
+    "Here's what's happening when you're inconsistent: your confidence is tied to the situation instead of to YOUR actions. When the game feels big, you rise. When it feels easy, you drop. The goal is to bring the same energy regardless of the opponent. Action step: Before your next game, say 'this is the hardest opponent I've ever faced' -- even if it's not. Watch what happens. 🔥",
   ])
   if (matchMsg(msg, ['confident feeling','act confident','confident action','feel confident','wait to feel','acting confident'])) return randomMsg([
-    "Here's the most important thing I can teach you about confidence: DO NOT wait to feel confident before acting confidently. Confident FEELINGS are uncontrollable — energy, ease, fun. Confident ACTIONS are controllable — calling for the ball, positive body language, shooting from inside the box. Act confident FIRST. The feelings follow. Always. 💪",
-    "Separate your feelings from your actions. You don't need to FEEL confident to ACT confident. Call for the ball even when you're nervous. Shoot from inside the box even when you're doubting yourself. Take that first touch forward even when it feels risky. The action creates the feeling — not the other way around. That's the key. 🦈",
+    "Here's the most important thing I can teach you about confidence: DO NOT wait to feel confident before acting confidently. Confident FEELINGS are uncontrollable -- energy, ease, fun. Confident ACTIONS are controllable -- calling for the ball, positive body language, shooting from inside the box. Act confident FIRST. The feelings follow. Always. 💪",
+    "Separate your feelings from your actions. You don't need to FEEL confident to ACT confident. Call for the ball even when you're nervous. Shoot from inside the box even when you're doubting yourself. Take that first touch forward even when it feels risky. The action creates the feeling -- not the other way around. That's the key. 🦈",
   ])
   if (matchMsg(msg, ['confidence','confident','believe','doubt','unsure','scale','build confidence'])) return randomMsg([
-    "Confidence is a SKILL — not a personality trait, not something you're born with. It's a scale from 1 to 10 and you can MOVE that number through practice. Every time you do ball mastery and push through frustration, you build confidence. Every time you run the mental loop in a game, you build confidence. It compounds. Stack the reps. 💪",
-    "Confidence isn't something you wait to feel — it's something you BUILD. Every rep of ball mastery. Every action step you complete. Every time you act confidently even when you don't feel it. You're building confidence brick by brick. You don't find it. You earn it. 💪",
+    "Confidence is a SKILL -- not a personality trait, not something you're born with. It's a scale from 1 to 10 and you can MOVE that number through practice. Every time you do ball mastery and push through frustration, you build confidence. Every time you run the mental loop in a game, you build confidence. It compounds. Stack the reps. 💪",
+    "Confidence isn't something you wait to feel -- it's something you BUILD. Every rep of ball mastery. Every action step you complete. Every time you act confidently even when you don't feel it. You're building confidence brick by brick. You don't find it. You earn it. 💪",
     "Your brain focuses on what you tell it. Flip it. I am a shark. I take risks. I move forward. Your body follows your mind. Train your mind first.",
   ])
   if (matchMsg(msg, ['weak team','easy game','c team','lower level','easy opponent','relaxed','low intensity'])) return randomMsg([
-    "Playing a weaker team and dropping off? That's a mental trap. Your brain lowers its arousal because it thinks you don't need to be switched on. Wrong. Elite athletes bring the SAME intensity to every game — training, friendlies, cup finals. It's all the same. Shark mentality doesn't take days off. Action step: Pick 3 confident actions to execute in your next game regardless of the opponent. 🦈",
-    "The C team game is just as important as the derby. Why? Because consistency is a HABIT. You train your brain to switch on or off based on the opponent — that's a dangerous habit. Train it to switch on regardless. Same pre-match routine. Same shark mentality phrase. Same intensity. Every time. 🔥",
+    "Playing a weaker team and dropping off? That's a mental trap. Your brain lowers its arousal because it thinks you don't need to be switched on. Wrong. Elite athletes bring the SAME intensity to every game -- training, friendlies, cup finals. It's all the same. Shark mentality doesn't take days off. Action step: Pick 3 confident actions to execute in your next game regardless of the opponent. 🦈",
+    "The C team game is just as important as the derby. Why? Because consistency is a HABIT. You train your brain to switch on or off based on the opponent -- that's a dangerous habit. Train it to switch on regardless. Same pre-match routine. Same shark mentality phrase. Same intensity. Every time. 🔥",
   ])
   if (matchMsg(msg, ['call for ball','shoot','first touch','box','positive action','one good thing'])) return randomMsg([
-    "Here's your weekly focus: after every practice and game, write down ONE positive action you took. Not a goal. Not an assist. One moment where you acted confidently — called for the ball, took a shot, made an aggressive first touch. Find that moment. Celebrate it. That's how you train your brain to find confidence. ✅",
+    "Here's your weekly focus: after every practice and game, write down ONE positive action you took. Not a goal. Not an assist. One moment where you acted confidently -- called for the ball, took a shot, made an aggressive first touch. Find that moment. Celebrate it. That's how you train your brain to find confidence. ✅",
     "Confident actions to practice every session: call for the ball loudly, take your first touch FORWARD not backwards, shoot from inside the box when you get the chance, positive body language always. These are controllable. These build confidence. Log them in your action steps. 💪",
   ])
   if (matchMsg(msg, ['motivat','tired','lazy','hard','struggle','dont want'])) return randomMsg([
-    "You don't need motivation — you need discipline. Motivation comes and goes. Discipline shows up every day whether you feel like it or not. Show up anyway. 🔥",
-    "On the days you don't feel like it — those are the most important days. That's where champions separate themselves. 15 minutes of ball mastery even when you're tired. That's the work. 💪",
+    "You don't need motivation -- you need discipline. Motivation comes and goes. Discipline shows up every day whether you feel like it or not. Show up anyway. 🔥",
+    "On the days you don't feel like it -- those are the most important days. That's where champions separate themselves. 15 minutes of ball mastery even when you're tired. That's the work. 💪",
   ])
   if (matchMsg(msg, ['schedule','program','daily','how often'])) return randomMsg([
-    "Your program: DAILY — 15 min ball mastery + weak foot. PRACTICE DAYS — Action steps form after every session. WEEKLY — Check-in form before Tuesday. DAILY HABIT — Morning visualization, pre-match routine, reflection. Stay consistent. In 3 months you won't recognize yourself. 💪",
+    "Your program: DAILY -- 15 min ball mastery + weak foot. PRACTICE DAYS -- Action steps form after every session. WEEKLY -- Check-in form before Tuesday. DAILY HABIT -- Morning visualization, pre-match routine, reflection. Stay consistent. In 3 months you won't recognize yourself. 💪",
   ])
   if (matchMsg(msg, ['belief','beliefs','limiting','story','wall','invisible','rubbish','not good enough','capable'])) return randomMsg([
-    "Beliefs are the stories you tell yourself — and they shape EVERYTHING. Limiting beliefs are invisible walls. 'I'm rubbish.' 'I'm not as good as my friend.' Those thoughts are LYING to you. Here's the 2-step fix:\n\n1️⃣ IDENTIFY the limiting belief — catch it\n2️⃣ REPLACE it with an empowering belief\n\nInstead of 'I'm rubbish' try 'I have talent and I'm improving.' Same situation — completely different outcome. Action step: Write down one limiting belief you have right now and replace it. 💪",
-    "Stop letting limiting beliefs run your game. Every time you think 'I can't do this' or 'I'm not good enough' — that's a limiting belief creating an invisible wall. You have to CHOOSE to break through it. The 2-step process: identify it, replace it. Do it every single day until the empowering belief becomes automatic. 🦈",
-    "Here's your daily belief declaration — say it every morning: 'I believe I am capable of playing my best while having fun.' Say it out loud. Mean it. Your brain believes what you repeat. Repeat empowering beliefs until they become your reality. 🔥",
+    "Beliefs are the stories you tell yourself -- and they shape EVERYTHING. Limiting beliefs are invisible walls. 'I'm rubbish.' 'I'm not as good as my friend.' Those thoughts are LYING to you. Here's the 2-step fix:\n\n1️⃣ IDENTIFY the limiting belief -- catch it\n2️⃣ REPLACE it with an empowering belief\n\nInstead of 'I'm rubbish' try 'I have talent and I'm improving.' Same situation -- completely different outcome. Action step: Write down one limiting belief you have right now and replace it. 💪",
+    "Stop letting limiting beliefs run your game. Every time you think 'I can't do this' or 'I'm not good enough' -- that's a limiting belief creating an invisible wall. You have to CHOOSE to break through it. The 2-step process: identify it, replace it. Do it every single day until the empowering belief becomes automatic. 🦈",
+    "Here's your daily belief declaration -- say it every morning: 'I believe I am capable of playing my best while having fun.' Say it out loud. Mean it. Your brain believes what you repeat. Repeat empowering beliefs until they become your reality. 🔥",
   ])
   if (matchMsg(msg, ['empowering','empower','affirmation','declaration','positive belief'])) return randomMsg([
-    "Empowering beliefs fuel confidence and growth. Examples: 'I have talent and I'm improving.' 'We are all on different journeys.' 'I get better every single day.' These aren't fake — they're the TRUTH you choose to focus on. Write yours down. Say them daily. Log them in your self-talk section. 💬",
+    "Empowering beliefs fuel confidence and growth. Examples: 'I have talent and I'm improving.' 'We are all on different journeys.' 'I get better every single day.' These aren't fake -- they're the TRUTH you choose to focus on. Write yours down. Say them daily. Log them in your self-talk section. 💬",
     "Your daily belief declaration is your most powerful mental tool. Write one sentence that captures who you're becoming as an athlete. Say it every morning before training. Say it before games. Burn it into your brain. That's how you build unshakeable confidence. 🦈",
   ])
   if (matchMsg(msg, ['progress','improving','better','archie','2.0','reset','recovery','frustration','body language'])) return randomMsg([
-    "Progress isn't always a goal or a win. Sometimes progress is resetting faster after frustration. Catching yourself before the negative body language takes over. Choosing to respond instead of react. That's HUGE. That's the difference between an average athlete and an elite one. Recognize your progress — even the small wins. 💪",
-    "Archie 1.0 reacted with frustration and slumped shoulders. Archie 2.0 catches it, resets, and keeps competing. Which version are you choosing today? Growth isn't linear — but every time you reset faster, you're leveling up. That's real progress. 🔥",
-    "When pressure hits — slumped shoulders, frustration, negative self talk — that's your signal to run the reset routine. Shake it out. Say 'next play.' Stand tall. Shark mentality back on. The faster you reset, the better athlete you become. How fast can you reset? 🦈",
+    "Progress isn't always a goal or a win. Sometimes progress is resetting faster after frustration. Catching yourself before the negative body language takes over. Choosing to respond instead of react. That's HUGE. That's the difference between an average athlete and an elite one. Recognize your progress -- even the small wins. 💪",
+    "Archie 1.0 reacted with frustration and slumped shoulders. Archie 2.0 catches it, resets, and keeps competing. Which version are you choosing today? Growth isn't linear -- but every time you reset faster, you're leveling up. That's real progress. 🔥",
+    "When pressure hits -- slumped shoulders, frustration, negative self talk -- that's your signal to run the reset routine. Shake it out. Say 'next play.' Stand tall. Shark mentality back on. The faster you reset, the better athlete you become. How fast can you reset? 🦈",
   ])
   if (matchMsg(msg, ['pressure','drill','demonstrate','selected','coach watching','eyes on me'])) return randomMsg([
-    "High pressure moments are where champions are MADE. When the coach calls on you, when all eyes are on you — that's not a threat, that's an opportunity. Shark mentality means you WANT those moments. You step up, not back. Action step: Next time you feel pressure, say 'I want this' before you act. 🦈",
-    "Pressure reveals character. When you're put on the spot in a drill, in a game, in front of everyone — what do you do? The mental work you do every day is FOR those moments. Trust your preparation. Trust the process. You've put in the reps. Now perform. 🔥",
+    "High pressure moments are where champions are MADE. When the coach calls on you, when all eyes are on you -- that's not a threat, that's an opportunity. Shark mentality means you WANT those moments. You step up, not back. Action step: Next time you feel pressure, say 'I want this' before you act. 🦈",
+    "Pressure reveals character. When you're put on the spot in a drill, in a game, in front of everyone -- what do you do? The mental work you do every day is FOR those moments. Trust your preparation. Trust the process. You've put in the reps. Now perform. 🔥",
   ])
   if (matchMsg(msg, ['journey','compare','friend','teammate','better than me','not as good'])) return randomMsg([
-    "Stop comparing your journey to someone else's. We are ALL on different journeys. Your friend might be ahead of you right now — so what? Your path is YOUR path. Focus on being better than YOU were yesterday. That's the only comparison that matters. Action step: Write down one thing you did better today than last week. 💪",
+    "Stop comparing your journey to someone else's. We are ALL on different journeys. Your friend might be ahead of you right now -- so what? Your path is YOUR path. Focus on being better than YOU were yesterday. That's the only comparison that matters. Action step: Write down one thing you did better today than last week. 💪",
     "Comparing yourself to others is a trap. It feeds limiting beliefs. 'I'm not as good as him.' 'She's better than me.' These thoughts steal your focus from YOUR development. Empowering belief: I am on my own journey and I improve every single day. Say it. Mean it. 🦈",
   ])
   if (matchMsg(msg, ['body language','shoulders','slump','head down','negative body'])) return randomMsg([
-    "Your body language affects your mindset AS MUCH as your mindset affects your body language. Slumped shoulders tell your brain you've given up. Stand tall, chest out, head up — even when things go wrong. Fake it until your body catches up with your mind. That's a real technique used by elite athletes. 💪",
-    "Catch the slumped shoulders before they catch you. The moment you feel frustration — stand tall. That physical reset triggers a mental reset. It's biology. Use it. Action step: Every time something goes wrong today, physically stand tall and take one deep breath before responding. 🦈",
+    "Your body language affects your mindset AS MUCH as your mindset affects your body language. Slumped shoulders tell your brain you've given up. Stand tall, chest out, head up -- even when things go wrong. Fake it until your body catches up with your mind. That's a real technique used by elite athletes. 💪",
+    "Catch the slumped shoulders before they catch you. The moment you feel frustration -- stand tall. That physical reset triggers a mental reset. It's biology. Use it. Action step: Every time something goes wrong today, physically stand tall and take one deep breath before responding. 🦈",
   ])
   // General conversation responses
   if (matchMsg(msg, ['thank','thanks','thank you','appreciate','helped'])) return randomMsg([
     "That's what I'm here for. Keep putting in the work and the results will follow. 💪",
-    "Always. Now go apply it — action steps after your next session. 🦈",
+    "Always. Now go apply it -- action steps after your next session. 🦈",
     "Let's go! Come back and tell me how it goes. 🔥",
   ])
   if (matchMsg(msg, ['good','great','amazing','awesome','killed it','played well','won','victory','scored'])) return randomMsg([
     "LETS GO! That's what happens when you stay locked in and trust the process. What mental tool did you use today? 🦈",
     "That's the work paying off! Log it in your action steps and tell me exactly what you did mentally. I want details. 🔥",
-    "Yes! Build on that. Consistency is everything — same mindset next session. 💪",
+    "Yes! Build on that. Consistency is everything -- same mindset next session. 💪",
   ])
   if (matchMsg(msg, ['tired','exhausted','sore','hurt','pain','injured','sick'])) return randomMsg([
-    "Rest is part of the process. Recovery is training. But while your body rests, your mind can still work — visualization, self talk review, watching film. Stay mentally sharp. 💪",
+    "Rest is part of the process. Recovery is training. But while your body rests, your mind can still work -- visualization, self talk review, watching film. Stay mentally sharp. 💪",
     "Listen to your body. But don't let rest days become mental off days. Use the time to visualize, review your action steps, prep your mindset for when you're back. 🧠",
   ])
   if (matchMsg(msg, ['parent','mom','dad','family','father','mother'])) return randomMsg([
-    "Parents play a huge role in your mental performance. Show them the Parents tab in this app — it has everything they need to support you the right way. The best thing they can do is cheer effort, not just results. 👨‍👩‍👧",
+    "Parents play a huge role in your mental performance. Show them the Parents tab in this app -- it has everything they need to support you the right way. The best thing they can do is cheer effort, not just results. 👨‍👩‍👧",
     "Talk to your parents about what you're learning in DSM. When they understand the Mental Loop and how to support you after tough games, everything gets easier. Check the Parents tab together. 💪",
   ])
   if (matchMsg(msg, ['team','teammates','friend','friends','other players'])) return randomMsg([
@@ -442,19 +442,19 @@ function getCoachVResponse(input) {
     "The mental game is what separates players at the highest level. Talent gets you in the room. Mindset keeps you there. You're building that right now with every action step and check-in you submit. 💪",
   ])
   if (matchMsg(msg, ['game tomorrow','match tomorrow','big game','tournament tomorrow','playoffs'])) return randomMsg([
-    "Tonight — do your 5 minute visualization. See yourself defending, passing, creating, scoring. Make it vivid and real. Tomorrow morning — say your shark phrase out loud 3 times. Before kickoff — energizing breath. You're ready. Go compete. 🦈",
-    "Big game prep: Tonight — visualize at game speed. Tomorrow — same pre-match routine as always. Don't change anything. Trust your preparation. Shark mentality from the first whistle. 🔥",
+    "Tonight -- do your 5 minute visualization. See yourself defending, passing, creating, scoring. Make it vivid and real. Tomorrow morning -- say your shark phrase out loud 3 times. Before kickoff -- energizing breath. You're ready. Go compete. 🦈",
+    "Big game prep: Tonight -- visualize at game speed. Tomorrow -- same pre-match routine as always. Don't change anything. Trust your preparation. Shark mentality from the first whistle. 🔥",
   ])
   if (matchMsg(msg, ['what is dsm','what is dilorenzo','about this program','how does this work','explain the program'])) return randomMsg([
-    "DSM is DiLorenzo Soccer Mindset — a mental performance program built specifically for youth soccer athletes. We train your mind the same way you train your body. Core tools: Shark Mentality, Goldfish Mentality, Positive Self Talk, Visualization, and the Mental Loop. Daily ball mastery, weekly check-ins, action steps after every session. This is how you build a champion mindset. 🦈",
+    "DSM is DiLorenzo Soccer Mindset -- a mental performance program built specifically for youth soccer athletes. We train your mind the same way you train your body. Core tools: Shark Mentality, Goldfish Mentality, Positive Self Talk, Visualization, and the Mental Loop. Daily ball mastery, weekly check-ins, action steps after every session. This is how you build a champion mindset. 🦈",
   ])
   if (matchMsg(msg, ['how are you','how r you','you good','whats up','what's up','wassup'])) return randomMsg([
-    "I'm locked in and ready to work — question is, are YOU? What do you want to work on today? 🦈",
+    "I'm locked in and ready to work -- question is, are YOU? What do you want to work on today? 🦈",
     "Always ready to coach. What's going on with your game right now? 💪",
-    "Good! More importantly — how are YOU doing mentally? What's been the biggest challenge this week? 🔥",
+    "Good! More importantly -- how are YOU doing mentally? What's been the biggest challenge this week? 🔥",
   ])
   if (matchMsg(msg, ['i don't know','idk','not sure','confused','don't understand'])) return randomMsg([
-    "That's okay — confusion means you're learning something new. Tell me exactly what you're working on and I'll break it down step by step. That's what I'm here for. 💪",
+    "That's okay -- confusion means you're learning something new. Tell me exactly what you're working on and I'll break it down step by step. That's what I'm here for. 💪",
     "Let's figure it out together. Give me more details about what's going on and we'll work through it. No question is too small. 🦈",
   ])
   if (matchMsg(msg, ['age','how old','young','youth','u10','u11','u12','u13','u14','u15','u16'])) return randomMsg([
@@ -464,12 +464,12 @@ function getCoachVResponse(input) {
     "Every position needs mental toughness. Strikers need shark mentality to keep shooting after missing. Defenders need goldfish mentality to reset after being beaten. Midfielders need self talk to stay composed under pressure. Goalkeepers need all three after every goal conceded. What position do you play? 🦈",
   ])
   return randomMsg([
-    "Lock in. Whatever you're going through — shark mentality. Keep moving forward. What specific challenge do you want to work on today? 🦈",
+    "Lock in. Whatever you're going through -- shark mentality. Keep moving forward. What specific challenge do you want to work on today? 🦈",
     "Talk to me. Give me more details and I'll give you a specific action step you can use today. 💪",
-    "Process over outcome. Don't focus on the result — focus on the work. What's one thing you can do TODAY to get better? ⚽",
-    "Every challenge has a solution. Tell me exactly what's happening and we'll break it down. Shark, Goldfish, or Self Talk — which one do you need right now? 🔥",
-    "I hear you. Here's what I want you to do — open your action steps form after your next session and log this. Getting it out of your head and onto paper is the first step. 📝",
-    "Real talk — the athletes who make it aren't the most talented. They're the most consistent. Show up every day. Do the work. Trust the process. 💪",
+    "Process over outcome. Don't focus on the result -- focus on the work. What's one thing you can do TODAY to get better? ⚽",
+    "Every challenge has a solution. Tell me exactly what's happening and we'll break it down. Shark, Goldfish, or Self Talk -- which one do you need right now? 🔥",
+    "I hear you. Here's what I want you to do -- open your action steps form after your next session and log this. Getting it out of your head and onto paper is the first step. 📝",
+    "Real talk -- the athletes who make it aren't the most talented. They're the most consistent. Show up every day. Do the work. Trust the process. 💪",
   ])
 }
 
@@ -478,6 +478,11 @@ const StepCard = React.memo(({icon,title,desc,k,usedSteps,occasions,comments,onT
   const [occ, setOcc] = useState(occasions[k]||'')
   const [com, setCom] = useState(comments[k]||'')
   const used = usedSteps[k]
+  // Use refs to call parent without triggering re-render
+  const occRef = React.useRef(onOccasion)
+  const comRef = React.useRef(onComment)
+  React.useEffect(() => { occRef.current = onOccasion }, [onOccasion])
+  React.useEffect(() => { comRef.current = onComment }, [onComment])
   return (
     <div style={{background:'#111',borderRadius:12,padding:16,marginBottom:8,border:`1px solid ${used?'#ff3d00':'#1e1e1e'}`}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:used?10:0}}>
@@ -499,11 +504,11 @@ const StepCard = React.memo(({icon,title,desc,k,usedSteps,occasions,comments,onT
           <input style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:14,color:'#fff',fontFamily:'inherit',outline:'none',boxSizing:'border-box',marginBottom:8}}
             placeholder="When did you use this?" value={occ}
             autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
-            onChange={e=>{setOcc(e.target.value);onOccasion(k,e.target.value)}} />
+            onChange={e=>{const v=e.target.value; setOcc(v); occRef.current(k,v)}} />
           <div style={{fontSize:9,letterSpacing:3,color:'#555',fontWeight:700,marginBottom:7}}>COMMENTS</div>
           <textarea style={{width:'100%',background:'#0a0a0a',border:'1px solid #2a2a2a',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#fff',fontFamily:'inherit',outline:'none',resize:'none',boxSizing:'border-box',height:55}}
             placeholder="How did it help?" value={com}
-            onChange={e=>{setCom(e.target.value);onComment(k,e.target.value)}} />
+            onChange={e=>{const v=e.target.value; setCom(v); comRef.current(k,v)}} />
         </div>
       )}
     </div>
@@ -545,7 +550,7 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
       <div style={{fontSize:26,fontWeight:900,letterSpacing:2,marginBottom:2}}>ACTION STEPS</div>
       <div style={{fontSize:9,color:'#555',letterSpacing:3,fontWeight:700,marginBottom:12}}>AFTER EVERY PRACTICE & GAME</div>
       <div style={orange}>
-        <span style={{...lbl,color:'rgba(255,255,255,0.6)'}}>⚠️ REQUIRED — NO EXCEPTIONS</span>
+        <span style={{...lbl,color:'rgba(255,255,255,0.6)'}}>⚠️ REQUIRED -- NO EXCEPTIONS</span>
         <div style={{fontSize:14,fontWeight:800,lineHeight:1.4}}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
       </div>
       <div style={card}>
@@ -610,7 +615,7 @@ function ActionForm({ user, onSubmit, initialSubmissions }) {
         </div>
       </div>
       <div style={card}>
-        <span style={lbl}>RATE MY PERFORMANCE (1–10)</span>
+        <span style={lbl}>RATE MY PERFORMANCE (1-10)</span>
         {['conditioning','strength','technical','mental'].map(k=>(
           <div key={k} style={{marginBottom:12}}>
             <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
@@ -819,7 +824,7 @@ export default function Main({ user }) {
     const { error } = await submitActionSteps(form, user.id)
     if (error) { alert('Error: ' + error.message); setSavingForm(false); return }
     const steps = ['shark','goldfish','selftalk','tuneout'].filter(k => form.usedSteps[k])
-    const txt = `DSM ACTION STEPS\n${'='.repeat(40)}\nPLAYER: ${form.playerName}\nDAY: ${form.dayOfWeek}, ${form.date}\nSESSION: ${form.sessionType}\nDID STEPS: ${form.didSteps}\n\n${steps.map(k=>`✅ ${k.toUpperCase()}\n  Occasion: ${form.occasions[k]||'—'}\n  Comments: ${form.comments[k]||'—'}`).join('\n\n')}\n\nPERFORMANCE:\nConditioning: ${form.conditioning}/10\nStrength: ${form.strength}/10\nTechnical: ${form.technical}/10\nMental: ${form.mental}/10`
+    const txt = `DSM ACTION STEPS\n${'='.repeat(40)}\nPLAYER: ${form.playerName}\nDAY: ${form.dayOfWeek}, ${form.date}\nSESSION: ${form.sessionType}\nDID STEPS: ${form.didSteps}\n\n${steps.map(k=>`✅ ${k.toUpperCase()}\n  Occasion: ${form.occasions[k]||'--'}\n  Comments: ${form.comments[k]||'--'}`).join('\n\n')}\n\nPERFORMANCE:\nConditioning: ${form.conditioning}/10\nStrength: ${form.strength}/10\nTechnical: ${form.technical}/10\nMental: ${form.mental}/10`
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }))
     a.download = `DSM-${form.playerName}-${form.date}.txt`
@@ -976,7 +981,7 @@ export default function Main({ user }) {
           </div>
           <a href="https://www.fanbasis.com" target="_blank" rel="noreferrer"
             style={{ display:'block', width:'100%', maxWidth:340, background:'linear-gradient(135deg,#ff3d00,#ff6d00)', border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:'#fff', cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
-            JOIN NOW — FANBASIS 🔥
+            JOIN NOW -- FANBASIS 🔥
           </a>
           <div style={{ fontSize:11, color:'#444', lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
             After payment, your coach will activate your account within 24 hours.
@@ -1046,7 +1051,7 @@ export default function Main({ user }) {
           <div style={C.orange}>
             <span style={C.olbl}>TODAY'S MINDSET FUEL</span>
             <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.4, marginBottom: 4 }}>"{quote}"</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>— Coach Valentino</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>-- Coach Valentino</div>
           </div>
 
           {/* Today checklist */}
@@ -1113,7 +1118,7 @@ export default function Main({ user }) {
             const { error } = await submitActionSteps(formData, user.id)
             if (error) { alert('Error: ' + error.message); return }
             const steps = ['shark','goldfish','selftalk','tuneout'].filter(k => formData.usedSteps[k])
-            const txt = 'DSM ACTION STEPS\n' + '='.repeat(40) + '\nPLAYER: ' + formData.playerName + '\nDAY: ' + formData.dayOfWeek + ', ' + formData.date + '\nSESSION: ' + formData.sessionType + '\nDID STEPS: ' + formData.didSteps + '\n\n' + steps.map(k=>'✅ ' + k.toUpperCase() + '\n  Occasion: ' + (formData.occasions[k]||'—') + '\n  Comments: ' + (formData.comments[k]||'—')).join('\n\n') + '\n\nPERFORMANCE:\nConditioning: ' + formData.conditioning + '/10\nStrength: ' + formData.strength + '/10\nTechnical: ' + formData.technical + '/10\nMental: ' + formData.mental + '/10'
+            const txt = 'DSM ACTION STEPS\n' + '='.repeat(40) + '\nPLAYER: ' + formData.playerName + '\nDAY: ' + formData.dayOfWeek + ', ' + formData.date + '\nSESSION: ' + formData.sessionType + '\nDID STEPS: ' + formData.didSteps + '\n\n' + steps.map(k=>'✅ ' + k.toUpperCase() + '\n  Occasion: ' + (formData.occasions[k]||'--') + '\n  Comments: ' + (formData.comments[k]||'--')).join('\n\n') + '\n\nPERFORMANCE:\nConditioning: ' + formData.conditioning + '/10\nStrength: ' + formData.strength + '/10\nTechnical: ' + formData.technical + '/10\nMental: ' + formData.mental + '/10'
             const a = document.createElement('a')
             a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }))
             a.download = 'DSM-' + formData.playerName + '-' + formData.date + '.txt'
@@ -1123,7 +1128,7 @@ export default function Main({ user }) {
             alert('✅ Saved & downloaded!')
           }} />
           {false && <div style={{ ...C.orange }}>
-            <span style={C.olbl}>⚠️ REQUIRED — NO EXCEPTIONS</span>
+            <span style={C.olbl}>⚠️ REQUIRED -- NO EXCEPTIONS</span>
             <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Fill this out after EVERY practice and game. It goes straight to Coach Valentino. 🦈</div>
           </div>
           <div style={C.card}>
@@ -1178,7 +1183,7 @@ export default function Main({ user }) {
             </div>
           </div>
           <div style={C.card}>
-            <span style={C.lbl}>RATE MY PERFORMANCE (1–10)</span>
+            <span style={C.lbl}>RATE MY PERFORMANCE (1-10)</span>
             {['conditioning','strength','technical','mental'].map(k => (
               <div key={k} style={{ marginBottom:12 }}>
                 <div style={{ display:'flex',justifyContent:'space-between',marginBottom:4 }}>
@@ -1209,7 +1214,7 @@ export default function Main({ user }) {
           ) : <>
             <div style={C.orange}>
               <span style={C.olbl}>LOG TODAY'S TRAINING</span>
-              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Tap each skill you trained. Set your reps. Be honest — this is YOUR progress. 🦈</div>
+              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Tap each skill you trained. Set your reps. Be honest -- this is YOUR progress. 🦈</div>
             </div>
             <div style={C.card}>
               <span style={C.lbl}>SKILLS PRACTICED</span>
@@ -1282,7 +1287,7 @@ export default function Main({ user }) {
       {tab === 'weekly' && (
         <div style={C.scroll} className="fade">
           <div style={C.title}>WEEKLY CHECK-IN</div>
-          <div style={C.sub}>{currentWeek} — REFLECT & LOCK IN</div>
+          <div style={C.sub}>{currentWeek} -- REFLECT & LOCK IN</div>
           {checkinDone ? (
             <div>
               <div style={{ ...C.card,borderColor:'#1a4a1a',textAlign:'center',padding:36,marginBottom:16 }}>
@@ -1312,7 +1317,7 @@ export default function Main({ user }) {
           ) : <>
             <div style={C.orange}>
               <span style={C.olbl}>WEEK: {currentWeek} · PROGRAM WEEK {profile?.program_week||1}</span>
-              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Time to reflect. Be real with yourself — that's how you grow. 🦈</div>
+              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Time to reflect. Be real with yourself -- that's how you grow. 🦈</div>
             </div>
 
             {/* ALWAYS VISIBLE: Confidence + Energy + Sessions */}
@@ -1385,7 +1390,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card,opacity:0.4 }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                   <div style={{ background:'#333',borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:'#fff' }}>WEEK 4</div>
-                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>🎯 Goal Setting — Unlocks at Week 4</span>
+                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>🎯 Goal Setting -- Unlocks at Week 4</span>
                   <div style={{ marginLeft:'auto',fontSize:12 }}>🔒</div>
                 </div>
               </div>
@@ -1441,7 +1446,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card,opacity:0.4 }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                   <div style={{ background:'#333',borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:'#fff' }}>WEEK 5</div>
-                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>👁️ Visualization & Morning Routine — Unlocks at Week 5</span>
+                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>👁️ Visualization & Morning Routine -- Unlocks at Week 5</span>
                   <div style={{ marginLeft:'auto',fontSize:12 }}>🔒</div>
                 </div>
               </div>
@@ -1687,7 +1692,7 @@ export default function Main({ user }) {
               { id:'goldfish', icon:'🐠', title:'MISTAKE RELEASE', time:'30 sec', instruction:'Think of one mistake from your last session. Now shake your hands out, take a strong exhale, and say "Next play." Watch the mistake disappear.' },
               { id:'breath', icon:'💨', title:'RESET BREATH', time:'45 sec', instruction:'Inhale for 4 seconds while clenching your fists. Hold for 2 seconds. Exhale for 6 seconds while releasing your fists. Repeat 3 times.' },
               { id:'selftalk', icon:'💬', title:'SELF TALK REP', time:'30 sec', instruction:'Write down one limiting belief you have about your game. Cross it out. Write the empowering version. Read it out loud twice.' },
-              { id:'visualize', icon:'👁️', title:'QUICK VISUALIZATION', time:'60 sec', instruction:'Close your eyes. See yourself in your next game. One aggressive action — a tackle, a shot, a dribble. Make it vivid. Feel the confidence.' },
+              { id:'visualize', icon:'👁️', title:'QUICK VISUALIZATION', time:'60 sec', instruction:'Close your eyes. See yourself in your next game. One aggressive action -- a tackle, a shot, a dribble. Make it vivid. Feel the confidence.' },
               { id:'declaration', icon:'📣', title:'BELIEF DECLARATION', time:'20 sec', instruction:'Say your personal declaration out loud: "I believe I am capable of playing my best while having fun." Say it with conviction.' },
             ]
             const todayKey = today + '-microreps'
@@ -1836,7 +1841,7 @@ export default function Main({ user }) {
           {mentalTab === 'map' && (
             <>
               <div style={C.orange}>
-                <span style={C.olbl}>MINDSET ACTION PLAN — {currentWeek}</span>
+                <span style={C.olbl}>MINDSET ACTION PLAN -- {currentWeek}</span>
                 <div style={{ fontSize:14, fontWeight:800, lineHeight:1.4 }}>Your weekly mental roadmap. Review it every Monday. Adjust every week. 🗺️</div>
               </div>
               <div style={C.card}>
@@ -2245,7 +2250,7 @@ export default function Main({ user }) {
           <div style={C.sub}>BEST PRACTICES GUIDE</div>
           <div style={C.orange}>
             <span style={C.olbl}>FROM COACH VALENTINO</span>
-            <div style={{ fontSize:15,fontWeight:700,lineHeight:1.4 }}>"Parents are the most influential people in a young athlete's mental development. Here's how to help — not hurt."</div>
+            <div style={{ fontSize:15,fontWeight:700,lineHeight:1.4 }}>"Parents are the most influential people in a young athlete's mental development. Here's how to help -- not hurt."</div>
           </div>
           {PARENT_GUIDE.map((item,i)=>(
             <div key={i} style={C.card}>
@@ -2291,7 +2296,7 @@ export default function Main({ user }) {
             ))}
           </>}
           <span style={C.lbl}>ACTIVE ATHLETES</span>
-          {/* Coach filter — admin only */}
+          {/* Coach filter -- admin only */}
           {isAdmin && allAthletes.filter(a=>a.role==='coach').length > 0 && (
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
               <button onClick={()=>setCoachFilter('all')}
@@ -2311,7 +2316,7 @@ export default function Main({ user }) {
             </div>
           )}
 
-          {/* Stats bar — admin only */}
+          {/* Stats bar -- admin only */}
           {isAdmin && <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
             {[
               [allAthletes.filter(a=>a.role==='athlete').length, 'TOTAL'],
@@ -2601,7 +2606,7 @@ export default function Main({ user }) {
               )}
             </div>
 
-            {/* GOAL SETTING — Week 4+ */}
+            {/* GOAL SETTING -- Week 4+ */}
             {(selectedAthlete.program_week||1) >= 4 && (
               <div style={C.card}>
                 <span style={C.lbl}>🎯 GOAL SETTING (WEEK 4+)</span>
@@ -2617,7 +2622,7 @@ export default function Main({ user }) {
               </div>
             )}
 
-            {/* VISUALIZATION & MORNING ROUTINE — Week 5+ */}
+            {/* VISUALIZATION & MORNING ROUTINE -- Week 5+ */}
             {(selectedAthlete.program_week||1) >= 5 && (
               <div style={C.card}>
                 <span style={C.lbl}>👁️ VISUALIZATION & MORNING ROUTINE (WEEK 5+)</span>
@@ -2848,4 +2853,5 @@ export default function Main({ user }) {
       </div>
     </div>
   )
+}
 }
