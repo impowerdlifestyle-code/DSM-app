@@ -31,7 +31,9 @@ export async function getUser() {
 
 // ─── ACTION STEPS ────────────────────────────────────────────
 export async function submitActionSteps(formData, userId) {
+  // Force schema refresh
   const { data, error } = await supabase
+    .schema('public')
     .from('action_steps')
     .insert([{
       user_id: userId,
@@ -65,6 +67,7 @@ export async function submitActionSteps(formData, userId) {
 
 export async function getActionSteps(userId) {
   const { data, error } = await supabase
+    .schema('public')
     .from('action_steps')
     .select('*')
     .eq('user_id', userId)
