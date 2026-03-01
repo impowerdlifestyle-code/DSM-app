@@ -810,6 +810,175 @@ export default function Main({ user }) {
     }, 600)
   }
 
+  // ── REPORT DOWNLOAD ──
+  const downloadReport = async (athleteData, actionSteps, checkins, ballMasteryData, forCoach=false) => {
+    const name = athleteData?.full_name || athleteData?.email || 'Athlete'
+    const today = new Date().toLocaleDateString()
+
+    // ── EXCEL ──
+    try {
+      const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs')
+      const wb = XLSX.utils.book_new()
+
+      // Sheet 1: All Sessions
+      const sessionRows = [['Date','Day','Session','Did Steps','Shark','Goldfish','Self Talk','Tune Out','Conditioning','Strength','Technical','Mental']]
+      actionSteps.forEach(s => {
+        sessionRows.push([s.date, s.day_of_week, s.session_type, s.did_action_steps,
+          s.shark_used?'✅':'', s.goldfish_used?'✅':'', s.selftalk_used?'✅':'', s.tuneout_used?'✅':'',
+          s.conditioning, s.strength, s.technical, s.mental])
+      })
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sessionRows), 'All Sessions')
+
+      // Sheet 2: Weekly Summary
+      const weekRows = [['Week','Energy','Confidence','Sessions','Biggest Win','Biggest Challenge']]
+      checkins.forEach(c => {
+        weekRows.push([c.week, c.energy_level, c.confidence_level, c.sessions_completed, c.biggest_win, c.biggest_challenge])
+      })
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(weekRows), 'Weekly Check-Ins')
+
+      // Sheet 3: Mental Tools Stats
+      const tools = ['shark','goldfish','selftalk','tuneout']
+      const toolRows = [['Tool','Times Used','Usage %','Occasions']]
+      tools.forEach(t => {
+        const used = actionSteps.filter(s=>s[t+'_used']).length
+        const pct = actionSteps.length ? Math.round((used/actionSteps.length)*100) : 0
+        const occasions = actionSteps.filter(s=>s[t+'_used']&&s[t+'_occasion']).map(s=>s[t+'_occasion']).join(' | ')
+        toolRows.push([t.charAt(0).toUpperCase()+t.slice(1)+' Mentality', used, pct+'%', occasions])
+      })
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(toolRows), 'Mental Tools')
+
+      // Sheet 4: Performance Over Time
+      const perfRows = [['Date','Conditioning','Strength','Technical','Mental','Average']]
+      actionSteps.forEach(s => {
+        const avg = ((s.conditioning+s.strength+s.technical+s.mental)/4).toFixed(1)
+        perfRows.push([s.date, s.conditioning, s.strength, s.technical, s.mental, avg])
+      })
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(perfRows), 'Performance Ratings')
+
+      // Sheet 5: Ball Mastery
+      if(ballMasteryData?.length) {
+        const bmRows = [['Date','Skills Practiced','Total Reps','Notes']]
+        ballMasteryData.forEach(b => bmRows.push([b.date, b.total_skills, b.total_reps, b.notes]))
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bmRows), 'Ball Mastery')
+      }
+
+      XLSX.writeFile(wb, `DSM-Progress-${name.replace(/ /g,'-')}-${today}.xlsx`)
+    } catch(e) { console.error('Excel error:', e) }
+
+    // ── PDF ──
+    try {
+      const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+      const doc = new jsPDF()
+      const orange = [255, 61, 0]
+      const white = [255, 255, 255]
+      const gray = [100, 100, 100]
+      const dark = [20, 20, 20]
+
+      // Header
+      doc.setFillColor(...dark)
+      doc.rect(0, 0, 210, 297, 'F')
+      doc.setFillColor(...orange)
+      doc.rect(0, 0, 210, 20, 'F')
+      doc.setTextColor(...white)
+      doc.setFontSize(14)
+      doc.setFont('helvetica','bold')
+      doc.text('DI LORENZO SOCCER MINDSET', 14, 13)
+      doc.setFontSize(9)
+      doc.text('PROGRESS REPORT', 160, 13)
+
+      let y = 30
+      doc.setFontSize(16)
+      doc.setTextColor(...orange)
+      doc.text(name.toUpperCase(), 14, y); y += 8
+      doc.setFontSize(8)
+      doc.setTextColor(...gray)
+      doc.text(`Generated: ${today}  |  Total Sessions: ${actionSteps.length}  |  Check-Ins: ${checkins.length}`, 14, y); y += 12
+
+      // Weekly Summary
+      doc.setFontSize(10)
+      doc.setTextColor(...orange)
+      doc.setFont('helvetica','bold')
+      doc.text('WEEKLY SUMMARY', 14, y); y += 6
+      doc.setFillColor(30,30,30)
+      doc.rect(14, y, 182, 7, 'F')
+      doc.setTextColor(...white)
+      doc.setFontSize(7)
+      doc.text('WEEK', 17, y+5)
+      doc.text('ENERGY', 50, y+5)
+      doc.text('CONFIDENCE', 80, y+5)
+      doc.text('SESSIONS', 120, y+5)
+      doc.text('BIGGEST WIN', 150, y+5)
+      y += 9
+      checkins.slice(0,8).forEach((c,i) => {
+        doc.setFillColor(i%2===0?15:25, i%2===0?15:25, i%2===0?15:25)
+        doc.rect(14, y-3, 182, 7, 'F')
+        doc.setTextColor(...white)
+        doc.setFont('helvetica','normal')
+        doc.text(c.week||'', 17, y+2)
+        doc.text(String(c.energy_level||''), 55, y+2)
+        doc.text(String(c.confidence_level||''), 88, y+2)
+        doc.text(String(c.sessions_completed||''), 125, y+2)
+        doc.text((c.biggest_win||'').substring(0,30), 150, y+2)
+        y += 7
+      }); y += 8
+
+      // Mental Tools
+      doc.setFontSize(10)
+      doc.setTextColor(...orange)
+      doc.setFont('helvetica','bold')
+      doc.text('MENTAL TOOLS USAGE', 14, y); y += 8
+      const toolNames = ['Shark Mentality','Goldfish Mentality','Self Talk','Tune Out']
+      const toolKeys = ['shark','goldfish','selftalk','tuneout']
+      toolKeys.forEach((t,i) => {
+        const used = actionSteps.filter(s=>s[t+'_used']).length
+        const pct = actionSteps.length ? Math.round((used/actionSteps.length)*100) : 0
+        doc.setFontSize(8)
+        doc.setTextColor(...white)
+        doc.setFont('helvetica','normal')
+        doc.text(toolNames[i], 14, y)
+        doc.text(`${used} times (${pct}%)`, 80, y)
+        doc.setFillColor(30,30,30)
+        doc.rect(130, y-4, 60, 5, 'F')
+        doc.setFillColor(...orange)
+        doc.rect(130, y-4, Math.max(1, pct*0.6), 5, 'F')
+        y += 8
+      }); y += 6
+
+      // Performance Ratings
+      if(y < 220) {
+        doc.setFontSize(10)
+        doc.setTextColor(...orange)
+        doc.setFont('helvetica','bold')
+        doc.text('PERFORMANCE RATINGS (LAST 10 SESSIONS)', 14, y); y += 8
+        const recent = actionSteps.slice(0,10).reverse()
+        recent.forEach((s,i) => {
+          const avg = ((s.conditioning+s.strength+s.technical+s.mental)/4).toFixed(1)
+          doc.setFillColor(i%2===0?15:25, i%2===0?15:25, i%2===0?15:25)
+          doc.rect(14, y-4, 182, 7, 'F')
+          doc.setTextColor(...white)
+          doc.setFont('helvetica','normal')
+          doc.setFontSize(7)
+          doc.text(s.date||'', 17, y+1)
+          doc.text(s.session_type||'', 50, y+1)
+          doc.text(`C:${s.conditioning} S:${s.strength} T:${s.technical} M:${s.mental}`, 85, y+1)
+          doc.setTextColor(...orange)
+          doc.text(`AVG: ${avg}`, 160, y+1)
+          y += 7
+        })
+      }
+
+      // Footer
+      doc.setFillColor(...orange)
+      doc.rect(0, 287, 210, 10, 'F')
+      doc.setTextColor(...white)
+      doc.setFontSize(7)
+      doc.text('DiLorenzo Soccer Mindset | dsm-app-beta.vercel.app', 14, 294)
+      doc.text(`${name} | ${today}`, 140, 294)
+
+      doc.save(`DSM-Progress-${name.replace(/ /g,'-')}-${today}.pdf`)
+    } catch(e) { console.error('PDF error:', e) }
+  }
+
   const startVoice = () => {
     try {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -1336,6 +1505,14 @@ export default function Main({ user }) {
         <div style={C.scroll} className="fade">
           <div style={C.title}>PROGRESS</div>
           <div style={C.sub}>YOUR JOURNEY OVER TIME</div>
+
+          {/* DOWNLOAD BUTTON - ATHLETE */}
+          {submissions.length > 0 && (
+            <button onClick={()=>downloadReport(user, submissions, checkinHistory, [])}
+              style={{ ...C.btn, marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              📥 DOWNLOAD MY PROGRESS REPORT
+            </button>
+          )}
 
           {/* Energy & Confidence Chart */}
           {checkinHistory.length > 0 ? <>
@@ -2242,6 +2419,14 @@ export default function Main({ user }) {
 
           {/* OVERVIEW */}
           {athleteProfileTab==='overview' && <>
+
+            {/* DOWNLOAD REPORT BUTTON - COACH */}
+            <div style={{ display:'flex',gap:8,marginBottom:12 }}>
+              <button onClick={()=>downloadReport(selectedAthlete, athleteActionSteps, athleteCheckins, athleteBallMastery, true)}
+                style={{ flex:1,background:'linear-gradient(135deg,#ff3d00,#ff6d00)',border:'none',borderRadius:10,padding:'12px 8px',fontSize:10,fontWeight:800,color:'#fff',cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                📥 DOWNLOAD PDF + EXCEL
+              </button>
+            </div>
 
             {/* STATS ROW */}
             <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:12 }}>
