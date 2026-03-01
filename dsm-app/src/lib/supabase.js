@@ -76,12 +76,17 @@ export async function submitActionSteps(formData, userId) {
 }
 
 export async function getActionSteps(userId) {
-  const { data, error } = await supabase
-    .from('action_steps')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-  return { data, error }
+  const url = `${supabaseUrl}/rest/v1/action_steps?user_id=eq.${userId}&order=created_at.desc`
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch(url, {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+    }
+  })
+  if (!res.ok) return { data: [], error: null }
+  const data = await res.json()
+  return { data, error: null }
 }
 
 export async function getAllActionSteps() {
