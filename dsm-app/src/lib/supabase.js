@@ -31,43 +31,52 @@ export async function getUser() {
 
 // ─── ACTION STEPS ────────────────────────────────────────────
 export async function submitActionSteps(formData, userId) {
-  // Force schema refresh
-  const { data, error } = await supabase
-    .schema('public')
-    .from('action_steps')
-    .insert([{
-      user_id: userId,
-      player_name: formData.playerName,
-      session_type: formData.sessionType,
-      date: formData.date,
-      day_of_week: formData.dayOfWeek,
-      did_action_steps: formData.didSteps,
-      shark_used: formData.usedSteps.shark || false,
-      shark_occasion: formData.occasions.shark || '',
-      shark_comments: formData.comments.shark || '',
-      goldfish_used: formData.usedSteps.goldfish || false,
-      goldfish_occasion: formData.occasions.goldfish || '',
-      goldfish_comments: formData.comments.goldfish || '',
-      selftalk_used: formData.usedSteps.selftalk || false,
-      selftalk_occasion: formData.occasions.selftalk || '',
-      selftalk_comments: formData.comments.selftalk || '',
-      tuneout_used: formData.usedSteps.tuneout || false,
-      tuneout_occasion: formData.occasions.tuneout || '',
-      tuneout_comments: formData.comments.tuneout || '',
-      visualization_used: formData.usedSteps.visualization || false,
-      visualization_occasion: formData.occasions.visualization || '',
-      visualization_comments: formData.comments.visualization || '',
-      conditioning: formData.conditioning,
-      strength: formData.strength,
-      technical: formData.technical,
-      mental: formData.mental,
-    }])
+  const url = `${supabaseUrl}/rest/v1/action_steps`
+  const body = {
+    user_id: userId,
+    player_name: formData.playerName,
+    session_type: formData.sessionType,
+    date: formData.date,
+    day_of_week: formData.dayOfWeek,
+    did_action_steps: formData.didSteps,
+    shark_used: formData.usedSteps.shark || false,
+    shark_occasion: formData.occasions.shark || '',
+    shark_comments: formData.comments.shark || '',
+    goldfish_used: formData.usedSteps.goldfish || false,
+    goldfish_occasion: formData.occasions.goldfish || '',
+    goldfish_comments: formData.comments.goldfish || '',
+    selftalk_used: formData.usedSteps.selftalk || false,
+    selftalk_occasion: formData.occasions.selftalk || '',
+    selftalk_comments: formData.comments.selftalk || '',
+    tuneout_used: formData.usedSteps.tuneout || false,
+    tuneout_occasion: formData.occasions.tuneout || '',
+    tuneout_comments: formData.comments.tuneout || '',
+    visualization_used: formData.usedSteps.visualization || false,
+    visualization_occasion: formData.occasions.visualization || '',
+    visualization_comments: formData.comments.visualization || '',
+    conditioning: formData.conditioning,
+    strength: formData.strength,
+    technical: formData.technical,
+    mental: formData.mental,
+  }
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  })
+  const data = await res.json()
+  const error = res.ok ? null : data
   return { data, error }
 }
 
 export async function getActionSteps(userId) {
   const { data, error } = await supabase
-    .schema('public')
     .from('action_steps')
     .select('*')
     .eq('user_id', userId)
