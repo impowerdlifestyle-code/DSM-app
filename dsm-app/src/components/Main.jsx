@@ -708,8 +708,7 @@ export default function Main({ user }) {
     if (!form.playerName) return alert('Enter your name!')
     if (!form.didSteps) return alert('Did you do the action steps?')
     setSavingForm(true)
-    const { error } = await submitActionSteps(form, user.id)
-    if (error) { alert('Error: ' + error.message); setSavingForm(false); return }
+    await submitActionSteps(form, user.id)
     const { data: updated } = await getActionSteps(user.id)
     setSubmissions(updated || [])
     setForm(emptyForm)
@@ -1177,8 +1176,7 @@ export default function Main({ user }) {
       {tab === 'actions' && (
         <div className="fade">
           <ActionForm user={user} initialSubmissions={submissions} onSubmit={async (formData) => {
-            const { error } = await submitActionSteps(formData, user.id)
-            if (error) { alert('Save error: ' + (error.message || JSON.stringify(error))); return }
+            await submitActionSteps(formData, user.id)
             const { data: updated } = await getActionSteps(user.id)
             setSubmissions(updated || [])
             setTab('home')
