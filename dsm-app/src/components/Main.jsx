@@ -586,6 +586,7 @@ export default function Main({ user }) {
   const [leaderboard, setLeaderboard] = useState([])
   const [newChallenge, setNewChallenge] = useState({ title: '', description: '', type: 'weekly', target: 7, unit: 'sessions' })
   const [competitionTab, setCompetitionTab] = useState('leaderboard')
+  const [progressTab, setProgressTab] = useState('overview')
   const [savingChallenge, setSavingChallenge] = useState(false)
   const chatEnd = useRef(null)
   const today = new Date().toISOString().split('T')[0]
@@ -869,112 +870,349 @@ export default function Main({ user }) {
       const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
       const doc = new jsPDF()
       const orange = [255, 61, 0]
+      const orangeLight = [255, 109, 0]
       const white = [255, 255, 255]
-      const gray = [100, 100, 100]
+      const gray = [150, 150, 150]
+      const darkGray = [80, 80, 80]
       const dark = [20, 20, 20]
+      const cardBg = [28, 28, 28]
 
-      // Header
-      doc.setFillColor(...dark)
-      doc.rect(0, 0, 210, 297, 'F')
-      doc.setFillColor(...orange)
-      doc.rect(0, 0, 210, 20, 'F')
-      doc.setTextColor(...white)
-      doc.setFontSize(14)
-      doc.setFont('helvetica','bold')
-      doc.text('DI LORENZO SOCCER MINDSET', 14, 13)
-      doc.setFontSize(9)
-      doc.text('PROGRESS REPORT', 160, 13)
+      const pageW = 210, pageH = 297
+      let y = 0
+      let pageNum = 1
 
-      let y = 30
-      doc.setFontSize(16)
-      doc.setTextColor(...orange)
-      doc.text(name.toUpperCase(), 14, y); y += 8
-      doc.setFontSize(8)
-      doc.setTextColor(...gray)
-      doc.text(`Generated: ${today}  |  Total Sessions: ${actionSteps.length}  |  Check-Ins: ${checkins.length}`, 14, y); y += 12
-
-      // Weekly Summary
-      doc.setFontSize(10)
-      doc.setTextColor(...orange)
-      doc.setFont('helvetica','bold')
-      doc.text('WEEKLY SUMMARY', 14, y); y += 6
-      doc.setFillColor(30,30,30)
-      doc.rect(14, y, 182, 7, 'F')
-      doc.setTextColor(...white)
-      doc.setFontSize(7)
-      doc.text('WEEK', 17, y+5)
-      doc.text('ENERGY', 50, y+5)
-      doc.text('CONFIDENCE', 80, y+5)
-      doc.text('SESSIONS', 120, y+5)
-      doc.text('BIGGEST WIN', 150, y+5)
-      y += 9
-      checkins.slice(0,8).forEach((c,i) => {
-        doc.setFillColor(i%2===0?15:25, i%2===0?15:25, i%2===0?15:25)
-        doc.rect(14, y-3, 182, 7, 'F')
-        doc.setTextColor(...white)
-        doc.setFont('helvetica','normal')
-        doc.text(c.week||'', 17, y+2)
-        doc.text(String(c.energy_level||''), 55, y+2)
-        doc.text(String(c.confidence_level||''), 88, y+2)
-        doc.text(String(c.sessions_completed||''), 125, y+2)
-        doc.text((c.biggest_win||'').substring(0,30), 150, y+2)
-        y += 7
-      }); y += 8
-
-      // Mental Tools
-      doc.setFontSize(10)
-      doc.setTextColor(...orange)
-      doc.setFont('helvetica','bold')
-      doc.text('MENTAL TOOLS USAGE', 14, y); y += 8
-      const toolNames = ['Shark Mentality','Goldfish Mentality','Self Talk','Tune Out']
-      const toolKeys = ['shark','goldfish','selftalk','tuneout']
-      toolKeys.forEach((t,i) => {
-        const used = actionSteps.filter(s=>s[t+'_used']).length
-        const pct = actionSteps.length ? Math.round((used/actionSteps.length)*100) : 0
-        doc.setFontSize(8)
-        doc.setTextColor(...white)
-        doc.setFont('helvetica','normal')
-        doc.text(toolNames[i], 14, y)
-        doc.text(`${used} times (${pct}%)`, 80, y)
-        doc.setFillColor(30,30,30)
-        doc.rect(130, y-4, 60, 5, 'F')
+      function newPage() {
+        doc.addPage()
+        pageNum++
+        // dark background
+        doc.setFillColor(...dark)
+        doc.rect(0, 0, pageW, pageH, 'F')
+        // top bar
         doc.setFillColor(...orange)
-        doc.rect(130, y-4, Math.max(1, pct*0.6), 5, 'F')
-        y += 8
-      }); y += 6
-
-      // Performance Ratings
-      if(y < 220) {
-        doc.setFontSize(10)
-        doc.setTextColor(...orange)
+        doc.rect(0, 0, pageW, 10, 'F')
+        doc.setTextColor(...white)
+        doc.setFontSize(6)
         doc.setFont('helvetica','bold')
-        doc.text('PERFORMANCE RATINGS (LAST 10 SESSIONS)', 14, y); y += 8
-        const recent = actionSteps.slice(0,10).reverse()
-        recent.forEach((s,i) => {
-          const avg = ((s.conditioning+s.strength+s.technical+s.mental)/4).toFixed(1)
-          doc.setFillColor(i%2===0?15:25, i%2===0?15:25, i%2===0?15:25)
-          doc.rect(14, y-4, 182, 7, 'F')
+        doc.text('DI LORENZO SOCCER MINDSET — PROGRESS REPORT', 14, 7)
+        doc.text(`${name.toUpperCase()} | Page ${pageNum}`, pageW-14, 7, { align:'right' })
+        y = 18
+      }
+
+      function checkY(needed) {
+        if (y + needed > pageH - 14) newPage()
+      }
+
+      function sectionHeader(title) {
+        checkY(14)
+        doc.setFillColor(...orange)
+        doc.rect(14, y-1, pageW-28, 9, 'F')
+        doc.setTextColor(...white)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(9)
+        doc.text(title, 17, y+5)
+        y += 13
+      }
+
+      function statBox(x, bY, w, h, label, val, color=[255,61,0]) {
+        doc.setFillColor(...cardBg)
+        doc.rect(x, bY, w, h, 'F')
+        doc.setTextColor(...color)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(16)
+        doc.text(String(val), x+w/2, bY+h-7, { align:'center' })
+        doc.setTextColor(...gray)
+        doc.setFontSize(5.5)
+        doc.text(label, x+w/2, bY+h-2, { align:'center' })
+      }
+
+      // ── COVER PAGE ──
+      doc.setFillColor(...dark)
+      doc.rect(0, 0, pageW, pageH, 'F')
+      doc.setFillColor(...orange)
+      doc.rect(0, 0, pageW, 40, 'F')
+      doc.setTextColor(...white)
+      doc.setFont('helvetica','bold')
+      doc.setFontSize(22)
+      doc.text('DI LORENZO SOCCER MINDSET', pageW/2, 16, { align:'center' })
+      doc.setFontSize(10)
+      doc.setTextColor('rgba(255,255,255,0.8)')
+      doc.text('ATHLETE PROGRESS REPORT', pageW/2, 26, { align:'center' })
+      doc.setFontSize(7)
+      doc.text(`Generated: ${today}`, pageW/2, 34, { align:'center' })
+
+      y = 56
+      doc.setTextColor(...orange)
+      doc.setFontSize(24)
+      doc.setFont('helvetica','bold')
+      doc.text(name.toUpperCase(), pageW/2, y, { align:'center' }); y += 12
+
+      // Summary stat boxes
+      const boxW = 40, boxH = 22, boxGap = 4
+      const totalBoxW = 4*boxW + 3*boxGap
+      const boxStartX = (pageW - totalBoxW) / 2
+      const boxes = [
+        ['ACTION STEPS', actionSteps.length],
+        ['CHECK-INS', checkins.length],
+        ['BALL SESSIONS', ballMasteryData?.length || 0],
+        ['DAY STREAK', forCoach ? '--' : (athleteData?.streak || 0)],
+      ]
+      boxes.forEach((b,i) => statBox(boxStartX+i*(boxW+boxGap), y, boxW, boxH, b[0], b[1]))
+      y += boxH + 10
+
+      // Divider
+      doc.setDrawColor(...orange)
+      doc.setLineWidth(0.5)
+      doc.line(14, y, pageW-14, y); y += 8
+
+      // Performance averages (from action steps)
+      if (actionSteps.length > 0) {
+        doc.setTextColor(...gray)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(7)
+        doc.text('AVERAGE PERFORMANCE RATINGS', pageW/2, y, { align:'center' }); y += 5
+        const ratingKeys = ['conditioning','strength','technical','mental']
+        const ratingLabels = ['CONDITIONING','STRENGTH','TECHNICAL','MENTAL']
+        const rbW = 38, rbH = 20, rbGap = 4
+        const rbTotal = 4*rbW + 3*rbGap
+        const rbX = (pageW - rbTotal) / 2
+        ratingKeys.forEach((k,i) => {
+          const avg = (actionSteps.reduce((a,s)=>a+(s[k]||0),0)/actionSteps.length).toFixed(1)
+          statBox(rbX+i*(rbW+rbGap), y, rbW, rbH, ratingLabels[i], avg, [255,140,0])
+        })
+        y += rbH + 8
+      }
+
+      // Mental tools quick view
+      if (actionSteps.length > 0) {
+        doc.setDrawColor(...cardBg)
+        doc.setLineWidth(0.3)
+        doc.line(14, y, pageW-14, y); y += 6
+        doc.setTextColor(...gray)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(7)
+        doc.text('MENTAL TOOLS USAGE', pageW/2, y, { align:'center' }); y += 6
+        const tools = [['shark','Shark Mentality'],['goldfish','Goldfish Mentality'],['selftalk','Self Talk'],['tuneout','Tune Out']]
+        tools.forEach(([k,lbl]) => {
+          const cnt = actionSteps.filter(s=>s[k+'_used']).length
+          const pct = Math.round((cnt/actionSteps.length)*100)
           doc.setTextColor(...white)
           doc.setFont('helvetica','normal')
           doc.setFontSize(7)
-          doc.text(s.date||'', 17, y+1)
-          doc.text(s.session_type||'', 50, y+1)
-          doc.text(`C:${s.conditioning} S:${s.strength} T:${s.technical} M:${s.mental}`, 85, y+1)
-          doc.setTextColor(...orange)
-          doc.text(`AVG: ${avg}`, 160, y+1)
-          y += 7
+          doc.text(lbl, 30, y+1)
+          doc.text(`${cnt}x (${pct}%)`, 95, y+1)
+          doc.setFillColor(...cardBg)
+          doc.rect(115, y-3, 65, 5, 'F')
+          doc.setFillColor(...orange)
+          doc.rect(115, y-3, Math.max(1, pct*0.65), 5, 'F')
+          y += 8
         })
       }
 
       // Footer
       doc.setFillColor(...orange)
-      doc.rect(0, 287, 210, 10, 'F')
+      doc.rect(0, pageH-12, pageW, 12, 'F')
       doc.setTextColor(...white)
-      doc.setFontSize(7)
-      doc.text('DiLorenzo Soccer Mindset | dsm-app-beta.vercel.app', 14, 294)
-      doc.text(`${name} | ${today}`, 140, 294)
+      doc.setFontSize(6)
+      doc.setFont('helvetica','normal')
+      doc.text('DiLorenzo Soccer Mindset | dsm-app-beta.vercel.app', 14, pageH-5)
+      doc.text(`Coach Valentino Di Lorenzo`, pageW-14, pageH-5, { align:'right' })
 
-      doc.save(`DSM-Progress-${name.replace(/ /g,'-')}-${today}.pdf`)
+      // ── PAGE 2: ACTION STEPS HISTORY ──
+      if (actionSteps.length > 0) {
+        newPage()
+        sectionHeader(`✅ ACTION STEPS HISTORY (${actionSteps.length} SESSIONS)`)
+
+        // Table header
+        checkY(10)
+        doc.setFillColor(40, 40, 40)
+        doc.rect(14, y-2, pageW-28, 8, 'F')
+        doc.setTextColor(...orange)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(6)
+        doc.text('DATE', 17, y+3)
+        doc.text('SESSION', 45, y+3)
+        doc.text('STEPS', 80, y+3)
+        doc.text('COND', 97, y+3)
+        doc.text('STR', 110, y+3)
+        doc.text('TECH', 121, y+3)
+        doc.text('MNT', 133, y+3)
+        doc.text('AVG', 145, y+3)
+        doc.text('MENTAL TOOLS', 157, y+3)
+        y += 10
+
+        actionSteps.forEach((s,i) => {
+          checkY(9)
+          if (i%2===0) { doc.setFillColor(18,18,18); doc.rect(14, y-2, pageW-28, 8, 'F') }
+          const avg = (((s.conditioning||0)+(s.strength||0)+(s.technical||0)+(s.mental||0))/4).toFixed(1)
+          const tools = [s.shark_used?'🦈':'',s.goldfish_used?'🐠':'',s.selftalk_used?'💬':'',s.tuneout_used?'🔇':''].filter(Boolean).join(' ')
+          doc.setTextColor(...white)
+          doc.setFont('helvetica','normal')
+          doc.setFontSize(6)
+          doc.text(s.date||'', 17, y+3)
+          doc.text((s.session_type||'').substring(0,14), 45, y+3)
+          doc.setTextColor(s.did_action_steps==='Yes'?[100,220,100]:[220,80,80])
+          doc.text(s.did_action_steps==='Yes'?'YES':'NO', 80, y+3)
+          doc.setTextColor(...white)
+          doc.text(String(s.conditioning||'-'), 99, y+3)
+          doc.text(String(s.strength||'-'), 112, y+3)
+          doc.text(String(s.technical||'-'), 123, y+3)
+          doc.text(String(s.mental||'-'), 135, y+3)
+          doc.setTextColor(...orangeLight)
+          doc.text(avg, 147, y+3)
+          doc.setTextColor(...gray)
+          doc.setFontSize(5.5)
+          doc.text(tools, 157, y+3)
+          y += 8
+        })
+
+        // Comments section
+        const withComments = actionSteps.filter(s=>s.shark_comments||s.goldfish_comments||s.selftalk_comments||s.tuneout_comments)
+        if (withComments.length > 0) {
+          checkY(16)
+          sectionHeader('SESSION NOTES & COMMENTS')
+          withComments.slice(0,8).forEach(s => {
+            checkY(20)
+            doc.setFillColor(...cardBg)
+            doc.rect(14, y, pageW-28, 1, 'F')
+            doc.setTextColor(...orange)
+            doc.setFont('helvetica','bold')
+            doc.setFontSize(6.5)
+            doc.text(`${s.date} · ${s.session_type}`, 17, y+5)
+            y += 8
+            const comments = [
+              s.shark_comments?`Shark: ${s.shark_comments}`:'',
+              s.goldfish_comments?`Goldfish: ${s.goldfish_comments}`:'',
+              s.selftalk_comments?`Self Talk: ${s.selftalk_comments}`:'',
+              s.tuneout_comments?`Tune Out: ${s.tuneout_comments}`:'',
+            ].filter(Boolean)
+            comments.forEach(c => {
+              checkY(7)
+              doc.setTextColor(...gray)
+              doc.setFont('helvetica','normal')
+              doc.setFontSize(6)
+              const lines = doc.splitTextToSize(c, pageW-35)
+              doc.text(lines, 20, y)
+              y += lines.length * 5 + 2
+            })
+          })
+        }
+      }
+
+      // ── PAGE 3: WEEKLY CHECK-INS ──
+      if (checkins.length > 0) {
+        newPage()
+        sectionHeader(`📋 WEEKLY CHECK-IN HISTORY (${checkins.length} CHECK-INS)`)
+
+        // Averages row
+        const avgE = (checkins.reduce((a,c)=>a+c.energy_level,0)/checkins.length).toFixed(1)
+        const avgC = (checkins.reduce((a,c)=>a+c.confidence_level,0)/checkins.length).toFixed(1)
+        const avgS = (checkins.reduce((a,c)=>a+c.sessions_completed,0)/checkins.length).toFixed(1)
+        const smW = (pageW-28)/3-3
+        ;[[14,'ENERGY AVG',avgE],[14+smW+3,'CONFIDENCE AVG',avgC],[14+2*(smW+3),'SESSIONS AVG',avgS]].forEach(([x,lbl,val]) => {
+          statBox(x, y, smW, 18, lbl, val)
+        })
+        y += 24
+
+        checkins.forEach((c,i) => {
+          checkY(30)
+          doc.setFillColor(...cardBg)
+          doc.rect(14, y, pageW-28, 28, 'F')
+          // Week label + ratings
+          doc.setTextColor(...orange)
+          doc.setFont('helvetica','bold')
+          doc.setFontSize(7.5)
+          doc.text(c.week||'', 18, y+7)
+          const ratings = [[c.energy_level,'⚡ ENERGY'],[c.confidence_level,'💪 CONF'],[c.sessions_completed,'🏃 SESSIONS']]
+          ratings.forEach(([val,lbl],j)=>{
+            doc.setTextColor(...orange)
+            doc.setFontSize(9)
+            doc.setFont('helvetica','bold')
+            doc.text(String(val||''), 80+j*35, y+7)
+            doc.setTextColor(...gray)
+            doc.setFontSize(5.5)
+            doc.text(lbl, 80+j*35, y+12)
+          })
+          let cy = y + 16
+          if (c.biggest_win) {
+            doc.setTextColor(...white)
+            doc.setFontSize(6)
+            doc.setFont('helvetica','bold')
+            doc.text('WIN:', 18, cy)
+            doc.setFont('helvetica','normal')
+            doc.setTextColor(...gray)
+            const lines = doc.splitTextToSize(c.biggest_win, pageW-50)
+            doc.text(lines[0], 30, cy)
+            cy += 5
+          }
+          if (c.biggest_challenge) {
+            doc.setTextColor(...white)
+            doc.setFontSize(6)
+            doc.setFont('helvetica','bold')
+            doc.text('CHALLENGE:', 18, cy)
+            doc.setFont('helvetica','normal')
+            doc.setTextColor(...gray)
+            const lines = doc.splitTextToSize(c.biggest_challenge, pageW-55)
+            doc.text(lines[0], 42, cy)
+            cy += 5
+          }
+          if (c.goal_next_week) {
+            doc.setTextColor(...orangeLight)
+            doc.setFontSize(6)
+            doc.setFont('helvetica','bold')
+            doc.text(`GOAL: ${c.goal_next_week.substring(0,60)}`, 18, cy)
+          }
+          y += 32
+        })
+      }
+
+      // ── PAGE 4: BALL MASTERY ──
+      if (ballMasteryData?.length > 0) {
+        newPage()
+        sectionHeader(`⚽ BALL MASTERY HISTORY (${ballMasteryData.length} SESSIONS)`)
+
+        const totalReps = ballMasteryData.reduce((a,b)=>a+(b.total_reps||0),0)
+        statBox(14, y, 55, 18, 'TOTAL SESSIONS', ballMasteryData.length)
+        statBox(73, y, 55, 18, 'TOTAL REPS', totalReps)
+        statBox(132, y, 55, 18, 'AVG REPS/SESSION', Math.round(totalReps/ballMasteryData.length))
+        y += 24
+
+        // Table
+        doc.setFillColor(40,40,40)
+        doc.rect(14, y-2, pageW-28, 8, 'F')
+        doc.setTextColor(...orange)
+        doc.setFont('helvetica','bold')
+        doc.setFontSize(6)
+        doc.text('DATE', 17, y+3)
+        doc.text('SKILLS', 55, y+3)
+        doc.text('REPS', 95, y+3)
+        doc.text('NOTES', 115, y+3)
+        y += 10
+
+        ballMasteryData.forEach((b,i) => {
+          checkY(9)
+          if (i%2===0) { doc.setFillColor(18,18,18); doc.rect(14, y-2, pageW-28, 8, 'F') }
+          doc.setTextColor(...white)
+          doc.setFont('helvetica','normal')
+          doc.setFontSize(6)
+          doc.text(b.date||'', 17, y+3)
+          doc.text(String(b.total_skills||0), 65, y+3)
+          doc.setTextColor(...orange)
+          doc.text(String(b.total_reps||0), 97, y+3)
+          doc.setTextColor(...gray)
+          doc.text((b.notes||'').substring(0,50), 115, y+3)
+          y += 8
+        })
+      }
+
+      // Footer on last page
+      doc.setFillColor(...orange)
+      doc.rect(0, pageH-12, pageW, 12, 'F')
+      doc.setTextColor(...white)
+      doc.setFontSize(6)
+      doc.text('DiLorenzo Soccer Mindset | dsm-app-beta.vercel.app', 14, pageH-5)
+      doc.text(`${name} | ${today}`, pageW-14, pageH-5, { align:'right' })
+
+      doc.save(`DSM-ProgressReport-${name.replace(/ /g,'-')}-${today}.pdf`)
     } catch(e) { console.error('PDF error:', e) }
   }
 
@@ -1504,228 +1742,347 @@ export default function Main({ user }) {
           <div style={C.title}>PROGRESS</div>
           <div style={C.sub}>YOUR JOURNEY OVER TIME</div>
 
-          {/* DOWNLOAD BUTTON - ATHLETE */}
-          {submissions.length > 0 && (
-            <button onClick={()=>downloadReport(user, submissions, checkinHistory, [])}
-              style={{ ...C.btn, marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-              📥 DOWNLOAD MY PROGRESS REPORT
+          {/* PDF DOWNLOAD */}
+          {(submissions.length > 0 || checkinHistory.length > 0) && (
+            <button onClick={()=>downloadReport(user, submissions, checkinHistory, ballHistory)}
+              style={{ ...C.btn, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              📥 SAVE PROGRESS REPORT PDF
             </button>
           )}
 
-          {/* ACTION STEPS HISTORY - always visible */}
-          {submissions.length > 0 && <>
-            <span style={C.lbl}>✅ ACTION STEPS ({submissions.length} LOGGED)</span>
-            <div style={{ ...C.card, marginBottom:14 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                <div style={{ fontSize:13, fontWeight:800 }}>Total Sessions</div>
-                <div style={{ fontSize:24, fontWeight:900, color:'#ff3d00' }}>{submissions.length}</div>
+          {/* SECTION TABS */}
+          {(() => {
+            const hasAny = submissions.length > 0 || checkinHistory.length > 0 || ballHistory.length > 0
+            if (!hasAny) return (
+              <div style={{ ...C.card, textAlign:'center', padding:40 }}>
+                <div style={{ fontSize:44, marginBottom:12 }}>📈</div>
+                <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO DATA YET</div>
+                <div style={{ fontSize:13, color:'#555', lineHeight:1.6 }}>Start logging action steps, weekly check-ins, and ball mastery to see your full progress here. 🦈</div>
               </div>
-              {/* Performance averages from action steps */}
-              {(() => {
-                const avg = (key) => (submissions.reduce((a,s)=>a+(s[key]||0),0)/submissions.length).toFixed(1)
-                return (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:6, marginBottom:12 }}>
-                    {[['conditioning','💪','COND'],['strength','🏋️','STR'],['technical','⚽','TECH'],['mental','🧠','MNT']].map(([k,icon,lbl])=>(
-                      <div key={k} style={{ background:'#0a0a0a', borderRadius:8, padding:'8px 4px', textAlign:'center' }}>
-                        <div style={{ fontSize:14 }}>{icon}</div>
-                        <div style={{ fontSize:18, fontWeight:900, color:'#ff3d00' }}>{avg(k)}</div>
-                        <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl}</div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
-              {/* Mental tools usage */}
-              <div style={{ fontSize:9, color:'#555', fontWeight:700, letterSpacing:2, marginBottom:6 }}>MENTAL TOOLS USED</div>
-              <div style={{ display:'flex', gap:8 }}>
-                {[['shark','🦈','SHARK'],['goldfish','🐠','GOLDFISH'],['selftalk','💬','SELF TALK'],['tuneout','🔇','TUNE OUT']].map(([k,icon,lbl])=>{
-                  const count = submissions.filter(s=>s[k+'_used']).length
-                  const pct = Math.round((count/submissions.length)*100)
-                  return (
-                    <div key={k} style={{ flex:1, background:'#0a0a0a', borderRadius:8, padding:'6px 4px', textAlign:'center' }}>
-                      <div style={{ fontSize:14 }}>{icon}</div>
-                      <div style={{ fontSize:14, fontWeight:900, color:'#ff3d00' }}>{pct}%</div>
-                      <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>{lbl}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            )
 
-            {/* Recent action steps list */}
-            <span style={C.lbl}>RECENT SESSIONS</span>
-            {submissions.slice(0,10).map((s,i)=>(
-              <div key={i} style={{ ...C.card, marginBottom:8 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <div style={{ fontSize:10, color:'#ff3d00', fontWeight:700, letterSpacing:1 }}>{s.date} · {s.session_type||s.sessionType}</div>
-                  <div style={{ fontSize:11 }}>{s.did_action_steps==='Yes'||s.didSteps==='Yes'?'✅ Did steps':'❌ Missed'}</div>
-                </div>
-                <div style={{ display:'flex', gap:10, marginBottom:6 }}>
-                  {['conditioning','strength','technical','mental'].map(k=>(
-                    <div key={k} style={{ textAlign:'center' }}>
-                      <div style={{ fontSize:15, fontWeight:900, color:'#ff3d00' }}>{s[k]}</div>
-                      <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
-                    </div>
+            const progTabs = [
+              { id:'overview', label:'📊 Overview' },
+              { id:'actions', label:'✅ Actions' },
+              { id:'checkins', label:'📋 Check-Ins' },
+              { id:'ball', label:'⚽ Ball' },
+            ]
+
+            return (
+              <>
+                {/* Tab selector */}
+                <div style={{ display:'flex', gap:6, marginBottom:14, overflowX:'auto' }}>
+                  {progTabs.map(t=>(
+                    <button key={t.id} onClick={()=>setProgressTab(t.id)}
+                      style={{ flexShrink:0, background:progressTab===t.id?'#ff3d00':'#1e1e1e', border:'none', borderRadius:10, padding:'8px 12px', fontSize:10, fontWeight:800, color:'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                      {t.label}
+                    </button>
                   ))}
                 </div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                  {[['shark','🦈'],['goldfish','🐠'],['selftalk','💬'],['tuneout','🔇']].map(([k,icon])=>s[k+'_used']&&(
-                    <span key={k} style={{ background:'#1e1e1e', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#ff3d00' }}>{icon} {k.toUpperCase()}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </>}
 
-          {/* Energy & Confidence Chart */}
-          {checkinHistory.length > 0 ? <>
-            <span style={C.lbl}>ENERGY & CONFIDENCE (LAST 8 WEEKS)</span>
-            <div style={{ ...C.card, padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div style={{ display: 'flex', gap: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff3d00' }} />
-                    <span style={{ fontSize: 9, color: '#aaa', fontWeight: 700 }}>ENERGY</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff8c00' }} />
-                    <span style={{ fontSize: 9, color: '#aaa', fontWeight: 700 }}>CONFIDENCE</span>
-                  </div>
-                </div>
-              </div>
-              {/* Bar chart */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
-                {[...checkinHistory].reverse().map((c, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 100 }}>
-                      <div style={{ flex: 1, background: '#ff3d00', borderRadius: '3px 3px 0 0', height: `${(c.energy_level / 10) * 100}%`, minHeight: 4 }} />
-                      <div style={{ flex: 1, background: '#ff8c00', borderRadius: '3px 3px 0 0', height: `${(c.confidence_level / 10) * 100}%`, minHeight: 4 }} />
-                    </div>
-                    <div style={{ fontSize: 7, color: '#555', fontWeight: 700 }}>{c.week?.split('-W')[1] ? 'W'+c.week.split('-W')[1] : ''}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Sessions completed */}
-            <span style={C.lbl}>SESSIONS COMPLETED PER WEEK</span>
-            <div style={{ ...C.card, padding: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
-                {[...checkinHistory].reverse().map((c, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{ fontSize: 9, color: '#ff3d00', fontWeight: 900 }}>{c.sessions_completed}</div>
-                    <div style={{ width: '100%', background: '#ff3d00', borderRadius: '3px 3px 0 0', height: `${(c.sessions_completed / 14) * 60}px`, minHeight: 4 }} />
-                    <div style={{ fontSize: 7, color: '#555', fontWeight: 700 }}>{c.week?.split('-W')[1] ? 'W'+c.week.split('-W')[1] : ''}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Averages */}
-            <span style={C.lbl}>YOUR AVERAGES</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
-              {[
-                ['⚡', 'ENERGY', (checkinHistory.reduce((a,c)=>a+c.energy_level,0)/checkinHistory.length).toFixed(1)],
-                ['💪', 'CONFIDENCE', (checkinHistory.reduce((a,c)=>a+c.confidence_level,0)/checkinHistory.length).toFixed(1)],
-                ['🏃', 'SESSIONS', (checkinHistory.reduce((a,c)=>a+c.sessions_completed,0)/checkinHistory.length).toFixed(1)],
-              ].map(([icon, label, val]) => (
-                <div key={label} style={{ ...C.card, textAlign: 'center', padding: 12 }}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{icon}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#ff3d00' }}>{val}</div>
-                  <div style={{ fontSize: 7, color: '#555', letterSpacing: 2, fontWeight: 700, marginTop: 2 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Trend */}
-            {checkinHistory.length >= 2 && (() => {
-              const latest = checkinHistory[0]
-              const prev = checkinHistory[1]
-              const energyUp = latest.energy_level >= prev.energy_level
-              const confUp = latest.confidence_level >= prev.confidence_level
-              return (
-                <div style={{ ...C.card, borderColor: energyUp && confUp ? '#1a4a1a' : '#1e1e1e' }}>
-                  <span style={C.lbl}>WEEK OVER WEEK</span>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>
-                        {energyUp ? '⬆️' : '⬇️'} Energy {energyUp ? '+' : ''}{latest.energy_level - prev.energy_level}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#555' }}>vs last week</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>
-                        {confUp ? '⬆️' : '⬇️'} Confidence {confUp ? '+' : ''}{latest.confidence_level - prev.confidence_level}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#555' }}>vs last week</div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* Ball mastery progress */}
-            {ballHistory.length > 0 && <>
-              <span style={C.lbl}>BALL MASTERY SESSIONS</span>
-              <div style={{ ...C.card }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>Total Sessions</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#ff3d00' }}>{ballHistory.length}</div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>Total Reps</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#ff3d00' }}>{ballHistory.reduce((a,b)=>a+(b.total_reps||0),0)}</div>
-                </div>
-              </div>
-            </>}
-
-            {/* BADGES */}
-            {(() => {
-              const badges = [
-                { icon: '🦈', label: 'FIRST SHARK', desc: 'Submitted first action step', earned: submissions.length >= 1 },
-                { icon: '🔥', label: '7 DAY STREAK', desc: 'Logged 7 days in a row', earned: streak >= 7 },
-                { icon: '⚡', label: '30 DAY LEGEND', desc: 'Logged 30 days in a row', earned: streak >= 30 },
-                { icon: '⚽', label: 'BALL MASTER', desc: 'Logged 10 ball mastery sessions', earned: ballHistory.length >= 10 },
-                { icon: '📋', label: 'CHECK-IN PRO', desc: 'Completed 4 weekly check-ins', earned: checkinHistory.length >= 4 },
-                { icon: '💪', label: 'ACTION HERO', desc: 'Submitted 10 action steps', earned: submissions.length >= 10 },
-                { icon: '🏆', label: 'DSM ELITE', desc: 'Completed 8 weekly check-ins', earned: checkinHistory.length >= 8 },
-                { icon: '🧠', label: 'MINDSET ATHLETE', desc: 'Used all 4 mental tools', earned: submissions.some(s => s.shark_used && s.goldfish_used && s.selftalk_used && s.tuneout_used) },
-              ]
-              const earned = badges.filter(b => b.earned)
-              const locked = badges.filter(b => !b.earned)
-              return (
-                <>
-                  <span style={C.lbl}>🏅 YOUR BADGES ({earned.length}/{badges.length})</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                    {earned.map((b, i) => (
-                      <div key={i} style={{ ...C.card, borderColor: '#ff3d00', textAlign: 'center', padding: 14 }}>
-                        <div style={{ fontSize: 32, marginBottom: 6 }}>{b.icon}</div>
-                        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#ff3d00', marginBottom: 3 }}>{b.label}</div>
-                        <div style={{ fontSize: 9, color: '#555' }}>{b.desc}</div>
-                      </div>
-                    ))}
-                    {locked.map((b, i) => (
-                      <div key={i} style={{ ...C.card, textAlign: 'center', padding: 14, opacity: 0.35 }}>
-                        <div style={{ fontSize: 32, marginBottom: 6, filter: 'grayscale(1)' }}>🔒</div>
-                        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#555', marginBottom: 3 }}>{b.label}</div>
-                        <div style={{ fontSize: 9, color: '#444' }}>{b.desc}</div>
+                {/* ── OVERVIEW TAB ── */}
+                {progressTab==='overview' && <>
+                  {/* Stats summary */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
+                    {[
+                      ['✅', submissions.length, 'ACTIONS'],
+                      ['📋', checkinHistory.length, 'CHECK-INS'],
+                      ['⚽', ballHistory.length, 'BALL SESSIONS'],
+                    ].map(([icon,val,lbl])=>(
+                      <div key={lbl} style={{ ...C.card, textAlign:'center', padding:12 }}>
+                        <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
+                        <div style={{ fontSize:26, fontWeight:900, color:'#ff3d00' }}>{val}</div>
+                        <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{lbl}</div>
                       </div>
                     ))}
                   </div>
-                </>
-              )
-            })()}
 
-          </> : null}
+                  {/* Performance trend from action steps */}
+                  {submissions.length > 0 && (()=>{
+                    const avg = key => (submissions.reduce((a,s)=>a+(s[key]||0),0)/submissions.length).toFixed(1)
+                    return (<>
+                      <span style={C.lbl}>AVG PERFORMANCE RATINGS</span>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:6, marginBottom:14 }}>
+                        {[['conditioning','💪','COND'],['strength','🏋️','STR'],['technical','⚽','TECH'],['mental','🧠','MNT']].map(([k,icon,lbl])=>(
+                          <div key={k} style={{ ...C.card, textAlign:'center', padding:10 }}>
+                            <div style={{ fontSize:16 }}>{icon}</div>
+                            <div style={{ fontSize:22, fontWeight:900, color:'#ff3d00' }}>{avg(k)}</div>
+                            <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>)
+                  })()}
 
-          {/* Only show NO DATA if nothing at all is logged */}
-          {checkinHistory.length === 0 && submissions.length === 0 && (
-            <div style={{ ...C.card, textAlign: 'center', padding: 40 }}>
-              <div style={{ fontSize: 44, marginBottom: 12 }}>📈</div>
-              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>NO DATA YET</div>
-              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>Log your action steps and weekly check-ins to see your progress here. The more you log, the more you grow! 🦈</div>
-            </div>
-          )}
+                  {/* Energy & Confidence chart */}
+                  {checkinHistory.length > 0 && <>
+                    <span style={C.lbl}>ENERGY & CONFIDENCE OVER TIME</span>
+                    <div style={{ ...C.card, padding:16, marginBottom:14 }}>
+                      <div style={{ display:'flex', gap:14, marginBottom:10 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:'#ff3d00' }}/><span style={{ fontSize:9,color:'#aaa',fontWeight:700 }}>ENERGY</span></div>
+                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:'#ff8c00' }}/><span style={{ fontSize:9,color:'#aaa',fontWeight:700 }}>CONFIDENCE</span></div>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:100 }}>
+                        {[...checkinHistory].reverse().map((c,i)=>(
+                          <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                            <div style={{ width:'100%', display:'flex', gap:2, alignItems:'flex-end', height:80 }}>
+                              <div style={{ flex:1, background:'#ff3d00', borderRadius:'2px 2px 0 0', height:`${(c.energy_level/10)*100}%`, minHeight:3 }}/>
+                              <div style={{ flex:1, background:'#ff8c00', borderRadius:'2px 2px 0 0', height:`${(c.confidence_level/10)*100}%`, minHeight:3 }}/>
+                            </div>
+                            <div style={{ fontSize:6,color:'#555',fontWeight:700 }}>W{c.week?.split('-W')[1]||''}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Week over week */}
+                    {checkinHistory.length >= 2 && (()=>{
+                      const latest = checkinHistory[0], prev = checkinHistory[1]
+                      const eUp = latest.energy_level >= prev.energy_level
+                      const cUp = latest.confidence_level >= prev.confidence_level
+                      return (
+                        <div style={{ ...C.card, borderColor: eUp&&cUp?'#1a4a1a':'#1e1e1e', marginBottom:14 }}>
+                          <span style={C.lbl}>WEEK OVER WEEK TREND</span>
+                          <div style={{ display:'flex', gap:16 }}>
+                            <div><div style={{ fontSize:13,fontWeight:800 }}>{eUp?'⬆️':'⬇️'} Energy {eUp?'+':''}{latest.energy_level-prev.energy_level}</div><div style={{ fontSize:10,color:'#555' }}>vs last week</div></div>
+                            <div><div style={{ fontSize:13,fontWeight:800 }}>{cUp?'⬆️':'⬇️'} Confidence {cUp?'+':''}{latest.confidence_level-prev.confidence_level}</div><div style={{ fontSize:10,color:'#555' }}>vs last week</div></div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </>}
+
+                  {/* Mental tools overview */}
+                  {submissions.length > 0 && <>
+                    <span style={C.lbl}>MENTAL TOOLS USAGE</span>
+                    <div style={{ ...C.card, marginBottom:14 }}>
+                      {[['shark','🦈','Shark Mentality'],['goldfish','🐠','Goldfish Mentality'],['selftalk','💬','Self Talk'],['tuneout','🔇','Tune Out']].map(([k,icon,lbl])=>{
+                        const cnt = submissions.filter(s=>s[k+'_used']).length
+                        const pct = Math.round((cnt/submissions.length)*100)
+                        return (
+                          <div key={k} style={{ marginBottom:10 }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                              <span style={{ fontSize:12, fontWeight:700 }}>{icon} {lbl}</span>
+                              <span style={{ fontSize:12, fontWeight:900, color:'#ff3d00' }}>{pct}% <span style={{ fontSize:9,color:'#555' }}>({cnt}/{submissions.length})</span></span>
+                            </div>
+                            <div style={{ height:5, background:'#1e1e1e', borderRadius:3, overflow:'hidden' }}>
+                              <div style={{ height:'100%', width:`${pct}%`, background:'linear-gradient(90deg,#ff3d00,#ff6d00)', borderRadius:3 }}/>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>}
+
+                  {/* Badges */}
+                  {(()=>{
+                    const badges = [
+                      { icon:'🦈', label:'FIRST SHARK', desc:'Submitted first action step', earned:submissions.length>=1 },
+                      { icon:'🔥', label:'7 DAY STREAK', desc:'Logged 7 days in a row', earned:streak>=7 },
+                      { icon:'⚡', label:'30 DAY LEGEND', desc:'Logged 30 days in a row', earned:streak>=30 },
+                      { icon:'⚽', label:'BALL MASTER', desc:'Logged 10 ball mastery sessions', earned:ballHistory.length>=10 },
+                      { icon:'📋', label:'CHECK-IN PRO', desc:'Completed 4 weekly check-ins', earned:checkinHistory.length>=4 },
+                      { icon:'💪', label:'ACTION HERO', desc:'Submitted 10 action steps', earned:submissions.length>=10 },
+                      { icon:'🏆', label:'DSM ELITE', desc:'Completed 8 weekly check-ins', earned:checkinHistory.length>=8 },
+                      { icon:'🧠', label:'MINDSET ATHLETE', desc:'Used all 4 mental tools', earned:submissions.some(s=>s.shark_used&&s.goldfish_used&&s.selftalk_used&&s.tuneout_used) },
+                    ]
+                    const earned = badges.filter(b=>b.earned), locked = badges.filter(b=>!b.earned)
+                    return (<>
+                      <span style={C.lbl}>🏅 BADGES ({earned.length}/{badges.length})</span>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+                        {earned.map((b,i)=>(
+                          <div key={i} style={{ ...C.card, borderColor:'#ff3d00', textAlign:'center', padding:14 }}>
+                            <div style={{ fontSize:28, marginBottom:5 }}>{b.icon}</div>
+                            <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:'#ff3d00', marginBottom:3 }}>{b.label}</div>
+                            <div style={{ fontSize:8, color:'#555' }}>{b.desc}</div>
+                          </div>
+                        ))}
+                        {locked.map((b,i)=>(
+                          <div key={i} style={{ ...C.card, textAlign:'center', padding:14, opacity:0.3 }}>
+                            <div style={{ fontSize:28, marginBottom:5 }}>🔒</div>
+                            <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:'#555', marginBottom:3 }}>{b.label}</div>
+                            <div style={{ fontSize:8, color:'#444' }}>{b.desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>)
+                  })()}
+                </>}
+
+                {/* ── ACTION STEPS TAB ── */}
+                {progressTab==='actions' && <>
+                  {submissions.length === 0 ? (
+                    <div style={{ ...C.card, textAlign:'center', padding:30 }}>
+                      <div style={{ fontSize:13, color:'#555' }}>No action steps logged yet. Hit the Actions tab to log your first session! ✅</div>
+                    </div>
+                  ) : <>
+                    {/* Summary stats */}
+                    <div style={{ ...C.card, marginBottom:14 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+                        <div style={{ fontSize:13, fontWeight:800 }}>Total Sessions</div>
+                        <div style={{ fontSize:28, fontWeight:900, color:'#ff3d00' }}>{submissions.length}</div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:6 }}>
+                        {[['conditioning','💪','COND'],['strength','🏋️','STR'],['technical','⚽','TECH'],['mental','🧠','MNT']].map(([k,icon,lbl])=>{
+                          const avg = (submissions.reduce((a,s)=>a+(s[k]||0),0)/submissions.length).toFixed(1)
+                          return (
+                            <div key={k} style={{ background:'#0a0a0a', borderRadius:8, padding:'8px 4px', textAlign:'center' }}>
+                              <div style={{ fontSize:14 }}>{icon}</div>
+                              <div style={{ fontSize:18, fontWeight:900, color:'#ff3d00' }}>{avg}</div>
+                              <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl} AVG</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* All sessions list */}
+                    <span style={C.lbl}>ALL SESSIONS ({submissions.length})</span>
+                    {submissions.map((s,i)=>(
+                      <div key={i} style={{ ...C.card, marginBottom:8 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                          <div>
+                            <div style={{ fontSize:11, color:'#ff3d00', fontWeight:800, letterSpacing:1 }}>{s.date}</div>
+                            <div style={{ fontSize:9, color:'#555', fontWeight:700 }}>{s.day_of_week} · {s.session_type}</div>
+                          </div>
+                          <div style={{ fontSize:13, fontWeight:800 }}>{s.did_action_steps==='Yes'?'✅':'❌'}</div>
+                        </div>
+                        <div style={{ display:'flex', gap:10, marginBottom:8 }}>
+                          {['conditioning','strength','technical','mental'].map(k=>(
+                            <div key={k} style={{ textAlign:'center' }}>
+                              <div style={{ fontSize:18, fontWeight:900, color:'#ff3d00' }}>{s[k]}</div>
+                              <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
+                            </div>
+                          ))}
+                          <div style={{ textAlign:'center', marginLeft:'auto' }}>
+                            <div style={{ fontSize:18, fontWeight:900, color:'#ff8c00' }}>{((( s.conditioning||0)+(s.strength||0)+(s.technical||0)+(s.mental||0))/4).toFixed(1)}</div>
+                            <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>AVG</div>
+                          </div>
+                        </div>
+                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                          {[['shark','🦈'],['goldfish','🐠'],['selftalk','💬'],['tuneout','🔇']].map(([k,icon])=>s[k+'_used']&&(
+                            <span key={k} style={{ background:'#1a1a1a', border:'1px solid #ff3d00', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#ff3d00' }}>{icon} {k.toUpperCase()}</span>
+                          ))}
+                        </div>
+                        {(s.shark_comments||s.goldfish_comments||s.selftalk_comments||s.tuneout_comments) && (
+                          <div style={{ marginTop:8, fontSize:11, color:'#666', lineHeight:1.5 }}>
+                            {s.shark_comments && <div>🦈 {s.shark_comments}</div>}
+                            {s.goldfish_comments && <div>🐠 {s.goldfish_comments}</div>}
+                            {s.selftalk_comments && <div>💬 {s.selftalk_comments}</div>}
+                            {s.tuneout_comments && <div>🔇 {s.tuneout_comments}</div>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>}
+                </>}
+
+                {/* ── CHECK-INS TAB ── */}
+                {progressTab==='checkins' && <>
+                  {checkinHistory.length === 0 ? (
+                    <div style={{ ...C.card, textAlign:'center', padding:30 }}>
+                      <div style={{ fontSize:13, color:'#555' }}>No weekly check-ins yet. Complete your first one from the Weekly tab! 📋</div>
+                    </div>
+                  ) : <>
+                    {/* Summary averages */}
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
+                      {[
+                        ['⚡','ENERGY AVG',(checkinHistory.reduce((a,c)=>a+c.energy_level,0)/checkinHistory.length).toFixed(1)],
+                        ['💪','CONF AVG',(checkinHistory.reduce((a,c)=>a+c.confidence_level,0)/checkinHistory.length).toFixed(1)],
+                        ['🏃','SESSIONS AVG',(checkinHistory.reduce((a,c)=>a+c.sessions_completed,0)/checkinHistory.length).toFixed(1)],
+                      ].map(([icon,lbl,val])=>(
+                        <div key={lbl} style={{ ...C.card, textAlign:'center', padding:12 }}>
+                          <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
+                          <div style={{ fontSize:22, fontWeight:900, color:'#ff3d00' }}>{val}</div>
+                          <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{lbl}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* All check-ins list */}
+                    <span style={C.lbl}>ALL WEEKLY CHECK-INS ({checkinHistory.length})</span>
+                    {checkinHistory.map((c,i)=>(
+                      <div key={i} style={{ ...C.card, marginBottom:10 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                          <div style={{ fontSize:11, color:'#ff3d00', fontWeight:800, letterSpacing:1 }}>{c.week}</div>
+                          <div style={{ display:'flex', gap:12 }}>
+                            {[['⚡',c.energy_level],['💪',c.confidence_level],['🏃',c.sessions_completed]].map(([icon,val],j)=>(
+                              <div key={j} style={{ textAlign:'center' }}>
+                                <div style={{ fontSize:16, fontWeight:900, color:'#ff3d00' }}>{val}</div>
+                                <div style={{ fontSize:9 }}>{icon}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {c.biggest_win && <div style={{ fontSize:12, color:'#aaa', marginBottom:5 }}>🏆 <strong style={{ color:'#ccc' }}>Win:</strong> {c.biggest_win}</div>}
+                        {c.biggest_challenge && <div style={{ fontSize:12, color:'#aaa', marginBottom:5 }}>💥 <strong style={{ color:'#ccc' }}>Challenge:</strong> {c.biggest_challenge}</div>}
+                        {c.shark_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>🦈 {c.shark_moment}</div>}
+                        {c.goldfish_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>🐠 {c.goldfish_moment}</div>}
+                        {c.self_talk_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>💬 {c.self_talk_moment}</div>}
+                        {c.goal_next_week && <div style={{ fontSize:12, color:'#ff3d00', marginTop:6 }}>🎯 Next week: {c.goal_next_week}</div>}
+                        {c.message_to_coach && <div style={{ fontSize:11, color:'#888', fontStyle:'italic', marginTop:6, borderTop:'1px solid #1e1e1e', paddingTop:6 }}>"{c.message_to_coach}"</div>}
+                      </div>
+                    ))}
+                  </>}
+                </>}
+
+                {/* ── BALL MASTERY TAB ── */}
+                {progressTab==='ball' && <>
+                  {ballHistory.length === 0 ? (
+                    <div style={{ ...C.card, textAlign:'center', padding:30 }}>
+                      <div style={{ fontSize:13, color:'#555' }}>No ball mastery sessions yet. Log your first one from the Ball tab! ⚽</div>
+                    </div>
+                  ) : <>
+                    <div style={{ ...C.card, marginBottom:14 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                        <div style={{ fontSize:13, fontWeight:800 }}>Total Sessions</div>
+                        <div style={{ fontSize:28, fontWeight:900, color:'#ff3d00' }}>{ballHistory.length}</div>
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div style={{ fontSize:13, fontWeight:800 }}>Total Reps</div>
+                        <div style={{ fontSize:28, fontWeight:900, color:'#ff3d00' }}>{ballHistory.reduce((a,b)=>a+(b.total_reps||0),0)}</div>
+                      </div>
+                    </div>
+                    <span style={C.lbl}>ALL BALL MASTERY SESSIONS ({ballHistory.length})</span>
+                    {ballHistory.map((b,i)=>(
+                      <div key={i} style={{ ...C.card, marginBottom:8 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                          <div style={{ fontSize:11, color:'#ff3d00', fontWeight:800 }}>{b.date}</div>
+                          <div style={{ display:'flex', gap:12 }}>
+                            <div style={{ textAlign:'center' }}>
+                              <div style={{ fontSize:16, fontWeight:900, color:'#ff3d00' }}>{b.total_skills}</div>
+                              <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>SKILLS</div>
+                            </div>
+                            <div style={{ textAlign:'center' }}>
+                              <div style={{ fontSize:16, fontWeight:900, color:'#ff8c00' }}>{b.total_reps}</div>
+                              <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>REPS</div>
+                            </div>
+                          </div>
+                        </div>
+                        {b.notes && <div style={{ fontSize:11, color:'#666', marginTop:4 }}>{b.notes}</div>}
+                        {b.skills && (()=>{
+                          try {
+                            const sk = typeof b.skills==='string'?JSON.parse(b.skills):b.skills
+                            const practiced = Object.entries(sk).filter(([k,v])=>k!=='notes'&&v?.reps>0)
+                            if (!practiced.length) return null
+                            return (
+                              <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
+                                {practiced.map(([k,v])=>(
+                                  <span key={k} style={{ background:'#1a1a1a', border:'1px solid #2a2a2a', borderRadius:20, padding:'2px 8px', fontSize:9, color:'#aaa', fontWeight:700 }}>
+                                    {k.replace(/_/g,' ')} ×{v.reps}
+                                  </span>
+                                ))}
+                              </div>
+                            )
+                          } catch { return null }
+                        })()}
+                      </div>
+                    ))}
+                  </>}
+                </>}
+              </>
+            )
+          })()}
         </div>
       )}
 
