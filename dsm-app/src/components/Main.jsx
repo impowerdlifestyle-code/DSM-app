@@ -1,3 +1,58 @@
+/*
+ * ══════════════════════════════════════════════════════════════════
+ * DSM APP — Main-26.jsx (PATCHED VERSION)
+ * ══════════════════════════════════════════════════════════════════
+ *
+ * BUGS FIXED IN THIS VERSION (search "BUG FIX" to find each one):
+ *
+ *   1. loadAthleteProfile() — Action steps query was replaced with
+ *      Promise.resolve({data:[]}) so coach dashboard NEVER loaded
+ *      athlete action steps. Restored to getActionSteps(athlete.id).
+ *
+ *   2. Leaderboard — asCount was hardcoded to 0 instead of querying
+ *      the action_steps table. Restored the Supabase count query.
+ *      ⚠️  VERIFY: the table name may be 'action_steps' or something
+ *      else — check your supabase.js / Supabase dashboard to confirm.
+ *
+ *   3. Weekly check-in upsert — was missing onConflict parameter, so
+ *      Supabase didn't know how to handle duplicate (user_id, week).
+ *      Added { onConflict: 'user_id,week' }.
+ *      ⚠️  REQUIRES: a UNIQUE constraint on (user_id, week) in the
+ *      weekly_checkins table. Run this in Supabase SQL Editor if missing:
+ *
+ *        ALTER TABLE weekly_checkins
+ *          ADD CONSTRAINT weekly_checkins_user_week_unique
+ *          UNIQUE (user_id, week);
+ *
+ *   4. mindset_map upsert — same onConflict fix as #3.
+ *      ⚠️  REQUIRES: UNIQUE constraint on (user_id, week) in mindset_map:
+ *
+ *        ALTER TABLE mindset_map
+ *          ADD CONSTRAINT mindset_map_user_week_unique
+ *          UNIQUE (user_id, week);
+ *
+ * ──────────────────────────────────────────────────────────────────
+ * REMAINING ISSUES (not fixed here — need supabase.js or DB access):
+ *
+ *   A. Need to verify submitActionSteps() in lib/supabase.js is
+ *      correctly mapping form fields to database columns. If action
+ *      steps silently fail to save, the bug is in that function.
+ *
+ *   B. The action_steps table name used in the leaderboard query
+ *      (line ~648) may not match your actual table name. Check
+ *      supabase.js to see what table submitActionSteps() writes to.
+ *
+ *   C. ElevenLabs API key is exposed client-side via VITE_ env var.
+ *      Should be proxied through a Vercel serverless function.
+ *
+ *   D. The N+1 leaderboard query (one DB call per athlete) should
+ *      be replaced with a single aggregated query or Supabase RPC.
+ *
+ *   E. This 3300-line single-file component should be split into
+ *      separate component files per tab for maintainability.
+ * ══════════════════════════════════════════════════════════════════
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel } from '../lib/supabase.js'
 
@@ -603,7 +658,8 @@ export default function Main({ user }) {
 
   async function loadAthleteProfile(athlete) {
     const [as, ci, bm, sn, msgs] = await Promise.all([
-      Promise.resolve({data:[]}),
+      // BUG FIX: was Promise.resolve({data:[]}) — action steps were never being fetched
+      getActionSteps(athlete.id),
       supabase.from('weekly_checkins').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('ball_mastery').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('session_notes').select('*').eq('athlete_id', athlete.id).order('created_at', {ascending:false}).limit(20),
@@ -643,7 +699,8 @@ export default function Main({ user }) {
       // Enrich with counts
       const enriched = await Promise.all(lb.map(async (a) => {
         const { count: bmCount } = await supabase.from('ball_mastery').select('id', { count: 'exact' }).eq('user_id', a.id)
-        const asCount = 0
+        // BUG FIX: was hardcoded to 0 — action steps were never counted in leaderboard scores
+        const { count: asCount } = await supabase.from('action_steps').select('id', { count: 'exact' }).eq('user_id', a.id)
         const { count: ciCount } = await supabase.from('weekly_checkins').select('id', { count: 'exact' }).eq('user_id', a.id)
         const score = (a.streak||0)*3 + (bmCount||0)*2 + (asCount||0)*2 + (ciCount||0)*1
         return { ...a, bmCount: bmCount||0, asCount: asCount||0, ciCount: ciCount||0, score }
@@ -745,6 +802,8 @@ export default function Main({ user }) {
   const handleSubmitCheckin = async () => {
     if (!checkin.biggestWin) return alert('Fill in your biggest win!')
     setSavingCheckin(true)
+    // BUG FIX: Added onConflict so upsert knows to match on user_id+week
+    // NOTE FOR DEVELOPER: Ensure weekly_checkins table has a UNIQUE constraint on (user_id, week)
     const { error } = await supabase.from('weekly_checkins').upsert([{
       user_id: user.id, week: currentWeek,
       biggest_win: checkin.biggestWin,
@@ -763,7 +822,7 @@ export default function Main({ user }) {
       visualization_notes: checkin.visualizationNotes,
       did_morning_routine: checkin.didMorningRoutine,
       morning_routine_notes: checkin.morningRoutineNotes,
-    }])
+    }], { onConflict: 'user_id,week' })
     if (error) { alert('Error: ' + error.message); setSavingCheckin(false); return }
     setCheckinDone(true)
     setSavingCheckin(false)
@@ -2303,7 +2362,7 @@ export default function Main({ user }) {
                     user_id: user.id, week: currentWeek,
                     goal: map.goal, focus_area: map.focusArea,
                     weekly_win: map.weeklyWin, adjustment: map.adjustment, commitment: map.commitment
-                  }])
+                  }], { onConflict: 'user_id,week' })
                   setMapSaved(true)
                   alert('MAP saved! Stay locked in this week. 🦈')
                 }}>💾 SAVE MY MAP</button>
