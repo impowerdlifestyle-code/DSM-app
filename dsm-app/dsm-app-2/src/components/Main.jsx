@@ -1,55 +1,78 @@
 /*
  * ══════════════════════════════════════════════════════════════════
- * DSM APP — Main-26.jsx (PATCHED VERSION)
+ * DSM APP — Main-26.jsx (FULLY DEBUGGED VERSION)
  * ══════════════════════════════════════════════════════════════════
  *
- * BUGS FIXED IN THIS VERSION (search "BUG FIX" to find each one):
+ * BUGS FIXED (search "BUG FIX" for critical DB fixes):
  *
- *   1. loadAthleteProfile() — Action steps query was replaced with
- *      Promise.resolve({data:[]}) so coach dashboard NEVER loaded
- *      athlete action steps. Restored to getActionSteps(athlete.id).
+ *   1.  loadAthleteProfile() — Action steps query was replaced with
+ *       Promise.resolve({data:[]}) so coach dashboard NEVER loaded
+ *       athlete action steps. Restored to getActionSteps(athlete.id).
  *
- *   2. Leaderboard — asCount was hardcoded to 0 instead of querying
- *      the action_steps table. Restored the Supabase count query.
- *      ⚠️  VERIFY: the table name may be 'action_steps' or something
- *      else — check your supabase.js / Supabase dashboard to confirm.
+ *   2.  Leaderboard — asCount was hardcoded to 0 instead of querying
+ *       the action_steps table. Restored the Supabase count query.
+ *       ⚠️  VERIFY: table name may differ — check supabase.js.
  *
- *   3. Weekly check-in upsert — was missing onConflict parameter, so
- *      Supabase didn't know how to handle duplicate (user_id, week).
- *      Added { onConflict: 'user_id,week' }.
- *      ⚠️  REQUIRES: a UNIQUE constraint on (user_id, week) in the
- *      weekly_checkins table. Run this in Supabase SQL Editor if missing:
+ *   3.  Weekly check-in upsert — missing onConflict parameter.
+ *       Added { onConflict: 'user_id,week' }.
+ *       ⚠️  REQUIRES in Supabase SQL Editor:
+ *         ALTER TABLE weekly_checkins
+ *           ADD CONSTRAINT weekly_checkins_user_week_unique
+ *           UNIQUE (user_id, week);
  *
- *        ALTER TABLE weekly_checkins
- *          ADD CONSTRAINT weekly_checkins_user_week_unique
- *          UNIQUE (user_id, week);
+ *   4.  mindset_map upsert — same onConflict fix.
+ *       ⚠️  REQUIRES:
+ *         ALTER TABLE mindset_map
+ *           ADD CONSTRAINT mindset_map_user_week_unique
+ *           UNIQUE (user_id, week);
  *
- *   4. mindset_map upsert — same onConflict fix as #3.
- *      ⚠️  REQUIRES: UNIQUE constraint on (user_id, week) in mindset_map:
+ *   5.  downloadReport() called with `user` instead of `profile` —
+ *       the user object doesn't have full_name, so reports showed
+ *       wrong name. Fixed to pass `profile`.
  *
- *        ALTER TABLE mindset_map
- *          ADD CONSTRAINT mindset_map_user_week_unique
- *          UNIQUE (user_id, week);
+ *   6.  loadUserData() had zero error handling — one failed query
+ *       would silently crash the whole app. Wrapped in try/catch.
+ *       Also added null check on profile result.
+ *
+ *   7.  loadAthleteProfile() — same missing error handling. Wrapped.
+ *
+ *   8.  Micro reps progress bar counted ALL gameDayChecked items
+ *       including gameday checklist entries, inflating the count.
+ *       Fixed to only count drill-specific IDs.
+ *
+ *   9.  Coach dashboard typo: "COACH VALENTINOIEW" → "COACH VALENTINO VIEW"
+ *
+ *   10. Duplicate matchMsg for "how are you" — second block was dead
+ *       code (first match always wins). Removed.
+ *
+ *   11. Chat send button (→) called sendChat() with no arguments,
+ *       so clicking it did nothing. Fixed to read from input ref.
+ *
+ *   12. Removed dead code: handleSubmitForm (replaced by ActionForm),
+ *       form state, savingForm state, setF, microRepDone state.
+ *
+ *   13. Added error handling to: mistake resets, MAP save, community
+ *       post creation. All previously had no error feedback.
  *
  * ──────────────────────────────────────────────────────────────────
- * REMAINING ISSUES (not fixed here — need supabase.js or DB access):
+ * REMAINING ISSUES (need supabase.js or DB access to fix):
  *
- *   A. Need to verify submitActionSteps() in lib/supabase.js is
- *      correctly mapping form fields to database columns. If action
- *      steps silently fail to save, the bug is in that function.
+ *   A. Verify submitActionSteps() in lib/supabase.js maps form
+ *      fields to the correct database columns.
  *
- *   B. The action_steps table name used in the leaderboard query
- *      (line ~648) may not match your actual table name. Check
- *      supabase.js to see what table submitActionSteps() writes to.
+ *   B. The action_steps table name in leaderboard query (~line 700)
+ *      may not match your actual table. Check supabase.js.
  *
  *   C. ElevenLabs API key is exposed client-side via VITE_ env var.
  *      Should be proxied through a Vercel serverless function.
  *
- *   D. The N+1 leaderboard query (one DB call per athlete) should
- *      be replaced with a single aggregated query or Supabase RPC.
+ *   D. N+1 leaderboard query fires one DB call per athlete.
+ *      Replace with aggregated query or Supabase RPC.
  *
- *   E. This 3300-line single-file component should be split into
- *      separate component files per tab for maintainability.
+ *   E. Supabase Site URL must be set to your live domain
+ *      (dsm-app-beta.vercel.app) not localhost:3000.
+ *
+ *   F. This 3300-line file should be split into separate components.
  * ══════════════════════════════════════════════════════════════════
  */
 
@@ -387,11 +410,6 @@ function getCoachVResponse(input) {
     "Simple: Ball Mastery every day. Action Steps after every practice and game. Weekly Check-In once a week. Do those three things consistently and the mental and technical growth will follow. Trust the process.",
   ])
 
-  if (matchMsg(msg, ['how are you','how r you','you good','whats up'])) return randomMsg([
-    "Doing great! Locked in and ready to help. What do you need?",
-    "All good! What is on your mind?",
-  ])
-
   if (matchMsg(msg, ['idk','not sure','confused'])) return randomMsg([
     "That is okay -- confusion means you are learning something new. Tell me exactly what you are working on and I will break it down.",
     "Let us figure it out together. Give me more details about what is going on and we will work through it.",
@@ -596,7 +614,6 @@ export default function Main({ user }) {
   const [streak, setStreak] = useState(0)
   const [profile, setProfile] = useState(null)
   const [habits, setHabits] = useState(HABITS_LIST.map(h => ({ label: h, days: [false,false,false,false,false,false,false] })))
-  const [form, setForm] = useState(emptyForm)
   const [submissions, setSubmissions] = useState([])
   const [messages, setMessages] = useState([{ role: 'assistant', content: "Hey! I'm Coach Valentino 🔥 Ask me anything about mindset, match prep, or your training!" }])
   const [chatInput, setChatInput] = useState('')
@@ -608,7 +625,6 @@ export default function Main({ user }) {
   const [selectedAthlete, setSelectedAthlete] = useState(null)
   const [allAthletes, setAllAthletes] = useState([])
   const [allSubmissions, setAllSubmissions] = useState([])
-  const [savingForm, setSavingForm] = useState(false)
   const [ballMastery, setBallMastery] = useState({})
   const [ballHistory, setBallHistory] = useState([])
   const [savingBall, setSavingBall] = useState(false)
@@ -621,7 +637,6 @@ export default function Main({ user }) {
   const [athleteProfileTab, setAthleteProfileTab] = useState('overview')
   const [coachFilter, setCoachFilter] = useState('all')
   const [athleteProgramWeek, setAthleteProgramWeek] = useState(1)
-  const [microRepDone, setMicroRepDone] = useState(false)
   const [gameDayChecked, setGameDayChecked] = useState({})
   const [mistakes, setMistakes] = useState([])
   const [newMistake, setNewMistake] = useState({ situation:'', reset:'', tool:'' })
@@ -657,6 +672,7 @@ export default function Main({ user }) {
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function loadAthleteProfile(athlete) {
+    try {
     const [as, ci, bm, sn, msgs] = await Promise.all([
       // BUG FIX: was Promise.resolve({data:[]}) — action steps were never being fetched
       getActionSteps(athlete.id),
@@ -671,10 +687,13 @@ export default function Main({ user }) {
     setSessionNotes(sn.data || [])
     setAthleteMessages(msgs.data || [])
     setAthleteProfileTab('overview')
+    } catch(err) { console.error('loadAthleteProfile error:', err) }
   }
 
   async function loadUserData() {
+    try {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    if (!p) { console.error('No profile found for user'); return }
     setProfile(p)
     setStreak(p?.streak || 0)
     const { data: hd } = await getHabits(user.id)
@@ -742,6 +761,7 @@ export default function Main({ user }) {
       const { data: ab } = await supabase.from('ball_mastery').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(50)
       setAllBallMastery(ab || [])
     }
+    } catch(err) { console.error('loadUserData error:', err) }
   }
 
   const toggleHabit = async (hi, di) => {
@@ -750,7 +770,6 @@ export default function Main({ user }) {
     await saveHabits(user.id, updated)
   }
 
-  const setF = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const setCI = (k, v) => setCheckin(p => ({ ...p, [k]: v }))
 
   const completedHabits = habits.reduce((a, h) => a + h.days.filter(Boolean).length, 0)
@@ -766,18 +785,6 @@ export default function Main({ user }) {
   const handleLogDay = async () => {
     const { streak: ns } = await logDay(user.id)
     setStreak(ns || streak + 1)
-  }
-
-  const handleSubmitForm = async () => {
-    if (!form.playerName) return alert('Enter your name!')
-    if (!form.didSteps) return alert('Did you do the action steps?')
-    setSavingForm(true)
-    await submitActionSteps(form, user.id)
-    const { data: updated } = await getActionSteps(user.id)
-    setSubmissions(updated || [])
-    setForm(emptyForm)
-    setSavingForm(false)
-    setTab('home')
   }
 
   const handleSaveBall = async () => {
@@ -1361,14 +1368,8 @@ export default function Main({ user }) {
     { id: 'home', icon: '⚡', label: 'HOME' },
     { id: 'actions', icon: '✅', label: 'ACTIONS' },
     { id: 'ball', icon: '⚽', label: 'BALL' },
-    { id: 'weekly', icon: '📋', label: 'WEEKLY' },
-    { id: 'tracker', icon: '📊', label: 'TRACK' },
+    { id: 'bot', icon: '🤖', label: 'COACH V' },
     { id: 'progress', icon: '📈', label: 'PROGRESS' },
-    { id: 'mental', icon: '🧠', label: 'MENTAL' },
-    { id: 'bot', icon: '🤖', label: 'COACH VALENTINO' },
-    { id: 'community', icon: '👥', label: 'COMMUNITY' },
-    { id: 'compete', icon: '🏆', label: 'COMPETE' },
-    { id: 'parents', icon: '👨‍👩‍👧', label: 'PARENTS' },
     ...(isCoach ? [{ id: 'dashboard', icon: '🏆', label: 'COACH' }] : []),
   ]
 
@@ -1458,7 +1459,16 @@ export default function Main({ user }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-            {[['🤖','COACH VALENTINO','AI coach','bot'],['🎥','COURSE','Video lessons','course']].map(([icon,label,sub,t]) => (
+            {[
+              ['🤖','COACH VALENTINO','AI mindset coach','bot'],
+              ['📋','WEEKLY CHECK-IN','Reflect & lock in','weekly'],
+              ['📊','HABIT TRACKER','Track your streak','tracker'],
+              ['🧠','MENTAL TOOLS','Train your mind','mental'],
+              ['👥','COMMUNITY','Connect with team','community'],
+              ['🏆','COMPETE','Challenges','compete'],
+              ['👨‍👩‍👧','PARENTS','Best practices guide','parents'],
+              ['🎥','COURSE','Video lessons','course'],
+            ].map(([icon,label,sub,t]) => (
               <button key={t} onClick={() => setTab(t)} style={{ background:'#111',border:'1px solid #1e1e1e',borderRadius:12,padding:'14px 12px',textAlign:'left',cursor:'pointer' }}>
                 <div style={{ fontSize:22,marginBottom:5 }}>{icon}</div>
                 <div style={{ fontSize:11,fontWeight:800,letterSpacing:2,color:'#fff' }}>{label}</div>
@@ -1817,7 +1827,7 @@ export default function Main({ user }) {
 
           {/* PDF DOWNLOAD */}
           {(submissions.length > 0 || checkinHistory.length > 0) && (
-            <button onClick={()=>downloadReport(user, submissions, checkinHistory, ballHistory)}
+            <button onClick={()=>downloadReport(profile, submissions, checkinHistory, ballHistory)}
               style={{ ...C.btn, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
               📥 SAVE PROGRESS REPORT PDF
             </button>
@@ -2216,10 +2226,10 @@ export default function Main({ user }) {
                 ))}
                 <div style={{ ...C.card, textAlign:'center', padding:20 }}>
                   <div style={{ fontSize:13, color:'#555', marginBottom:8 }}>
-                    {Object.values(gameDayChecked).filter(Boolean).length}/{drills.length} completed today
+                    {['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length}/{drills.length} completed today
                   </div>
                   <div style={{ height:6, background:'#1e1e1e', borderRadius:3, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${(Object.values(gameDayChecked).filter(Boolean).length/drills.length)*100}%`, background:'linear-gradient(90deg,#ff3d00,#ff6d00)', borderRadius:3 }} />
+                    <div style={{ height:'100%', width:`${(['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length/drills.length)*100}%`, background:'linear-gradient(90deg,#ff3d00,#ff6d00)', borderRadius:3 }} />
                   </div>
                 </div>
               </>
@@ -2295,7 +2305,8 @@ export default function Main({ user }) {
                   value={newMistake.reset} onChange={e => setNewMistake(p => ({...p, reset: e.target.value}))} />
                 <button style={C.btn} onClick={async () => {
                   if (!newMistake.situation || !newMistake.reset) return alert('Fill in what happened and how you reset!')
-                  await supabase.from('mistake_resets').insert([{ user_id: user.id, situation: newMistake.situation, reset_description: newMistake.reset, tool_used: newMistake.tool, date: today }])
+                  const { error } = await supabase.from('mistake_resets').insert([{ user_id: user.id, situation: newMistake.situation, reset_description: newMistake.reset, tool_used: newMistake.tool, date: today }])
+                  if (error) { alert('Error saving: ' + error.message); return }
                   const { data: mr } = await supabase.from('mistake_resets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
                   if (mr) setMistakes(mr)
                   setNewMistake({ situation:'', reset:'', tool:'' })
@@ -2358,11 +2369,12 @@ export default function Main({ user }) {
                   value={map.commitment} onChange={e => setMap(p => ({...p, commitment: e.target.value}))} />
                 <button style={C.btn} onClick={async () => {
                   if (!map.goal) return alert('Set your mental goal first!')
-                  await supabase.from('mindset_map').upsert([{
+                  const { error } = await supabase.from('mindset_map').upsert([{
                     user_id: user.id, week: currentWeek,
                     goal: map.goal, focus_area: map.focusArea,
                     weekly_win: map.weeklyWin, adjustment: map.adjustment, commitment: map.commitment
                   }], { onConflict: 'user_id,week' })
+                  if (error) { alert('Error saving: ' + error.message); return }
                   setMapSaved(true)
                   alert('MAP saved! Stay locked in this week. 🦈')
                 }}>💾 SAVE MY MAP</button>
@@ -2441,7 +2453,7 @@ export default function Main({ user }) {
                 ref={el => { if(el) chatInputRef.current = el }}
                 onKeyDown={e=>{if(e.key==='Enter'){const v=e.target.value;e.target.value='';sendChat(v)}}} />
               {!voiceMode&&<button onClick={startVoice} style={{ background:'#1e1e1e',border:'none',borderRadius:10,padding:'0 13px',fontSize:17,cursor:'pointer' }}>🎙️</button>}
-              <button onClick={()=>sendChat()} style={{ background:'#ff3d00',border:'none',borderRadius:10,padding:'0 15px',fontSize:17,cursor:'pointer' }}>→</button>
+              <button onClick={()=>{const v=chatInputRef.current?.value||'';if(chatInputRef.current)chatInputRef.current.value='';sendChat(v)}} style={{ background:'#ff3d00',border:'none',borderRadius:10,padding:'0 15px',fontSize:17,cursor:'pointer' }}>→</button>
             </div>
           </div>
         </div>
@@ -2645,12 +2657,13 @@ export default function Main({ user }) {
                   onClick={async()=>{
                     if(!newPost.content.trim()) return
                     setSavingPost(true)
-                    await supabase.from('community_posts').insert([{
+                    const { error } = await supabase.from('community_posts').insert([{
                       user_id: user.id,
                       type: newPost.type,
                       content: newPost.content,
                       community: communityTab,
                     }])
+                    if (error) { alert('Error posting: ' + error.message); setSavingPost(false); return }
                     setNewPost({type:'win',content:''})
                     const { data: posts } = await supabase
                       .from('community_posts')
@@ -2765,7 +2778,7 @@ export default function Main({ user }) {
       {tab === 'dashboard' && isCoach && !selectedAthlete && (
         <div style={C.scroll} className="fade">
           <div style={C.title}>DASHBOARD</div>
-          <div style={C.sub}>COACH VALENTINOIEW</div>
+          <div style={C.sub}>COACH VALENTINO VIEW</div>
           <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14 }}>
             {[[allAthletes.filter(a=>a.role==='athlete').length,'ATHLETES'],[allSubmissions.length,'ACTION STEPS'],[allCheckins.length,'CHECK-INS']].map(([n,l],i)=>(
               <div key={i} style={{ ...C.card,textAlign:'center',padding:12 }}>
