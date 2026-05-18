@@ -1,13 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
-import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE } from '../../data/gamification.js'
+import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS } from '../../data/gamification.js'
+import { getXpTotals, getEarnedBadges, levelFromXp } from '../../lib/supabase.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 import BadgeTile from '../widgets/BadgeTile.jsx'
 
 export default function PlayerTab({ profile, user }) {
-  const [tab, setTab] = useState('overview') // overview | badges | squad | tree
-  const xpPct = Math.min(100, Math.round((PLAYER.xp / PLAYER.xpToNext) * 100))
+  const [tab, setTab] = useState('overview')
+  const [xpTotal, setXpTotal] = useState(0)
+  const [earned, setEarned] = useState([])
+  const [mentalScore, setMentalScore] = useState(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    let alive = true
+    ;(async () => {
+      const [{ total }, { data: badges }] = await Promise.all([
+        getXpTotals(user.id),
+        getEarnedBadges(user.id),
+      ])
+      if (!alive) return
+      setXpTotal(total || 0)
+      setEarned(badges || [])
+      // mental score = (1 - share of feedback that's thumbs-down) * 100. Keep null until coach memory is consulted.
+      setMentalScore(profile?.mental_score ?? null)
+    })()
+    return () => { alive = false }
+  }, [user?.id, profile?.mental_score])
+
+  const lvl = useMemo(() => levelFromXp(xpTotal, LEVELS), [xpTotal])
+  const xpPct = Math.min(100, Math.round((xpTotal / lvl.xpToNext) * 100))
   const name = profile?.full_name || user?.email?.split('@')[0] || 'Athlete'
+  const earnedCount = earned.length
 
   return (
     <div className="fade" style={{ padding: '14px 22px 56px' }}>
@@ -34,7 +58,7 @@ export default function PlayerTab({ profile, user }) {
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>
-                {PLAYER.levelTitle} · Season {romanize(SEASON.number)}
+                {lvl.title} · Season {romanize(SEASON.number)}
               </div>
               <h1 style={{
                 fontFamily: t.font.athletic, fontSize: 38, fontWeight: 400,
@@ -58,16 +82,16 @@ export default function PlayerTab({ profile, user }) {
               }}>
                 <span style={{
                   fontFamily: t.font.athletic, fontSize: 26, color: t.color.text, letterSpacing: 1,
-                }}>LV {PLAYER.level}</span>
+                }}>LV {lvl.level}</span>
                 <span style={{ fontSize: 10, letterSpacing: 1.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>
-                  → LV {PLAYER.level + 1}
+                  → LV {lvl.level + 1}
                 </span>
               </div>
               <span style={{
                 fontSize: 11, color: t.color.textDim, letterSpacing: 1, fontWeight: 600,
                 fontVariantNumeric: 'tabular-nums',
               }}>
-                {PLAYER.xp.toLocaleString()} / {PLAYER.xpToNext.toLocaleString()} XP
+                {xpTotal.toLocaleString()} / {lvl.xpToNext.toLocaleString()} XP
               </span>
             </div>
             <div style={{
@@ -88,10 +112,10 @@ export default function PlayerTab({ profile, user }) {
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
           }}>
             {[
-              ['Coins',     PLAYER.coins,           '◊'],
-              ['Mental',    PLAYER.mentalScore,    '+'],
-              ['Streak',    '12d',                  '●'],
-              ['Badges',    BADGES.filter(b => b.earned).length, '★'],
+              ['Coins',     Math.floor(xpTotal / 25),  '◊'],
+              ['Mental',    mentalScore ?? '—',         '+'],
+              ['Streak',    `${profile?.streak ?? 0}d`, '●'],
+              ['Badges',    earnedCount,                '★'],
             ].map(([label, val, glyph]) => (
               <div key={label} style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: 9, letterSpacing: 2, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
@@ -134,7 +158,7 @@ export default function PlayerTab({ profile, user }) {
       </div>
 
       {tab === 'overview' && <Overview />}
-      {tab === 'badges'   && <BadgesView />}
+      {tab === 'badges'   && <BadgesView earnedFromDb={earned} />}
       {tab === 'squad'    && <SquadView />}
       {tab === 'skills'     && <SkillTreeView />}
     </div>
@@ -258,9 +282,11 @@ function Overview() {
 
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function BadgesView() {
-  const earned = BADGES.filter(b => b.earned)
-  const locked = BADGES.filter(b => !b.earned)
+function BadgesView({ earnedFromDb }) {
+  const earnedSet = new Set((earnedFromDb || []).map(e => e.badge_id))
+  const merged = BADGES.map(b => earnedSet.has(b.id) ? { ...b, earned: true } : { ...b, earned: b.earned && false })
+  const earned = merged.filter(b => b.earned)
+  const locked = merged.filter(b => !b.earned)
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>

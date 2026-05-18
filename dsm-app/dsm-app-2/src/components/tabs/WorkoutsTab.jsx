@@ -1,12 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
 import { EXERCISES, EX_CATEGORIES, TODAYS_WORKOUT, PR_HISTORY } from '../../data/exercises.js'
+import { finishWorkout, getRecentWorkouts, awardXp } from '../../lib/supabase.js'
+import { XP_TABLE } from '../../data/gamification.js'
 import RestTimer from '../widgets/RestTimer.jsx'
 import TiltCard from '../widgets/TiltCard.jsx'
 
 const findEx = (id) => EXERCISES.find(e => e.id === id)
 
-export default function WorkoutsTab() {
+export default function WorkoutsTab({ user }) {
   const [view, setView] = useState('today') // today | library | history
 
   return (
@@ -15,9 +17,9 @@ export default function WorkoutsTab() {
         <ViewPicker view={view} setView={setView} />
       </div>
       <div style={{ padding: '14px 22px 56px' }}>
-        {view === 'today' && <TodayView />}
+        {view === 'today' && <TodayView user={user} />}
         {view === 'library' && <LibraryView />}
-        {view === 'history' && <HistoryView />}
+        {view === 'history' && <HistoryView user={user} />}
       </div>
     </div>
   )
@@ -57,7 +59,7 @@ function ViewPicker({ view, setView }) {
    TODAY — workout tracker with set logging
    ────────────────────────────────────────────────────────────────────────── */
 
-function TodayView() {
+function TodayView({ user }) {
   const w = TODAYS_WORKOUT
   const [logs, setLogs] = useState(() =>
     w.exercises.map(ex => ({
@@ -67,10 +69,49 @@ function TodayView() {
   )
   const [restFor, setRestFor] = useState(null) // { exIdx, restSeconds }
   const [showVideoUpload, setShowVideoUpload] = useState(null) // exIdx
+  const [startTime] = useState(() => Date.now())
+  const [finishing, setFinishing] = useState(false)
+  const [savedMsg, setSavedMsg] = useState(null)
 
   const totalSets = logs.reduce((a, l) => a + l.sets.length, 0)
   const doneSets = logs.reduce((a, l) => a + l.sets.filter(s => s.done).length, 0)
   const pct = Math.round((doneSets / totalSets) * 100)
+
+  async function onFinish() {
+    if (!user?.id) { alert('Sign in to save workouts.'); return }
+    if (doneSets === 0) {
+      if (!confirm('No sets marked complete. Save anyway?')) return
+    }
+    setFinishing(true)
+    const flatSets = logs.flatMap(l =>
+      l.sets.map(s => ({
+        exerciseId: l.exId,
+        exerciseName: findEx(l.exId)?.name,
+        weight: s.weight || null,
+        reps: s.reps || null,
+        rpe: s.rpe || null,
+        completed: s.done,
+      }))
+    )
+    const { data, error } = await finishWorkout(user.id, {
+      name: w.name,
+      workoutId: w.id,
+      block: w.block,
+      durationSeconds: Math.round((Date.now() - startTime) / 1000),
+      sets: flatSets,
+    })
+    if (error) {
+      setFinishing(false)
+      alert(`Save failed: ${error.message}`)
+      return
+    }
+    if (doneSets > 0) {
+      await awardXp(user.id, 'workout', XP_TABLE.workoutComplete, data?.id, w.name)
+    }
+    setFinishing(false)
+    setSavedMsg(`Saved · +${doneSets > 0 ? XP_TABLE.workoutComplete : 0} XP`)
+    setTimeout(() => setSavedMsg(null), 3000)
+  }
 
   return (
     <>
@@ -262,15 +303,24 @@ function TodayView() {
         )
       })}
 
-      <button style={{
+      <button onClick={onFinish} disabled={finishing} style={{
         marginTop: 10, width: '100%',
         background: t.color.ember, color: t.color.bg,
         border: 'none', borderRadius: 12,
         padding: '15px 20px',
         fontSize: 13, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
-        cursor: 'pointer', fontFamily: t.font.sans,
+        cursor: finishing ? 'wait' : 'pointer', fontFamily: t.font.sans,
         boxShadow: t.shadow.ember,
-      }}>Finish workout</button>
+        opacity: finishing ? 0.7 : 1,
+      }}>{finishing ? 'Saving…' : 'Finish workout'}</button>
+      {savedMsg && (
+        <div style={{
+          marginTop: 10, padding: '10px 14px',
+          background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.35)',
+          borderRadius: 10, color: '#4ade80',
+          fontSize: 12, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', textAlign: 'center',
+        }}>{savedMsg}</div>
+      )}
     </>
   )
 }
@@ -402,7 +452,21 @@ function LibraryView() {
    HISTORY — recent PRs + completed workouts
    ────────────────────────────────────────────────────────────────────────── */
 
-function HistoryView() {
+function HistoryView({ user }) {
+  const [recent, setRecent] = useState([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return }
+    let alive = true
+    ;(async () => {
+      const { data } = await getRecentWorkouts(user.id, 10)
+      if (!alive) return
+      setRecent(data || [])
+      setLoading(false)
+    })()
+    return () => { alive = false }
+  }, [user?.id])
+
   return (
     <>
       <span style={{
@@ -448,32 +512,38 @@ function HistoryView() {
         <span style={{
           fontSize: 10, letterSpacing: 2.4, color: t.color.textMute,
           fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 10,
-        }}>Last 7 sessions</span>
-        {[
-          ['2026-05-17', 'Upper + Conditioning', 'Completed · 48 min'],
-          ['2026-05-15', 'Lower Power',           'Completed · 51 min'],
-          ['2026-05-13', 'Speed Day',             'Completed · 38 min'],
-          ['2026-05-11', 'Lower Strength',        'Completed · 56 min'],
-          ['2026-05-10', 'Recovery + Mobility',   'Completed · 28 min'],
-          ['2026-05-08', 'Upper Strength',        'Completed · 49 min'],
-          ['2026-05-06', 'Conditioning',          'Completed · 32 min'],
-        ].map(([date, name, meta], i) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 14,
-            padding: '12px 4px',
-            borderBottom: i < 6 ? `1px solid ${t.color.line}` : 'none',
-          }}>
-            <div style={{
-              fontFamily: t.font.display, fontSize: 18, color: t.color.textDim,
-              minWidth: 38, fontVariantNumeric: 'tabular-nums',
-            }}>{date.slice(8)}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: t.color.text, fontWeight: 600 }}>{name}</div>
-              <div style={{ fontSize: 11, color: t.color.textMute, marginTop: 2 }}>{meta}</div>
-            </div>
-            <div style={{ color: t.color.textMute, fontSize: 12 }}>→</div>
+        }}>Last sessions {recent.length > 0 ? `· ${recent.length}` : ''}</span>
+        {loading && (
+          <div style={{ color: t.color.textMute, fontSize: 12, padding: 14 }}>Loading…</div>
+        )}
+        {!loading && recent.length === 0 && (
+          <div style={{ color: t.color.textMute, fontSize: 12, padding: 14, fontStyle: 'italic' }}>
+            No workouts logged yet. Finish one to see it here.
           </div>
-        ))}
+        )}
+        {recent.map((r, i) => {
+          const d = new Date(r.completed_at)
+          const dateStr = d.toISOString().slice(0, 10)
+          const mins = r.duration_seconds ? Math.round(r.duration_seconds / 60) : null
+          const meta = `${r.done_sets || 0}/${r.total_sets || 0} sets${mins ? ` · ${mins} min` : ''}`
+          return (
+            <div key={r.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '12px 4px',
+              borderBottom: i < recent.length - 1 ? `1px solid ${t.color.line}` : 'none',
+            }}>
+              <div style={{
+                fontFamily: t.font.display, fontSize: 18, color: t.color.textDim,
+                minWidth: 38, fontVariantNumeric: 'tabular-nums',
+              }}>{dateStr.slice(8)}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: t.color.text, fontWeight: 600 }}>{r.name}</div>
+                <div style={{ fontSize: 11, color: t.color.textMute, marginTop: 2 }}>{meta}</div>
+              </div>
+              <div style={{ color: t.color.textMute, fontSize: 12 }}>→</div>
+            </div>
+          )
+        })}
       </div>
     </>
   )

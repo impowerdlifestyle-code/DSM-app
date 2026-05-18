@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
-import { saveVoiceJournal } from '../../lib/supabase.js'
+import { saveVoiceJournal, awardXp } from '../../lib/supabase.js'
+import { XP_TABLE } from '../../data/gamification.js'
 
 /**
  * VoiceJournal — UI shell for voice-to-AI mindset journaling.
@@ -105,13 +106,14 @@ export default function VoiceJournal({ user }) {
   async function saveEntry() {
     if (!user?.id || !result) return
     try {
-      await saveVoiceJournal(user.id, {
+      const { data } = await saveVoiceJournal(user.id, {
         transcript: result.transcript,
         cues: result.cues,
         sentiment: result.sentiment,
         aiNote: result.aiNote,
         duration_seconds: elapsed,
       })
+      await awardXp(user.id, 'voice_journal', XP_TABLE.voiceJournal, data?.id, result.sentiment)
       setSaved(true)
     } catch (err) {
       console.error('[VoiceJournal save failed]', err)

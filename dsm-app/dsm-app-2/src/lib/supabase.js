@@ -279,10 +279,276 @@ export async function getAthleteStateDigest(userId) {
   }
 }
 
+// ─── XP / GAMIFICATION ───────────────────────────────────────
+export async function awardXp(userId, source, xp, refId = null, note = null) {
+  if (!userId || !xp) return { data: null, error: new Error('userId and xp required') }
+  const { data, error } = await supabase
+    .from('xp_log')
+    .insert([{ user_id: userId, source, xp, ref_id: refId, note }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getXpTotals(userId) {
+  const { data, error } = await supabase
+    .from('xp_log')
+    .select('xp, source, created_at')
+    .eq('user_id', userId)
+  const total = (data || []).reduce((a, r) => a + (r.xp || 0), 0)
+  return { total, rows: data || [], error }
+}
+
+export async function earnBadge(userId, badgeId) {
+  const { data, error } = await supabase
+    .from('badges_earned')
+    .upsert({ user_id: userId, badge_id: badgeId }, { onConflict: 'user_id,badge_id' })
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getEarnedBadges(userId) {
+  const { data, error } = await supabase
+    .from('badges_earned')
+    .select('badge_id, earned_at')
+    .eq('user_id', userId)
+  return { data: data || [], error }
+}
+
+export async function getDailyQuests(userId) {
+  const today = new Date().toISOString().slice(0, 10)
+  const { data, error } = await supabase
+    .from('daily_quests')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('date', today)
+  return { data: data || [], error }
+}
+
+export async function upsertQuestProgress(userId, questId, progress, target) {
+  const today = new Date().toISOString().slice(0, 10)
+  const completed = progress >= target
+  const { data, error } = await supabase
+    .from('daily_quests')
+    .upsert(
+      { user_id: userId, quest_id: questId, date: today, progress, target, completed, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,quest_id,date' }
+    )
+    .select()
+    .single()
+  return { data, error }
+}
+
+// ─── WORKOUTS ────────────────────────────────────────────────
+export async function finishWorkout(userId, workout) {
+  const { name, workoutId, block, durationSeconds, sets } = workout
+  const totalSets = sets.length
+  const doneSets = sets.filter(s => s.completed).length
+  const { data: logRow, error: logErr } = await supabase
+    .from('workouts_log')
+    .insert([{
+      user_id: userId,
+      workout_id: workoutId || null,
+      name,
+      block: block || null,
+      duration_seconds: durationSeconds || null,
+      total_sets: totalSets,
+      done_sets: doneSets,
+    }])
+    .select()
+    .single()
+  if (logErr) return { data: null, error: logErr }
+
+  const setRows = sets.map((s, i) => ({
+    user_id: userId,
+    workout_log_id: logRow.id,
+    exercise_id: s.exerciseId,
+    exercise_name: s.exerciseName || null,
+    set_index: i,
+    weight: s.weight ?? null,
+    reps: s.reps ?? null,
+    rpe: s.rpe ?? null,
+    completed: !!s.completed,
+  }))
+  if (setRows.length) {
+    const { error: setErr } = await supabase.from('workout_sets').insert(setRows)
+    if (setErr) return { data: logRow, error: setErr }
+  }
+  return { data: logRow, error: null }
+}
+
+export async function getRecentWorkouts(userId, limit = 10) {
+  const { data, error } = await supabase
+    .from('workouts_log')
+    .select('*')
+    .eq('user_id', userId)
+    .order('completed_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+// ─── NUTRITION ───────────────────────────────────────────────
+export async function logFood(userId, entry) {
+  const { data, error } = await supabase
+    .from('food_log')
+    .insert([{
+      user_id: userId,
+      food_id: entry.foodId || null,
+      food_name: entry.name,
+      serving: entry.serving || null,
+      cal: entry.cal,
+      protein_g: entry.p,
+      carbs_g: entry.c,
+      fat_g: entry.f,
+      qty: entry.qty || 1,
+      meal: entry.meal || null,
+    }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function removeFood(userId, id) {
+  const { data, error } = await supabase
+    .from('food_log')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+  return { data, error }
+}
+
+export async function getFoodLogToday(userId) {
+  const start = new Date(); start.setHours(0, 0, 0, 0)
+  const { data, error } = await supabase
+    .from('food_log')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('logged_at', start.toISOString())
+    .order('logged_at', { ascending: true })
+  return { data: data || [], error }
+}
+
+export async function getFoodLogRange(userId, days = 7) {
+  const start = new Date(); start.setDate(start.getDate() - (days - 1)); start.setHours(0, 0, 0, 0)
+  const { data, error } = await supabase
+    .from('food_log')
+    .select('cal, logged_at')
+    .eq('user_id', userId)
+    .gte('logged_at', start.toISOString())
+  return { data: data || [], error }
+}
+
+export async function getNutritionTargets(userId) {
+  const { data, error } = await supabase
+    .from('nutrition_targets')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function setNutritionTargets(userId, targets) {
+  const { data, error } = await supabase
+    .from('nutrition_targets')
+    .upsert({
+      user_id: userId,
+      cal: targets.cal,
+      protein_g: targets.p,
+      carbs_g: targets.c,
+      fat_g: targets.f,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+    .select()
+    .single()
+  return { data, error }
+}
+
+// ─── BODY STATS ──────────────────────────────────────────────
+export async function logBodyStats(userId, stats) {
+  const { data, error } = await supabase
+    .from('body_stats')
+    .insert([{
+      user_id: userId,
+      weight: stats.weight ?? null,
+      body_fat: stats.bodyFat ?? null,
+      chest: stats.chest ?? null,
+      waist: stats.waist ?? null,
+      arm: stats.arm ?? null,
+      thigh: stats.thigh ?? null,
+      resting_hr: stats.resting_hr ?? null,
+      vo2: stats.vo2 ?? null,
+    }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getBodyStatsHistory(userId, limit = 24) {
+  const { data, error } = await supabase
+    .from('body_stats')
+    .select('*')
+    .eq('user_id', userId)
+    .order('measured_at', { ascending: true })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+// ─── PROGRESS PHOTOS (Supabase Storage) ──────────────────────
+export async function uploadProgressPhoto(userId, angle, file) {
+  const ts = Date.now()
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `${userId}/${angle.toLowerCase()}-${ts}.${ext}`
+  const { error: upErr } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: false })
+  if (upErr) return { data: null, error: upErr }
+  const { data, error } = await supabase
+    .from('progress_photos')
+    .insert([{ user_id: userId, angle, storage_path: path }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getProgressPhotos(userId, limit = 12) {
+  const { data, error } = await supabase
+    .from('progress_photos')
+    .select('*')
+    .eq('user_id', userId)
+    .order('taken_at', { ascending: false })
+    .limit(limit)
+  if (error) return { data: [], error }
+  const withUrls = await Promise.all((data || []).map(async (p) => {
+    const { data: signed } = await supabase.storage
+      .from('progress-photos')
+      .createSignedUrl(p.storage_path, 3600)
+    return { ...p, url: signed?.signedUrl || null }
+  }))
+  return { data: withUrls, error: null }
+}
+
 // ─── UTILS ───────────────────────────────────────────────────
 function getWeekKey() {
   const now = new Date()
   const start = new Date(now.getFullYear(), 0, 1)
   const week = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7)
   return `${now.getFullYear()}-W${week}`
+}
+
+// Derive level from total XP using the LEVELS table in gamification.js
+export function levelFromXp(totalXp, levels) {
+  if (!levels?.length) return { level: 1, title: 'Rookie', tier: 'Rookie', xp: totalXp, xpToNext: 2500 }
+  const sorted = [...levels].sort((a, b) => a.threshold - b.threshold)
+  let cur = sorted[0]
+  for (const l of sorted) {
+    if (totalXp >= l.threshold) cur = l
+    else break
+  }
+  const next = sorted.find(l => l.threshold > totalXp)
+  return {
+    level: cur.lvl,
+    title: cur.title,
+    tier: cur.tier,
+    xp: totalXp,
+    xpToNext: next ? next.threshold : cur.threshold + 10000,
+  }
 }

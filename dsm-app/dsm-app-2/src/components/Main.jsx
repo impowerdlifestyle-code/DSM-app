@@ -79,7 +79,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
-  rateMessage, getRecentFeedback, getAthleteStateDigest } from '../lib/supabase.js'
+  rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp } from '../lib/supabase.js'
 import {
   QUOTES, HABITS_LIST, DAYS, WEEKDAYS, BALL_MASTERY_SKILLS, PARENT_GUIDE, RESOURCES,
   AI_SYSTEM, emptyCheckin,
@@ -106,7 +106,7 @@ import CourseTab from './tabs/CourseTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
-import { PLAYER, DAILY_QUESTS } from '../data/gamification.js'
+import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
 
 export default function Main({ user }) {
@@ -307,11 +307,12 @@ export default function Main({ user }) {
       notes: ballMastery.notes || '',
     }])
     if (error) { alert('Error: ' + error.message); setSavingBall(false); return }
+    await awardXp(user.id, 'ball_mastery', XP_TABLE.ballMastery, null, `${practiced.length} skills`)
     const { data: bd } = await supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14)
     setBallHistory(bd || [])
     setBallMastery({})
     setSavingBall(false)
-    alert('✅ Ball mastery logged!')
+    alert(`✅ Ball mastery logged · +${XP_TABLE.ballMastery} XP`)
   }
 
   const handleSubmitCheckin = async () => {
@@ -339,11 +340,12 @@ export default function Main({ user }) {
       morning_routine_notes: checkin.morningRoutineNotes,
     }], { onConflict: 'user_id,week' })
     if (error) { alert('Error: ' + error.message); setSavingCheckin(false); return }
+    await awardXp(user.id, 'weekly_checkin', XP_TABLE.weeklyCheckin, null, currentWeek)
     setCheckinDone(true)
     setSavingCheckin(false)
     const { data: cd } = await supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
     setCheckinHistory(cd || [])
-    alert('✅ Weekly check-in submitted to Coach Valentino!')
+    alert(`✅ Weekly check-in submitted · +${XP_TABLE.weeklyCheckin} XP`)
   }
 
   const sendChat = async (msgOverride) => {
@@ -863,7 +865,7 @@ export default function Main({ user }) {
       {tab === 'workouts' && (
         <div>
           <ActionsSubNav active="workouts" setTab={setTab} />
-          <WorkoutsTab />
+          <WorkoutsTab user={user} />
         </div>
       )}
 
@@ -871,7 +873,7 @@ export default function Main({ user }) {
       {tab === 'nutrition' && (
         <div>
           <BodySubNav active="nutrition" setTab={setTab} />
-          <NutritionTab />
+          <NutritionTab user={user} />
         </div>
       )}
 
@@ -882,7 +884,7 @@ export default function Main({ user }) {
       {tab === 'body' && (
         <div>
           <BodySubNav active="body" setTab={setTab} />
-          <BodyStatsTab />
+          <BodyStatsTab user={user} />
         </div>
       )}
 
