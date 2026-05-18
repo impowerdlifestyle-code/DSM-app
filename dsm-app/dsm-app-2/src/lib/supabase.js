@@ -147,6 +147,138 @@ export async function updateAccessLevel(userId, level) {
   return { data, error }
 }
 
+// ─── CHAT HISTORY (Coach V) ──────────────────────────────────
+export async function saveChatMessage(userId, role, content) {
+  const { data, error } = await supabase
+    .from('chat_history')
+    .insert([{ user_id: userId, role, content }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getChatHistory(userId, limit = 50) {
+  const { data, error } = await supabase
+    .from('chat_history')
+    .select('id, role, content, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+// ─── COACH MEMORY (per-user persistent summary) ──────────────
+export async function getCoachMemory(userId) {
+  const { data, error } = await supabase
+    .from('coach_memory')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function bumpMessagesSinceConsolidation(userId) {
+  // Increments counter by 1 — wrapped in upsert so first row creation is safe
+  const { data: existing } = await supabase
+    .from('coach_memory')
+    .select('messages_since_consolidation')
+    .eq('user_id', userId)
+    .maybeSingle()
+  const current = existing?.messages_since_consolidation ?? 0
+  const { data, error } = await supabase
+    .from('coach_memory')
+    .upsert({
+      user_id: userId,
+      messages_since_consolidation: current + 1,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+  return { data, error, newCount: current + 1 }
+}
+
+export async function consolidateCoachMemory(userId, newSummary) {
+  const { data, error } = await supabase
+    .from('coach_memory')
+    .upsert({
+      user_id: userId,
+      athlete_summary: newSummary,
+      messages_since_consolidation: 0,
+      last_consolidated: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+  return { data, error }
+}
+
+// ─── MESSAGE FEEDBACK (👍/👎) ────────────────────────────────
+export async function rateMessage(userId, messageId, rating, note = null) {
+  const { data, error } = await supabase
+    .from('message_feedback')
+    .upsert(
+      { user_id: userId, message_id: messageId, rating, note },
+      { onConflict: 'user_id,message_id' }
+    )
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getRecentFeedback(userId, limit = 20) {
+  const { data, error } = await supabase
+    .from('message_feedback')
+    .select('message_id, rating, note, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+// ─── VOICE JOURNAL ───────────────────────────────────────────
+export async function saveVoiceJournal(userId, entry) {
+  const { data, error } = await supabase
+    .from('voice_journal')
+    .insert([{
+      user_id: userId,
+      title: entry.title || null,
+      transcript: entry.transcript,
+      cues: entry.cues || [],
+      sentiment: entry.sentiment || null,
+      ai_note: entry.aiNote || entry.ai_note || null,
+      duration_seconds: entry.duration || entry.duration_seconds || null,
+    }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getVoiceJournalHistory(userId, limit = 20) {
+  const { data, error } = await supabase
+    .from('voice_journal')
+    .select('*')
+    .eq('user_id', userId)
+    .order('recorded_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+// ─── ATHLETE STATE DIGEST (for AI prompt injection) ──────────
+// Pulls a snapshot of everything Coach V should know about this athlete
+// right now: profile, recent actions, ball mastery, last check-in, voice journal.
+export async function getAthleteStateDigest(userId) {
+  const [profileRes, actionRes, ballRes, checkinRes, journalRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('action_steps').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
+    supabase.from('ball_mastery').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
+    supabase.from('weekly_checkins').select('*').eq('user_id', userId).order('week', { ascending: false }).limit(1),
+    supabase.from('voice_journal').select('*').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(3),
+  ])
+  return {
+    profile: profileRes.data,
+    recentActionSteps: actionRes.data || [],
+    recentBallMastery: ballRes.data || [],
+    lastCheckin: checkinRes.data?.[0],
+    recentJournal: journalRes.data || [],
+  }
+}
+
 // ─── UTILS ───────────────────────────────────────────────────
 function getWeekKey() {
   const now = new Date()

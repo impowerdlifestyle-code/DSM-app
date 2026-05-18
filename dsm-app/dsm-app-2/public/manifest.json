@@ -1,0 +1,20 @@
+{
+  "name": "DSM — DiLorenzo Soccer Mindset",
+  "short_name": "DSM",
+  "description": "Train your mind, dominate the pitch. Elite soccer mindset program.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["sports", "health", "fitness", "education"],
+  "icons": [
+    {
+      "src": "/dsm-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

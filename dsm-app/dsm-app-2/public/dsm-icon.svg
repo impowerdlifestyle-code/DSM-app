@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <rect width="180" height="180" rx="38" fill="#000"/>
+  <rect x="0.5" y="0.5" width="179" height="179" rx="37.5" fill="none" stroke="url(#shine)" stroke-width="1"/>
+  <defs>
+    <linearGradient id="shine" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.6"/>
+      <stop offset="0.5" stop-color="#a8a8b0" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <!-- Bebas-style "D" -->
+  <text x="90" y="135"
+        text-anchor="middle"
+        font-family="'Bebas Neue', 'Arial Narrow', sans-serif"
+        font-size="138"
+        font-weight="400"
+        letter-spacing="3"
+        fill="#fafafa">D</text>
+  <!-- Underline accent -->
+  <rect x="60" y="148" width="60" height="2" fill="#fafafa" opacity="0.5"/>
+</svg>

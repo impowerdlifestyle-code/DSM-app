@@ -2,13 +2,151 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DSM - DiLorenzo Soccer Mindset</title>
-    <meta name="description" content="DiLorenzo Soccer Mindset — Train your mind, dominate the pitch." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
+    <meta name="theme-color" content="#000000" />
+    <title>DSM — DiLorenzo Soccer Mindset</title>
+    <meta name="description" content="DiLorenzo Soccer Mindset — train your mind, dominate the pitch." />
+
+    <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/dsm-icon.svg" />
+
+    <!-- PWA / iOS standalone install -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="application-name" content="DSM" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DSM" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="/dsm-icon.svg" />
+    <link rel="mask-icon" href="/dsm-icon.svg" color="#fafafa" />
+
+    <!-- Open Graph / sharing -->
+    <meta property="og:title" content="DSM — DiLorenzo Soccer Mindset" />
+    <meta property="og:description" content="Train your mind, dominate the pitch." />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap"
+    />
+
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body, #root { background: #0a0a0a; min-height: 100vh; width: 100%; }
+      html, body, #root { background: #000; min-height: 100vh; min-height: 100dvh; width: 100%; color-scheme: dark; }
+      body {
+        font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: 'ss01', 'cv11';
+        /* iOS Safari: prevent overscroll bounce revealing white */
+        overscroll-behavior: none;
+      }
+      ::-webkit-scrollbar { width: 0; }
+      ::selection { background: #fafafa; color: #000; }
+
+      /* iOS inputs: 16px+ font prevents zoom-on-focus.
+         Apply globally so every input/textarea/select inherits. */
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+
+      /* ─────────────────────────────────────────────────────────────────
+         MOBILE (default): no grass, pure black, safe-area aware
+         ───────────────────────────────────────────────────────────────── */
+
+      /* ─────────────────────────────────────────────────────────────────
+         DESKTOP & LANDSCAPE iPad (≥768px): phone-on-pitch view with
+         animated black + silver grass background
+         ───────────────────────────────────────────────────────────────── */
+      @media (min-width: 768px) {
+        html, body {
+          background-color: #050507;
+          background-image:
+            radial-gradient(ellipse at center, transparent 14%, rgba(0,0,0,0.62) 60%, rgba(0,0,0,0.95) 100%),
+            repeating-linear-gradient(
+              105deg,
+              rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 70px,
+              rgba(200,200,210,0.075) 70px, rgba(200,200,210,0.075) 140px
+            ),
+            url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.75 0 0 0 0 0.78 0 0 0 0 0.82 0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+            url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='460' height='460'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.4' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.88 0 0 0 0 0.92 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E"),
+            linear-gradient(180deg, rgba(180,200,220,0.04) 0%, transparent 35%, rgba(0,0,0,0.30) 100%),
+            linear-gradient(165deg, #030305 0%, #0a0a0e 50%, #020203 100%);
+          background-attachment: fixed;
+          background-size:
+            100% 100%, 200px 200px, 320px 320px, 460px 460px, 100% 100%, 100% 100%;
+          background-repeat: no-repeat, repeat, repeat, repeat, no-repeat, no-repeat;
+          background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+          animation: pitchDrift 70s linear infinite;
+          position: relative;
+        }
+
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          background:
+            linear-gradient(
+              115deg,
+              transparent 38%,
+              rgba(220,225,235,0.04) 47%,
+              rgba(240,245,250,0.10) 50%,
+              rgba(220,225,235,0.04) 53%,
+              transparent 62%
+            );
+          background-size: 250% 250%;
+          background-position: -120% -120%;
+          animation: pitchSheen 16s linear infinite;
+        }
+
+        body > #root { position: relative; z-index: 1; }
+
+        @keyframes pitchDrift {
+          0%   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+          100% { background-position: 0 0, 280px -75px, 320px 320px, -460px 230px, 0 0, 0 0; }
+        }
+
+        @keyframes pitchSheen {
+          0%   { background-position: -120% -120%; }
+          100% { background-position: 220% 220%; }
+        }
+
+        /* Phone frame */
+        #root > div {
+          margin: 28px auto !important;
+          border-radius: 36px !important;
+          overflow: hidden;
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.10) inset,
+            0 50px 120px -20px rgba(0,0,0,0.92),
+            0 0 0 1px rgba(255,255,255,0.12),
+            0 0 120px -10px rgba(220,225,235,0.08);
+          min-height: calc(100vh - 56px);
+          min-height: calc(100dvh - 56px);
+          padding-bottom: 0 !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          html, body { animation: none !important; }
+          body::before { animation: none !important; }
+        }
+      }
+
+      /* ─────────────────────────────────────────────────────────────────
+         NATIVE iPAD / LARGE TABLET (≥1024px): wider 720px column,
+         keep the grass + frame aesthetic but use more of the screen
+         ───────────────────────────────────────────────────────────────── */
+      @media (min-width: 1024px) {
+        #root > div {
+          max-width: 720px !important;
+        }
+      }
     </style>
   </head>
   <body>
