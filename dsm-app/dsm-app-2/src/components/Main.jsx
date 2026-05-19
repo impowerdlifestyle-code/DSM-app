@@ -80,13 +80,14 @@ import React, { useState, useEffect, useRef } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
   rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
-  getOrSeedDailyQuests, bumpQuest, evaluateBadges } from '../lib/supabase.js'
+  getOrSeedDailyQuests, bumpQuest, evaluateBadges,
+  getActiveNudge, createNudge, dismissNudge, markNudgeActedOn, nudgeCreatedToday } from '../lib/supabase.js'
 import {
   QUOTES, HABITS_LIST, DAYS, WEEKDAYS, BALL_MASTERY_SKILLS, PARENT_GUIDE, RESOURCES,
   AI_SYSTEM, emptyCheckin,
 } from '../lib/constants.js'
 import { getWeekKey } from '../lib/dates.js'
-import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate } from '../lib/coachV.js'
+import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate, checkForNudge } from '../lib/coachV.js'
 import { speakText as elevenSpeak } from '../lib/elevenlabs.js'
 import { downloadReport } from '../lib/reports.js'
 import ActionForm from './ActionForm.jsx'
@@ -104,6 +105,9 @@ import BodyStatsTab from './tabs/BodyStatsTab.jsx'
 import InboxTab from './tabs/InboxTab.jsx'
 import PlayerTab from './tabs/PlayerTab.jsx'
 import CourseTab from './tabs/CourseTab.jsx'
+import SquadTab from './tabs/SquadTab.jsx'
+import LockerRoomTab from './tabs/LockerRoomTab.jsx'
+import AdminTab from './tabs/AdminTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
@@ -123,6 +127,8 @@ export default function Main({ user }) {
   const [chatLoading, setChatLoading] = useState(false)
   const [quests, setQuests] = useState(DAILY_QUESTS)
   const [badgeNotice, setBadgeNotice] = useState(null)
+  const [activeNudge, setActiveNudge] = useState(null)
+  const nudgeCheckedRef = useRef(false)
   const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -220,6 +226,18 @@ export default function Main({ user }) {
         setMessages(chRows.map(r => ({ id: r.id, role: r.role, content: r.content })))
       }
     } catch (err) { console.warn('[chat history load failed]', err) }
+
+    // Load active nudge + trigger nudge check at most once per app open
+    try {
+      const { data: nudge } = await getActiveNudge(user.id)
+      if (nudge) {
+        setActiveNudge(nudge)
+      } else if (!nudgeCheckedRef.current) {
+        nudgeCheckedRef.current = true
+        const already = await nudgeCreatedToday(user.id)
+        if (!already) maybeCreateNudge()
+      }
+    } catch (err) { console.warn('[nudge load failed]', err) }
     // Load leaderboard
     const { data: lb } = await supabase
       .from('profiles')
@@ -275,6 +293,52 @@ export default function Main({ user }) {
       setAllBallMastery(ab || [])
     }
     } catch(err) { console.error('loadUserData error:', err) }
+  }
+
+  async function maybeCreateNudge() {
+    try {
+      const digest = await getAthleteStateDigest(user.id)
+      const now = Date.now()
+      const daysSince = (iso) => iso ? Math.floor((now - new Date(iso).getTime()) / 86400000) : 999
+      const lastAction = digest.recentActionSteps?.[0]
+      const lastBall = digest.recentBallMastery?.[0]
+      const lastJournal = digest.recentJournal?.[0]
+      const nudgeContext = {
+        streak: digest.profile?.streak || 0,
+        daysSinceActionStep: lastAction ? daysSince(lastAction.created_at || lastAction.date) : null,
+        daysSinceBallMastery: lastBall ? daysSince(lastBall.created_at || lastBall.date) : null,
+        daysSinceJournal: lastJournal ? daysSince(lastJournal.recorded_at) : null,
+        lastJournalSentiment: lastJournal?.sentiment || null,
+        lastWeeklyMental: digest.lastCheckin?.mental || null,
+        lastWeeklyStruggles: digest.lastCheckin?.struggles || null,
+        accessLevel: digest.profile?.access_level || 'trial',
+        nowIso: new Date().toISOString(),
+      }
+      const result = await checkForNudge({ nudgeContext })
+      if (result?.send && result.message) {
+        const { data: nudge } = await createNudge(user.id, {
+          kind: result.kind || 'streak-risk',
+          message: result.message,
+          signal: result.signal || '',
+        })
+        if (nudge) setActiveNudge(nudge)
+      }
+    } catch (err) {
+      console.warn('[nudge check failed]', err)
+    }
+  }
+
+  async function handleDismissNudge() {
+    if (!activeNudge?.id) return
+    setActiveNudge(null)
+    await dismissNudge(activeNudge.id)
+  }
+
+  async function handleActOnNudge() {
+    if (!activeNudge?.id) return
+    await markNudgeActedOn(activeNudge.id)
+    setActiveNudge(null)
+    setTab('bot')
   }
 
   const toggleHabit = async (hi, di) => {
@@ -411,6 +475,7 @@ export default function Main({ user }) {
         messages: apiMessages,
         athleteContext: stateDigest,
         memorySummary: memRes?.data?.athlete_summary || '',
+        memoryThemes: memRes?.data?.themes || null,
       })
 
       // 6) Persist assistant reply
@@ -442,12 +507,13 @@ export default function Main({ user }) {
         try {
           const { data: fbRows } = await getRecentFeedback(user.id, 20)
           const { data: histRows } = await getChatHistory(user.id, 30)
-          const { summary } = await consolidateMemory({
+          const { summary, themes } = await consolidateMemory({
             messages: histRows || [],
             memorySummary: memRes?.data?.athlete_summary || '',
+            memoryThemes: memRes?.data?.themes || null,
             recentFeedback: fbRows || [],
           })
-          if (summary) await consolidateCoachMemory(user.id, summary)
+          if (summary || themes) await consolidateCoachMemory(user.id, summary || memRes?.data?.athlete_summary || '', themes || null)
         } catch (err) {
           console.warn('[coach memory consolidation failed]', err)
         }
@@ -531,8 +597,10 @@ export default function Main({ user }) {
     { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental'] },
     { id: 'nutrition', label: 'Body',   matches: ['nutrition', 'body'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
-    { id: 'player',    label: 'Player', matches: ['player', 'community', 'compete'] },
-    ...(isCoach ? [{ id: 'dashboard', label: 'Mode' }] : []),
+    { id: 'locker',    label: 'Locker' },
+    { id: 'squad',     label: 'Squad' },
+    ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
 
   return (
@@ -615,6 +683,47 @@ export default function Main({ user }) {
           }}>Out</button>
         </div>
       </div>
+
+      {/* ── COACH NUDGE BANNER (shows above home content when active) ── */}
+      {activeNudge && tab === 'home' && (
+        <div style={{
+          margin: '14px 22px 0', padding: 14,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid #36363c',
+          borderRadius: 14,
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: '#000', border: '1px solid #36363c',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Cormorant Garamond', serif", fontSize: 17,
+            fontStyle: 'italic', color: '#fafafa', fontWeight: 500, flexShrink: 0,
+          }}>V</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.6, color: '#4a4a4a', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
+              Coach V · {activeNudge.kind}
+            </div>
+            <div style={{ fontSize: 13, color: '#fafafa', lineHeight: 1.45, marginBottom: 10 }}>
+              {activeNudge.message}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleActOnNudge} style={{
+                padding: '6px 12px', background: '#fafafa', color: '#000',
+                border: 'none', borderRadius: 8,
+                fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>Reply</button>
+              <button onClick={handleDismissNudge} style={{
+                padding: '6px 12px', background: 'transparent', color: '#8e8e8e',
+                border: '1px solid #36363c', borderRadius: 8,
+                fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── HOME ── */}
       {tab === 'home' && (() => {
@@ -2080,6 +2189,15 @@ export default function Main({ user }) {
 
       {/* ── PARENTS ── */}
       {tab === 'parents' && <ParentsTab />}
+
+      {/* ── SQUAD ── */}
+      {tab === 'squad' && <SquadTab user={user} />}
+
+      {/* ── LOCKER ROOM (athlete-facing) ── */}
+      {tab === 'locker' && <LockerRoomTab user={user} adminView={false} />}
+
+      {/* ── ADMIN DASHBOARD ── */}
+      {tab === 'admin' && isAdmin && <AdminTab user={user} />}
 
       {/* ── COACH DASHBOARD ── */}
       {tab === 'dashboard' && isCoach && !selectedAthlete && (

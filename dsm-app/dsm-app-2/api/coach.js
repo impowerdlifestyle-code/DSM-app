@@ -2,10 +2,12 @@
 // Holds ANTHROPIC_API_KEY server-side. Client never sees the key.
 //
 // Body shape:
-//   { action: 'chat' | 'consolidate' | 'analyze_journal',
+//   { action: 'chat' | 'consolidate' | 'analyze_journal' | 'nudge_check' | 'extract_actions',
 //     messages: [{role, content}],
 //     athleteContext: { ... digest ... },
-//     memorySummary: '...' }
+//     memorySummary: '...',
+//     memoryThemes: { mindset, technique, recovery, goals },
+//     transcript: '...' }
 
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -23,16 +25,28 @@ Your voice:
 - Never preachy. Never long-winded. 2–4 sentences max unless they explicitly ask for more.
 - No emoji spam. One per message is fine if it serves the cue (🦈 for Shark, 🐠 for Goldfish, 🔇 for Tune-Out).
 
-You are continuous — you remember this athlete across sessions and improve every conversation. When state context is provided, treat it as ground truth about their current habits, mental score, and recent activity. When a long-term memory summary is provided, treat it as your accumulated understanding of who they are.
+You are continuous — you remember this athlete across sessions and improve every conversation. When state context is provided, treat it as ground truth about their current habits, mental score, and recent activity. When memory themes are provided, treat them as your accumulated understanding of who they are across MINDSET, TECHNIQUE, RECOVERY, and GOALS.
 `.trim()
 
-function buildSystemPrompt({ athleteContext, memorySummary }) {
+function renderThemes(themes) {
+  if (!themes || typeof themes !== 'object') return ''
+  const order = ['mindset', 'technique', 'recovery', 'goals']
+  const lines = order
+    .filter(k => themes[k] && String(themes[k]).trim())
+    .map(k => `${k.toUpperCase()}: ${themes[k]}`)
+  return lines.join('\n')
+}
+
+function buildSystemPrompt({ athleteContext, memorySummary, memoryThemes }) {
   const ctx = athleteContext || {}
   const memory = (memorySummary || '').trim()
+  const themesBlock = renderThemes(memoryThemes)
 
   let prompt = COACH_PERSONA + '\n\n'
 
-  if (memory) {
+  if (themesBlock) {
+    prompt += `─── WHAT YOU REMEMBER (THEMES) ───\n${themesBlock}\n\n`
+  } else if (memory) {
     prompt += `─── WHAT YOU REMEMBER ABOUT THIS ATHLETE ───\n${memory}\n\n`
   }
 
@@ -69,16 +83,18 @@ function buildSystemPrompt({ athleteContext, memorySummary }) {
 }
 
 const MEMORY_CONSOLIDATION_PROMPT = `
-You are Coach Valentino synthesizing what you've learned about this athlete from your recent conversations + any feedback they gave you.
+You are Coach Valentino synthesizing what you've learned about this athlete from recent conversations + feedback.
 
-Output a fresh "athlete summary" (max 200 words) that you'll use as your long-term memory of them. Include:
-- Cue words they respond to (or don't)
-- Recurring patterns you've noticed (mental, physical, situational)
-- Their growth edges (what they're working on, where they're stuck)
-- Their voice / tone (how they talk to you)
-- Any feedback from the athlete: messages they marked 👎 mean adjust your style; 👍 means double down.
+Output STRICT JSON with these keys (each value a single concise paragraph, max ~60 words, plain text — no markdown):
+{
+  "summary":  "...",   // 200-word athlete summary (your overall mental model of them)
+  "mindset":  "...",   // mental-game patterns, cue words, what works/doesn't
+  "technique":"...",   // technical/soccer specifics — first touch, shooting, decision-making
+  "recovery": "...",   // sleep, fatigue, body state, mood swings, recovery patterns
+  "goals":    "..."    // what they're explicitly working toward, current focus areas
+}
 
-Be concrete. No generic fluff. This is YOUR memory of THIS athlete — write like a private note to yourself.
+Adjust based on feedback: messages marked 👎 mean shift style; 👍 means double down. Concrete over generic. Write like a private note to yourself. No prose outside the JSON.
 `.trim()
 
 const JOURNAL_ANALYSIS_PROMPT = `
@@ -88,9 +104,38 @@ Given the transcript, extract:
 1. Up to 4 mental cues mentioned or implied (e.g., "Shark Mentality", "Tune-out", "First touch", "Bounce-back")
 2. A single sentiment tag from: locked-in, fired-up, neutral, recovering, flat, anxious, frustrated
 3. A short (2-3 sentence) coach note responding to what they said
+4. Up to 3 concrete action steps the athlete should take this week (each ≤12 words, imperative voice). Only suggest actions if the transcript surfaces something actionable — empty array if not.
 
-Return STRICT JSON with keys: cues (string[]), sentiment (string), aiNote (string). No prose outside the JSON.
+Return STRICT JSON with keys: cues (string[]), sentiment (string), aiNote (string), proposedActions (string[]). No prose outside the JSON.
 `.trim()
+
+const NUDGE_PROMPT = `
+You are Coach Valentino scanning an athlete's recent state to decide whether they need a proactive nudge right now.
+
+Inputs include: streak, days since last action-step log, days since last ball-mastery session, days since last voice journal, last weekly check-in mood, last journal sentiment.
+
+Decide ONE of:
+- Send a nudge — if there's a real signal (streak at risk, multi-day slip, mood low, plateau, or a notable win to celebrate).
+- Stay quiet — if nothing's surfaced or you already nudged today.
+
+Return STRICT JSON: { "send": boolean, "kind": "missed-workout"|"low-mood"|"plateau"|"streak-risk"|"win"|"none", "message": "...", "signal": "..." }
+
+Message rules: 1-2 sentences, athlete voice, no preaching, name what you noticed (specific). Signal: 1 line describing the trigger. No prose outside the JSON.
+`.trim()
+
+const EXTRACT_ACTIONS_PROMPT = `
+You are Coach Valentino. Given a chat transcript or journal entry, extract up to 3 concrete action steps for this athlete this week.
+
+Each step: imperative, specific, ≤12 words. Only include genuinely actionable items — return empty array if the input is reflective without a clear next step.
+
+Return STRICT JSON: { "proposedActions": string[] }. No prose outside the JSON.
+`.trim()
+
+function parseJsonOrEmpty(raw, fallback) {
+  if (!raw) return fallback
+  const cleaned = String(raw).trim().replace(/^```json\s*|\s*```$/g, '')
+  try { return JSON.parse(cleaned) } catch { return fallback }
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -115,26 +160,41 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' })
   }
 
-  const { action = 'chat', messages = [], athleteContext, memorySummary, transcript } = body || {}
+  const {
+    action = 'chat',
+    messages = [],
+    athleteContext,
+    memorySummary,
+    memoryThemes,
+    transcript,
+    nudgeContext,
+  } = body || {}
 
   const client = new Anthropic({ apiKey })
 
   try {
     if (action === 'consolidate') {
-      // Build a summary doc from current memory + recent messages + feedback
       const resp = await client.messages.create({
         model: MODEL,
-        max_tokens: 600,
+        max_tokens: 800,
         system: MEMORY_CONSOLIDATION_PROMPT,
         messages: [{
           role: 'user',
-          content: `Current memory:\n${memorySummary || '(empty)'}\n\nRecent context:\n${
+          content: `Current memory summary:\n${memorySummary || '(empty)'}\n\nCurrent themes:\n${JSON.stringify(memoryThemes || {}, null, 2)}\n\nRecent context:\n${
             messages.map(m => `${m.role}: ${m.content}${m.feedback ? ` [athlete: ${m.feedback}]` : ''}`).join('\n')
           }`,
         }],
       })
+      const raw = resp.content?.[0]?.text || '{}'
+      const parsed = parseJsonOrEmpty(raw, { summary: '', mindset: '', technique: '', recovery: '', goals: '' })
       return res.status(200).json({
-        summary: resp.content?.[0]?.text || '',
+        summary: parsed.summary || '',
+        themes: {
+          mindset:   parsed.mindset   || '',
+          technique: parsed.technique || '',
+          recovery:  parsed.recovery  || '',
+          goals:     parsed.goals     || '',
+        },
         usage: resp.usage,
       })
     }
@@ -142,18 +202,41 @@ export default async function handler(req, res) {
     if (action === 'analyze_journal') {
       const resp = await client.messages.create({
         model: MODEL,
-        max_tokens: 400,
+        max_tokens: 500,
         system: JOURNAL_ANALYSIS_PROMPT,
         messages: [{ role: 'user', content: transcript || '' }],
       })
       const raw = resp.content?.[0]?.text || '{}'
-      let parsed = { cues: [], sentiment: 'neutral', aiNote: '' }
-      try { parsed = JSON.parse(raw) } catch { /* keep defaults */ }
+      const parsed = parseJsonOrEmpty(raw, { cues: [], sentiment: 'neutral', aiNote: '', proposedActions: [] })
+      return res.status(200).json({ ...parsed, usage: resp.usage })
+    }
+
+    if (action === 'nudge_check') {
+      const resp = await client.messages.create({
+        model: MODEL,
+        max_tokens: 300,
+        system: NUDGE_PROMPT,
+        messages: [{ role: 'user', content: JSON.stringify(nudgeContext || {}, null, 2) }],
+      })
+      const raw = resp.content?.[0]?.text || '{}'
+      const parsed = parseJsonOrEmpty(raw, { send: false, kind: 'none', message: '', signal: '' })
+      return res.status(200).json({ ...parsed, usage: resp.usage })
+    }
+
+    if (action === 'extract_actions') {
+      const resp = await client.messages.create({
+        model: MODEL,
+        max_tokens: 300,
+        system: EXTRACT_ACTIONS_PROMPT,
+        messages: [{ role: 'user', content: transcript || '' }],
+      })
+      const raw = resp.content?.[0]?.text || '{}'
+      const parsed = parseJsonOrEmpty(raw, { proposedActions: [] })
       return res.status(200).json({ ...parsed, usage: resp.usage })
     }
 
     // default action: 'chat'
-    const systemPrompt = buildSystemPrompt({ athleteContext, memorySummary })
+    const systemPrompt = buildSystemPrompt({ athleteContext, memorySummary, memoryThemes })
     const resp = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,

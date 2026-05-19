@@ -195,17 +195,281 @@ export async function bumpMessagesSinceConsolidation(userId) {
   return { data, error, newCount: current + 1 }
 }
 
-export async function consolidateCoachMemory(userId, newSummary) {
+export async function consolidateCoachMemory(userId, newSummary, themes = null) {
+  const payload = {
+    user_id: userId,
+    athlete_summary: newSummary,
+    messages_since_consolidation: 0,
+    last_consolidated: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  if (themes && typeof themes === 'object') payload.themes = themes
+  const { data, error } = await supabase
+    .from('coach_memory')
+    .upsert(payload, { onConflict: 'user_id' })
+  return { data, error }
+}
+
+export async function updateCoachMemoryThemes(userId, themes) {
   const { data, error } = await supabase
     .from('coach_memory')
     .upsert({
       user_id: userId,
-      athlete_summary: newSummary,
-      messages_since_consolidation: 0,
-      last_consolidated: new Date().toISOString(),
+      themes,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' })
   return { data, error }
+}
+
+// ─── SQUADS ──────────────────────────────────────────────────
+function randomInviteCode() {
+  // 6-char alphanumeric, omit ambiguous chars
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let s = ''
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)]
+  return s
+}
+
+export async function createSquad(userId, name) {
+  let code = randomInviteCode()
+  for (let i = 0; i < 5; i++) {
+    const { data: hit } = await supabase.from('squads').select('id').eq('invite_code', code).maybeSingle()
+    if (!hit) break
+    code = randomInviteCode()
+  }
+  const { data: squad, error } = await supabase
+    .from('squads')
+    .insert([{ name, invite_code: code, created_by: userId }])
+    .select()
+    .single()
+  if (error) return { data: null, error }
+  await supabase.from('squad_members').insert([{ squad_id: squad.id, user_id: userId }])
+  return { data: squad, error: null }
+}
+
+export async function joinSquadByCode(userId, code) {
+  const cleaned = String(code || '').trim().toUpperCase()
+  const { data: squad, error: sqErr } = await supabase
+    .from('squads')
+    .select('*')
+    .eq('invite_code', cleaned)
+    .maybeSingle()
+  if (sqErr || !squad) return { data: null, error: sqErr || new Error('Squad code not found') }
+  const { error: memErr } = await supabase
+    .from('squad_members')
+    .upsert({ squad_id: squad.id, user_id: userId }, { onConflict: 'squad_id,user_id' })
+  if (memErr) return { data: null, error: memErr }
+  return { data: squad, error: null }
+}
+
+export async function getMySquads(userId) {
+  const { data: memberships, error } = await supabase
+    .from('squad_members')
+    .select('squad_id, joined_at, squads(*)')
+    .eq('user_id', userId)
+  if (error) return { data: [], error }
+  return { data: (memberships || []).map(m => ({ ...m.squads, joined_at: m.joined_at })), error: null }
+}
+
+export async function leaveSquad(userId, squadId) {
+  const { data, error } = await supabase
+    .from('squad_members')
+    .delete()
+    .eq('squad_id', squadId)
+    .eq('user_id', userId)
+  return { data, error }
+}
+
+export async function getSquadLeaderboard(squadId) {
+  const { data: members } = await supabase
+    .from('squad_members')
+    .select('user_id, profiles(id, full_name, email, streak)')
+    .eq('squad_id', squadId)
+  if (!members?.length) return { data: [], error: null }
+
+  const weekStart = new Date()
+  weekStart.setDate(weekStart.getDate() - 6)
+  weekStart.setHours(0, 0, 0, 0)
+
+  const rows = await Promise.all(members.map(async (m) => {
+    const profile = m.profiles || {}
+    const { data: xpRows } = await supabase
+      .from('xp_log')
+      .select('xp')
+      .eq('user_id', m.user_id)
+      .gte('created_at', weekStart.toISOString())
+    const weeklyXp = (xpRows || []).reduce((a, r) => a + (r.xp || 0), 0)
+    const { data: allXp } = await supabase
+      .from('xp_log')
+      .select('xp')
+      .eq('user_id', m.user_id)
+    const totalXp = (allXp || []).reduce((a, r) => a + (r.xp || 0), 0)
+    return {
+      user_id: m.user_id,
+      full_name: profile.full_name || profile.email || 'Athlete',
+      streak: profile.streak || 0,
+      weeklyXp,
+      totalXp,
+    }
+  }))
+  rows.sort((a, b) => b.weeklyXp - a.weeklyXp || b.totalXp - a.totalXp)
+  return { data: rows, error: null }
+}
+
+// ─── COACH NUDGES ────────────────────────────────────────────
+export async function getActiveNudge(userId) {
+  const { data, error } = await supabase
+    .from('coach_nudges')
+    .select('*')
+    .eq('user_id', userId)
+    .is('dismissed_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function getRecentNudges(userId, limit = 10) {
+  const { data, error } = await supabase
+    .from('coach_nudges')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+export async function createNudge(userId, { kind, message, signal }) {
+  const { data, error } = await supabase
+    .from('coach_nudges')
+    .insert([{ user_id: userId, kind, message, signal, shown_at: new Date().toISOString() }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function dismissNudge(nudgeId) {
+  const { data, error } = await supabase
+    .from('coach_nudges')
+    .update({ dismissed_at: new Date().toISOString() })
+    .eq('id', nudgeId)
+  return { data, error }
+}
+
+export async function markNudgeActedOn(nudgeId) {
+  const { data, error } = await supabase
+    .from('coach_nudges')
+    .update({ acted_on_at: new Date().toISOString(), dismissed_at: new Date().toISOString() })
+    .eq('id', nudgeId)
+  return { data, error }
+}
+
+export async function nudgeCreatedToday(userId) {
+  const start = new Date(); start.setHours(0, 0, 0, 0)
+  const { count } = await supabase
+    .from('coach_nudges')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', start.toISOString())
+  return (count || 0) > 0
+}
+
+// ─── LOCKER ROOM NOTES (admin/coach) ─────────────────────────
+export async function getLockerRoomNotes(athleteId) {
+  const { data, error } = await supabase
+    .from('locker_room_notes')
+    .select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)')
+    .eq('athlete_id', athleteId)
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function addLockerRoomNote(authorId, athleteId, note, pinned = false) {
+  const { data, error } = await supabase
+    .from('locker_room_notes')
+    .insert([{ author_id: authorId, athlete_id: athleteId, note, pinned }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteLockerRoomNote(noteId) {
+  const { error } = await supabase.from('locker_room_notes').delete().eq('id', noteId)
+  return { error }
+}
+
+// ─── LOCKER ROOM AGGREGATOR ──────────────────────────────────
+// Pulls EVERYTHING about an athlete in one shot. Used by both the athlete's
+// own Locker Room tab and the admin dashboard.
+export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
+  const [
+    profileRes, memoryRes, actionRes, ballRes, checkinRes, voiceRes,
+    chatRes, workoutRes, foodRes, bodyRes, xpRes, badgeRes, nudgeRes,
+    squadRes, notesRes,
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', athleteId).maybeSingle(),
+    supabase.from('coach_memory').select('*').eq('user_id', athleteId).maybeSingle(),
+    supabase.from('action_steps').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20),
+    supabase.from('ball_mastery').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20),
+    supabase.from('weekly_checkins').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(10),
+    supabase.from('voice_journal').select('*').eq('user_id', athleteId).order('recorded_at', { ascending: false }).limit(20),
+    supabase.from('chat_history').select('id, role, content, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(30),
+    supabase.from('workouts_log').select('*').eq('user_id', athleteId).order('completed_at', { ascending: false }).limit(15),
+    supabase.from('food_log').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(20),
+    supabase.from('body_stats').select('*').eq('user_id', athleteId).order('measured_at', { ascending: false }).limit(15),
+    supabase.from('xp_log').select('xp, source, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(50),
+    supabase.from('badges_earned').select('badge_id, earned_at').eq('user_id', athleteId),
+    supabase.from('coach_nudges').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(15),
+    supabase.from('squad_members').select('squad_id, joined_at, squads(*)').eq('user_id', athleteId),
+    isAdmin ? supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+  ])
+  const totalXp = (xpRes.data || []).reduce((a, r) => a + (r.xp || 0), 0)
+  return {
+    profile:    profileRes.data,
+    memory:     memoryRes.data,
+    actionSteps: actionRes.data || [],
+    ballMastery: ballRes.data || [],
+    checkins:   checkinRes.data || [],
+    voiceJournal: voiceRes.data || [],
+    chat:       (chatRes.data || []).reverse(),
+    workouts:   workoutRes.data || [],
+    food:       foodRes.data || [],
+    body:       bodyRes.data || [],
+    xpRows:     xpRes.data || [],
+    totalXp,
+    badges:     badgeRes.data || [],
+    nudges:     nudgeRes.data || [],
+    squads:     (squadRes.data || []).map(m => ({ ...m.squads, joined_at: m.joined_at })),
+    notes:      notesRes.data || [],
+  }
+}
+
+// ─── ADMIN: list all athletes with quick stats ───────────────
+export async function getAdminAthleteList() {
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at')
+    .order('created_at', { ascending: false })
+  if (!profiles) return { data: [], error: null }
+
+  const enriched = await Promise.all(profiles.map(async (p) => {
+    const [actionCnt, voiceCnt, lastChat, xpRows] = await Promise.all([
+      supabase.from('action_steps').select('id', { count: 'exact', head: true }).eq('user_id', p.id),
+      supabase.from('voice_journal').select('id', { count: 'exact', head: true }).eq('user_id', p.id),
+      supabase.from('chat_history').select('created_at').eq('user_id', p.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('xp_log').select('xp').eq('user_id', p.id),
+    ])
+    const totalXp = (xpRows.data || []).reduce((a, r) => a + (r.xp || 0), 0)
+    return {
+      ...p,
+      actionCount: actionCnt.count || 0,
+      voiceCount:  voiceCnt.count || 0,
+      lastChatAt:  lastChat.data?.created_at || null,
+      totalXp,
+    }
+  }))
+  return { data: enriched, error: null }
 }
 
 // ─── MESSAGE FEEDBACK (👍/👎) ────────────────────────────────

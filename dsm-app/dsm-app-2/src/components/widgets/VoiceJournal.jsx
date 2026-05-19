@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
-import { saveVoiceJournal, awardXp, evaluateBadges } from '../../lib/supabase.js'
+import { saveVoiceJournal, awardXp, evaluateBadges, supabase } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 
 /**
@@ -17,6 +17,9 @@ export default function VoiceJournal({ user }) {
   const recognizerRef = useRef(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [proposedActions, setProposedActions] = useState([])      // string[]
+  const [acceptedActions, setAcceptedActions] = useState({})      // { index: bool }
+  const [actionsSaved, setActionsSaved] = useState(false)
 
   // tick during recording
   useEffect(() => {
@@ -94,13 +97,37 @@ export default function VoiceJournal({ user }) {
         sentiment: ai.sentiment || 'neutral',
         aiNote: ai.aiNote || '',
       })
+      const proposals = Array.isArray(ai.proposedActions) ? ai.proposedActions.slice(0, 3) : []
+      setProposedActions(proposals)
+      setAcceptedActions(Object.fromEntries(proposals.map((_, i) => [i, true])))
       setState('analyzed')
     } catch (err) {
       console.error('[VoiceJournal analyze failed]', err)
       setError('Analysis failed. Saved transcript only.')
       setResult({ transcript: finalTranscript, cues: [], sentiment: 'neutral', aiNote: '' })
+      setProposedActions([])
+      setAcceptedActions({})
       setState('analyzed')
     }
+  }
+
+  async function saveProposedActions(journalId) {
+    if (!user?.id || !proposedActions.length) return
+    const accepted = proposedActions.filter((_, i) => acceptedActions[i])
+    if (!accepted.length) return
+    const today = new Date().toISOString().split('T')[0]
+    const dow = new Date().toLocaleDateString(undefined, { weekday: 'long' })
+    const rows = accepted.map(text => ({
+      user_id: user.id,
+      player_name: user.email,
+      session_type: 'voice-journal',
+      date: today,
+      day_of_week: dow,
+      did_steps: text,
+      conditioning: 7, strength: 7, technical: 7, mental: 7,
+    }))
+    await supabase.from('action_steps').insert(rows)
+    setActionsSaved(true)
   }
 
   async function saveEntry() {
@@ -115,11 +142,16 @@ export default function VoiceJournal({ user }) {
       })
       await awardXp(user.id, 'voice_journal', XP_TABLE.voiceJournal, data?.id, result.sentiment)
       await evaluateBadges(user.id)
+      await saveProposedActions(data?.id)
       setSaved(true)
     } catch (err) {
       console.error('[VoiceJournal save failed]', err)
       setError('Could not save entry. Try again.')
     }
+  }
+
+  function toggleAction(i) {
+    setAcceptedActions(prev => ({ ...prev, [i]: !prev[i] }))
   }
 
   function reset() {
@@ -129,12 +161,9 @@ export default function VoiceJournal({ user }) {
     setTranscript('')
     setSaved(false)
     setError('')
-  }
-
-  function reset() {
-    setState('idle')
-    setElapsed(0)
-    setResult(null)
+    setProposedActions([])
+    setAcceptedActions({})
+    setActionsSaved(false)
   }
 
   return (
@@ -244,6 +273,45 @@ export default function VoiceJournal({ user }) {
             }}>V</div>
             <div style={{ fontSize: 13, color: t.color.text, lineHeight: 1.5 }}>{result.aiNote}</div>
           </div>
+
+          {proposedActions.length > 0 && (
+            <div style={{
+              marginTop: 14, padding: 12,
+              background: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${t.color.line2}`,
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 10, letterSpacing: 2, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>
+                Action steps Coach extracted
+              </div>
+              <div style={{ fontSize: 11, color: t.color.textDim, marginBottom: 10, lineHeight: 1.45 }}>
+                Uncheck any you don't want. Saved with this entry go straight to your action steps.
+              </div>
+              {proposedActions.map((a, i) => (
+                <label key={i} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '6px 0', cursor: 'pointer',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={!!acceptedActions[i]}
+                    onChange={() => toggleAction(i)}
+                    style={{ marginTop: 3, accentColor: '#fafafa', cursor: 'pointer' }}
+                  />
+                  <span style={{
+                    fontSize: 13, color: t.color.text, lineHeight: 1.45,
+                    textDecoration: acceptedActions[i] ? 'none' : 'line-through',
+                    opacity: acceptedActions[i] ? 1 : 0.4,
+                  }}>{a}</span>
+                </label>
+              ))}
+              {actionsSaved && (
+                <div style={{ marginTop: 8, fontSize: 11, color: '#4ade80', letterSpacing: 1.2, fontWeight: 600, textTransform: 'uppercase' }}>
+                  ✓ Saved to action steps
+                </div>
+              )}
+            </div>
+          )}
 
           {error && (
             <div style={{

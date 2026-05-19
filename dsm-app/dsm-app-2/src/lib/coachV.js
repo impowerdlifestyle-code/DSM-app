@@ -15,9 +15,6 @@ const DEV_DIRECT_KEY =
     ? import.meta.env.VITE_ANTHROPIC_API_KEY
     : null
 
-/**
- * Surfaced when the chat is empty. Imported by BotTab.
- */
 export const SUGGESTED_QUESTIONS = [
   "I'm nervous about tomorrow's game",
   "I missed a sitter today, can't shake it",
@@ -27,35 +24,28 @@ export const SUGGESTED_QUESTIONS = [
   'Visualization — what do I actually do?',
 ]
 
-/**
- * Talk to Coach V.
- * @param {Object} params
- * @param {Array<{role:'user'|'assistant', content:string}>} params.messages
- * @param {Object} params.athleteContext — from getAthleteStateDigest()
- * @param {string} params.memorySummary — coach_memory.athlete_summary
- * @returns {Promise<{content: string, usage?: object}>}
- */
-export async function getCoachVResponse({ messages = [], athleteContext = {}, memorySummary = '' } = {}) {
-  return callProxy({ action: 'chat', messages, athleteContext, memorySummary })
+export async function getCoachVResponse({ messages = [], athleteContext = {}, memorySummary = '', memoryThemes = null } = {}) {
+  return callProxy({ action: 'chat', messages, athleteContext, memorySummary, memoryThemes })
 }
 
-/**
- * Memory consolidation — Claude synthesizes a fresh summary from prior memory +
- * recent messages + feedback ratings.
- */
-export async function consolidateMemory({ messages = [], memorySummary = '', recentFeedback = [] } = {}) {
+export async function consolidateMemory({ messages = [], memorySummary = '', memoryThemes = null, recentFeedback = [] } = {}) {
   const annotated = messages.map(m => {
     const fb = recentFeedback.find(f => f.message_id === m.id)
     return fb ? { ...m, feedback: fb.rating } : m
   })
-  return callProxy({ action: 'consolidate', messages: annotated, memorySummary })
+  return callProxy({ action: 'consolidate', messages: annotated, memorySummary, memoryThemes })
 }
 
-/**
- * Voice-journal analysis — extract cues, sentiment, coach note.
- */
 export async function analyzeVoiceJournal({ transcript }) {
   return callProxy({ action: 'analyze_journal', transcript })
+}
+
+export async function checkForNudge({ nudgeContext }) {
+  return callProxy({ action: 'nudge_check', nudgeContext })
+}
+
+export async function extractActionsFromText({ transcript }) {
+  return callProxy({ action: 'extract_actions', transcript })
 }
 
 export function shouldConsolidate(messagesSinceConsolidation) {
@@ -79,12 +69,11 @@ async function callProxy(payload) {
   return res.json()
 }
 
-// Dev-only direct browser→Anthropic call.
 async function callAnthropicDirect(payload) {
-  const { action, messages, athleteContext, memorySummary, transcript } = payload
+  const { action, messages, athleteContext, memorySummary, memoryThemes, transcript, nudgeContext } = payload
   const MODEL = 'claude-sonnet-4-6'
 
-  let system = buildCoachPersona({ athleteContext, memorySummary })
+  let system = buildCoachPersona({ athleteContext, memorySummary, memoryThemes })
   let body = []
   let maxTokens = 1024
 
@@ -92,15 +81,23 @@ async function callAnthropicDirect(payload) {
     system = CONSOLIDATION_SYSTEM
     body = [{
       role: 'user',
-      content: `Current memory:\n${memorySummary || '(empty)'}\n\nRecent context:\n${
+      content: `Current memory summary:\n${memorySummary || '(empty)'}\n\nCurrent themes:\n${JSON.stringify(memoryThemes || {}, null, 2)}\n\nRecent context:\n${
         (messages || []).map(m => `${m.role}: ${m.content}${m.feedback ? ` [athlete: ${m.feedback}]` : ''}`).join('\n')
       }`,
     }]
-    maxTokens = 600
+    maxTokens = 800
   } else if (action === 'analyze_journal') {
     system = JOURNAL_SYSTEM
     body = [{ role: 'user', content: transcript || '' }]
-    maxTokens = 400
+    maxTokens = 500
+  } else if (action === 'nudge_check') {
+    system = NUDGE_SYSTEM
+    body = [{ role: 'user', content: JSON.stringify(nudgeContext || {}, null, 2) }]
+    maxTokens = 300
+  } else if (action === 'extract_actions') {
+    system = EXTRACT_ACTIONS_SYSTEM
+    body = [{ role: 'user', content: transcript || '' }]
+    maxTokens = 300
   } else {
     body = (messages || []).map(m => ({ role: m.role, content: m.content }))
   }
@@ -121,22 +118,55 @@ async function callAnthropicDirect(payload) {
   }
   const data = await res.json()
   const text = data.content?.[0]?.text || ''
+  const cleaned = text.trim().replace(/^```json\s*|\s*```$/g, '')
 
   if (action === 'analyze_journal') {
-    try { return JSON.parse(text) }
-    catch { return { cues: [], sentiment: 'neutral', aiNote: '' } }
+    try { return JSON.parse(cleaned) }
+    catch { return { cues: [], sentiment: 'neutral', aiNote: '', proposedActions: [] } }
   }
-  if (action === 'consolidate') return { summary: text }
+  if (action === 'consolidate') {
+    try {
+      const parsed = JSON.parse(cleaned)
+      return {
+        summary: parsed.summary || '',
+        themes: {
+          mindset:   parsed.mindset   || '',
+          technique: parsed.technique || '',
+          recovery:  parsed.recovery  || '',
+          goals:     parsed.goals     || '',
+        },
+      }
+    } catch { return { summary: text, themes: { mindset:'', technique:'', recovery:'', goals:'' } } }
+  }
+  if (action === 'nudge_check') {
+    try { return JSON.parse(cleaned) }
+    catch { return { send: false, kind: 'none', message: '', signal: '' } }
+  }
+  if (action === 'extract_actions') {
+    try { return JSON.parse(cleaned) }
+    catch { return { proposedActions: [] } }
+  }
   return { content: text, usage: data.usage }
 }
 
 // ─── DEV-MODE PERSONA (mirror of server prompts) ──────────────────────
 
-function buildCoachPersona({ athleteContext, memorySummary }) {
+function renderThemes(themes) {
+  if (!themes || typeof themes !== 'object') return ''
+  const order = ['mindset', 'technique', 'recovery', 'goals']
+  const lines = order
+    .filter(k => themes[k] && String(themes[k]).trim())
+    .map(k => `${k.toUpperCase()}: ${themes[k]}`)
+  return lines.join('\n')
+}
+
+function buildCoachPersona({ athleteContext, memorySummary, memoryThemes }) {
   const ctx = athleteContext || {}
   const memory = (memorySummary || '').trim()
+  const themes = renderThemes(memoryThemes)
   let p = COACH_PERSONA_BASE + '\n\n'
-  if (memory) p += `─── WHAT YOU REMEMBER ABOUT THIS ATHLETE ───\n${memory}\n\n`
+  if (themes) p += `─── WHAT YOU REMEMBER (THEMES) ───\n${themes}\n\n`
+  else if (memory) p += `─── WHAT YOU REMEMBER ABOUT THIS ATHLETE ───\n${memory}\n\n`
   if (ctx.profile) p += `─── ATHLETE PROFILE ───\nName: ${ctx.profile.full_name || 'Athlete'}\nProgram week: ${ctx.profile.program_week || 1}\nStreak: ${ctx.profile.streak || 0}\n\n`
   if (ctx.recentActionSteps?.length) {
     p += `─── LAST 5 ACTION-STEP LOGS ───\n${ctx.recentActionSteps.slice(0, 5).map(s => {
@@ -163,15 +193,29 @@ Voice: tight, direct, athlete-to-athlete. No motivational poster fluff. Specific
 `.trim()
 
 const CONSOLIDATION_SYSTEM = `
-You are Coach Valentino synthesizing what you've learned about this athlete from recent conversations + their feedback.
+You are Coach Valentino synthesizing what you've learned about this athlete.
 
-Output a fresh "athlete summary" (max 200 words) for long-term memory. Include cue words they respond to, recurring patterns, growth edges, their voice/tone, and adjustments based on 👍/👎 feedback. Concrete. No generic fluff.
+Output STRICT JSON with keys: summary (~200 words), mindset, technique, recovery, goals (each ~60 words plain text, no markdown). Adjust based on 👍/👎 feedback. No prose outside the JSON.
 `.trim()
 
 const JOURNAL_SYSTEM = `
 You are Coach Valentino analyzing an athlete's voice-journal transcript.
 
-Extract: (1) up to 4 mental cues, (2) sentiment from [locked-in, fired-up, neutral, recovering, flat, anxious, frustrated], (3) a short (2-3 sentence) coach note responding to what they said.
+Extract: (1) up to 4 mental cues, (2) sentiment from [locked-in, fired-up, neutral, recovering, flat, anxious, frustrated], (3) 2-3 sentence coach note, (4) up to 3 concrete action steps for this week (imperative, ≤12 words each) — empty array if nothing actionable.
 
-Return STRICT JSON with keys: cues (string[]), sentiment (string), aiNote (string). No prose outside the JSON.
+Return STRICT JSON: cues (string[]), sentiment (string), aiNote (string), proposedActions (string[]). No prose outside the JSON.
+`.trim()
+
+const NUDGE_SYSTEM = `
+You are Coach Valentino deciding whether to send a proactive nudge based on athlete state.
+
+Send a nudge if: streak at risk, multi-day inactivity, low mood, plateau, or notable win. Stay quiet otherwise.
+
+Return STRICT JSON: { send (bool), kind (missed-workout|low-mood|plateau|streak-risk|win|none), message (1-2 sentences athlete-voice), signal (1 line trigger) }. No prose outside the JSON.
+`.trim()
+
+const EXTRACT_ACTIONS_SYSTEM = `
+Extract up to 3 concrete action steps from the input. Each ≤12 words, imperative. Empty array if input is reflective with no clear next step.
+
+Return STRICT JSON: { proposedActions (string[]) }. No prose outside the JSON.
 `.trim()
