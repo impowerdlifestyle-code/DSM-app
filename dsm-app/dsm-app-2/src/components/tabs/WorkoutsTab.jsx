@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
 import { EXERCISES, EX_CATEGORIES, TODAYS_WORKOUT, PR_HISTORY } from '../../data/exercises.js'
-import { finishWorkout, getRecentWorkouts, awardXp } from '../../lib/supabase.js'
+import { finishWorkout, getRecentWorkouts, awardXp, evaluateBadges } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 import RestTimer from '../widgets/RestTimer.jsx'
 import TiltCard from '../widgets/TiltCard.jsx'
@@ -108,8 +108,10 @@ function TodayView({ user }) {
     if (doneSets > 0) {
       await awardXp(user.id, 'workout', XP_TABLE.workoutComplete, data?.id, w.name)
     }
+    const newBadges = await evaluateBadges(user.id)
     setFinishing(false)
-    setSavedMsg(`Saved · +${doneSets > 0 ? XP_TABLE.workoutComplete : 0} XP`)
+    const badgeNote = newBadges.length ? ` · 🏅 ${newBadges.join(', ')}` : ''
+    setSavedMsg(`Saved · +${doneSets > 0 ? XP_TABLE.workoutComplete : 0} XP${badgeNote}`)
     setTimeout(() => setSavedMsg(null), 3000)
   }
 

@@ -79,7 +79,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
-  rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp } from '../lib/supabase.js'
+  rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
+  getOrSeedDailyQuests, bumpQuest, evaluateBadges } from '../lib/supabase.js'
 import {
   QUOTES, HABITS_LIST, DAYS, WEEKDAYS, BALL_MASTERY_SKILLS, PARENT_GUIDE, RESOURCES,
   AI_SYSTEM, emptyCheckin,
@@ -120,6 +121,8 @@ export default function Main({ user }) {
   const [chatInput, setChatInput] = useState('')
   const chatInputRef = useRef('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [quests, setQuests] = useState(DAILY_QUESTS)
+  const [badgeNotice, setBadgeNotice] = useState(null)
   const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -203,6 +206,8 @@ export default function Main({ user }) {
     if (sd) setSubmissions(sd)
     const { data: bd } = await supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14)
     if (bd) setBallHistory(bd)
+    const todayQuests = await getOrSeedDailyQuests(user.id, DAILY_QUESTS)
+    setQuests(todayQuests)
     const { data: cd } = await supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
     if (cd) {
       setCheckinHistory(cd)
@@ -308,11 +313,33 @@ export default function Main({ user }) {
     }])
     if (error) { alert('Error: ' + error.message); setSavingBall(false); return }
     await awardXp(user.id, 'ball_mastery', XP_TABLE.ballMastery, null, `${practiced.length} skills`)
+    await bumpQuestAndRefresh('quest-ball', 3)  // mark complete on save
+    const newBadges = await evaluateBadges(user.id)
+    if (newBadges.length) showBadgeNotice(newBadges)
     const { data: bd } = await supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14)
     setBallHistory(bd || [])
     setBallMastery({})
     setSavingBall(false)
     alert(`✅ Ball mastery logged · +${XP_TABLE.ballMastery} XP`)
+  }
+
+  // Bump a quest by N and refresh state. If newly completed, awards quest XP.
+  async function bumpQuestAndRefresh(questId, increment = 1) {
+    if (!user?.id) return
+    const { row, justCompleted } = await bumpQuest(user.id, questId, increment)
+    if (!row) return
+    if (justCompleted) {
+      const catalog = DAILY_QUESTS.find(q => q.id === questId)
+      if (catalog?.xp) await awardXp(user.id, 'quest', catalog.xp, null, questId)
+    }
+    const fresh = await getOrSeedDailyQuests(user.id, DAILY_QUESTS)
+    setQuests(fresh)
+  }
+
+  function showBadgeNotice(ids) {
+    if (!ids?.length) return
+    setBadgeNotice(ids.join(', '))
+    setTimeout(() => setBadgeNotice(null), 4500)
   }
 
   const handleSubmitCheckin = async () => {
@@ -341,6 +368,8 @@ export default function Main({ user }) {
     }], { onConflict: 'user_id,week' })
     if (error) { alert('Error: ' + error.message); setSavingCheckin(false); return }
     await awardXp(user.id, 'weekly_checkin', XP_TABLE.weeklyCheckin, null, currentWeek)
+    const newBadges = await evaluateBadges(user.id)
+    if (newBadges.length) showBadgeNotice(newBadges)
     setCheckinDone(true)
     setSavingCheckin(false)
     const { data: cd } = await supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
@@ -387,6 +416,9 @@ export default function Main({ user }) {
       // 6) Persist assistant reply
       const { data: assistantRow } = await saveChatMessage(user.id, 'assistant', reply)
       const assistantId = assistantRow?.id
+
+      // Daily quest: asked Coach V
+      bumpQuestAndRefresh('quest-coach', 1)
 
       // 7) Typing animation, then commit the final message
       setChatLoading(false)
@@ -463,8 +495,7 @@ export default function Main({ user }) {
           .fade { animation: fadeIn 0.3s ease; }
         `}</style>
         <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'30px 24px', textAlign:'center' }} className="fade">
-          <div style={{ fontSize:36, fontWeight:900, letterSpacing:4, marginBottom:4 }}>DSM</div>
-          <div style={{ fontSize:9, letterSpacing:3, color:'#fafafa', fontWeight:700, marginBottom:40 }}>DILORENZO SOCCER MINDSET</div>
+          <img src="/dsm-logo.png" alt="Di Lorenzo Mindset" style={{ width: 160, height: 160, objectFit: 'contain', marginBottom: 28, filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.10))' }} />
           <div style={{ fontSize:60, marginBottom:20 }}>🔒</div>
           <div style={{ fontSize:24, fontWeight:900, letterSpacing:2, marginBottom:12 }}>UNLOCK YOUR ACCESS</div>
           <div style={{ fontSize:14, color:'#888', lineHeight:1.6, marginBottom:32, maxWidth:320 }}>
@@ -506,6 +537,23 @@ export default function Main({ user }) {
 
   return (
     <div style={C.app}>
+      {badgeNotice && (
+        <div style={{
+          position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 500, padding: '12px 18px',
+          background: 'rgba(0,0,0,0.92)',
+          border: '1px solid rgba(255,255,255,0.35)',
+          borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontFamily: 'Bebas Neue, sans-serif', letterSpacing: 1.2,
+          maxWidth: 'calc(100% - 28px)',
+        }}>
+          <span style={{ fontSize: 18 }}>🏅</span>
+          <span style={{ fontSize: 13, color: '#fafafa', textTransform: 'uppercase' }}>
+            Badge unlocked · {badgeNotice}
+          </span>
+        </div>
+      )}
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { background: #08090b; min-height: 100vh; }
@@ -531,26 +579,21 @@ export default function Main({ user }) {
           background: 'transparent', border: 'none', padding: 0,
           cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', textAlign: 'left',
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            border: '1px solid #2a2a2a', background: '#0a0a0a',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Bebas Neue', sans-serif", fontSize: 22,
-            color: '#fafafa', fontWeight: 400, letterSpacing: 1,
-            position: 'relative',
-          }}>
-            D
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <img src="/dsm-logo.png" alt="Di Lorenzo Mindset" style={{
+              width: 42, height: 42, objectFit: 'contain', display: 'block',
+            }} />
             <div style={{
-              position: 'absolute', bottom: -3, right: -3,
-              width: 16, height: 16, borderRadius: '50%',
+              position: 'absolute', bottom: -3, right: -5,
+              minWidth: 18, height: 18, borderRadius: '50%',
               background: '#fafafa', color: '#000',
-              border: '2px solid #000',
+              border: '2px solid #000', padding: '0 4px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Bebas Neue', sans-serif", fontSize: 10, letterSpacing: 0.5, fontWeight: 400,
+              fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 0.5, fontWeight: 400,
             }}>{PLAYER.level}</div>
           </div>
           <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, fontWeight: 400, letterSpacing: 2.5, color: '#fafafa', lineHeight: 0.9, textTransform: 'uppercase' }}>DSM</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, fontWeight: 400, letterSpacing: 2.5, color: '#fafafa', lineHeight: 0.9, textTransform: 'uppercase' }}>Di Lorenzo</div>
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#8e8e8e', fontWeight: 600, marginTop: 3, textTransform: 'uppercase' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
           </div>
         </button>
@@ -628,11 +671,15 @@ export default function Main({ user }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
               <span style={C.lbl}>Daily quests</span>
               <span style={{ fontSize: 10, letterSpacing: 1.4, color: '#fafafa', fontWeight: 600, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
-                {DAILY_QUESTS.filter(q => q.progress >= q.target).length}/{DAILY_QUESTS.length} done
+                {quests.filter(q => q.progress >= q.target).length}/{quests.length} done
               </span>
             </div>
-            {DAILY_QUESTS.map(q => (
-              <QuestCard key={q.id} quest={q} onClick={() => { /* hook to actual action later */ }} />
+            {quests.map(q => (
+              <QuestCard key={q.id} quest={q} onClick={() => {
+                if (q.id === 'quest-coach') setTab('bot')
+                else if (q.id === 'quest-action-2') setTab('actions')
+                else if (q.id === 'quest-ball') setTab('ball')
+              }} />
             ))}
           </div>
 
@@ -772,7 +819,12 @@ export default function Main({ user }) {
 
       {/* ── ACTION STEPS ── */}
       {tab === 'actions' && (
-        <ActionsTab user={user} profile={profile} submissions={submissions} setSubmissions={setSubmissions} setTab={setTab} />
+        <ActionsTab user={user} profile={profile} submissions={submissions} setSubmissions={setSubmissions} setTab={setTab}
+          onActionSaved={async () => {
+            await bumpQuestAndRefresh('quest-action-2', 1)
+            const newBadges = await evaluateBadges(user.id)
+            if (newBadges.length) showBadgeNotice(newBadges)
+          }} />
       )}
 
       {/* ── BALL MASTERY ── */}

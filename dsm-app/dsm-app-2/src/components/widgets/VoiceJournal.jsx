@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
-import { saveVoiceJournal, awardXp } from '../../lib/supabase.js'
+import { saveVoiceJournal, awardXp, evaluateBadges } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 
 /**
@@ -114,6 +114,7 @@ export default function VoiceJournal({ user }) {
         duration_seconds: elapsed,
       })
       await awardXp(user.id, 'voice_journal', XP_TABLE.voiceJournal, data?.id, result.sentiment)
+      await evaluateBadges(user.id)
       setSaved(true)
     } catch (err) {
       console.error('[VoiceJournal save failed]', err)

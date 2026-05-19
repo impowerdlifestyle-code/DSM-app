@@ -3,7 +3,7 @@ import ActionsSubNav from './ActionsSubNav.jsx'
 import { submitActionSteps, getActionSteps, awardXp } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 
-export default function ActionsTab({ user, profile, submissions, setSubmissions, setTab }) {
+export default function ActionsTab({ user, profile, submissions, setSubmissions, setTab, onActionSaved }) {
   return (
     <div className="fade">
       <ActionsSubNav active="steps" setTab={setTab} />
@@ -17,6 +17,7 @@ export default function ActionsTab({ user, profile, submissions, setSubmissions,
             return
           }
           await awardXp(user.id, 'action_step', XP_TABLE.actionStep, null, formData.sessionType)
+          if (onActionSaved) await onActionSaved()
           const { data: updated } = await getActionSteps(user.id)
           setSubmissions(updated || [])
           alert(`✅ Action steps submitted · +${XP_TABLE.actionStep} XP`)

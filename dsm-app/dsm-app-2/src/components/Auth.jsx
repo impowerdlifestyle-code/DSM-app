@@ -230,12 +230,11 @@ export default function Auth() {
     <div style={s.shell}>
       <div style={s.glow} />
       <div style={s.inner}>
-        <div style={s.mark}>
-          <div style={s.monogram}>D</div>
-          <div style={s.wordmark}>
-            <span style={s.wmTitle}>DSM</span>
-            <span style={s.wmSub}>DiLorenzo · Mindset</span>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}>
+          <img src="/dsm-logo.png" alt="Di Lorenzo Mindset" style={{
+            width: 168, height: 168, objectFit: 'contain',
+            filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.10))',
+          }} />
         </div>
 
         <div style={s.eyebrow}>Elite Soccer Mindset Program</div>

@@ -326,6 +326,37 @@ export async function getDailyQuests(userId) {
   return { data: data || [], error }
 }
 
+// Hydrate today's quests, seeding missing defaults from the catalog.
+// `defaults` shape: [{ id, target, ... }]. Returns DB rows enriched with catalog fields.
+export async function getOrSeedDailyQuests(userId, defaults) {
+  const today = new Date().toISOString().slice(0, 10)
+  const { data: existing } = await supabase
+    .from('daily_quests')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('date', today)
+  const byId = Object.fromEntries((existing || []).map(r => [r.quest_id, r]))
+  const toSeed = defaults.filter(d => !byId[d.id])
+  if (toSeed.length) {
+    const rows = toSeed.map(d => ({
+      user_id: userId,
+      quest_id: d.id,
+      date: today,
+      progress: 0,
+      target: d.target,
+      completed: false,
+      claimed: false,
+    }))
+    const { data: inserted } = await supabase.from('daily_quests').insert(rows).select()
+    ;(inserted || []).forEach(r => { byId[r.quest_id] = r })
+  }
+  // Merge catalog → DB row so UI gets {progress,target,completed} from DB + {icon,title,sub,xp} from catalog.
+  return defaults.map(d => {
+    const row = byId[d.id] || { progress: 0, target: d.target, completed: false, claimed: false }
+    return { ...d, progress: row.progress, target: row.target, completed: row.completed, claimed: row.claimed, _row: row }
+  })
+}
+
 export async function upsertQuestProgress(userId, questId, progress, target) {
   const today = new Date().toISOString().slice(0, 10)
   const completed = progress >= target
@@ -338,6 +369,35 @@ export async function upsertQuestProgress(userId, questId, progress, target) {
     .select()
     .single()
   return { data, error }
+}
+
+// Bump quest progress by 1 (capped at target). Returns { row, justCompleted }.
+export async function bumpQuest(userId, questId, increment = 1) {
+  const today = new Date().toISOString().slice(0, 10)
+  const { data: prior } = await supabase
+    .from('daily_quests')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('quest_id', questId)
+    .eq('date', today)
+    .maybeSingle()
+  if (!prior) return { row: null, justCompleted: false }
+  if (prior.completed) return { row: prior, justCompleted: false }
+  const newProgress = Math.min(prior.target, (prior.progress || 0) + increment)
+  const justCompleted = newProgress >= prior.target
+  const { data, error } = await supabase
+    .from('daily_quests')
+    .update({
+      progress: newProgress,
+      completed: justCompleted,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('quest_id', questId)
+    .eq('date', today)
+    .select()
+    .single()
+  return { row: data, error, justCompleted }
 }
 
 // ─── WORKOUTS ────────────────────────────────────────────────
@@ -532,6 +592,51 @@ function getWeekKey() {
   const start = new Date(now.getFullYear(), 0, 1)
   const week = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7)
   return `${now.getFullYear()}-W${week}`
+}
+
+// Evaluate trackable badge conditions and earn any that have crossed the
+// threshold. Returns array of badge_ids newly earned. Safe to call after every
+// XP-awarding action — upsert ignores already-earned.
+export async function evaluateBadges(userId) {
+  const newly = []
+  if (!userId) return newly
+
+  // Pull everything we need in parallel
+  const [profileRes, actionRes, ballRes, voiceRes, workoutRes, sharkRes, earnedRes] = await Promise.all([
+    supabase.from('profiles').select('streak').eq('id', userId).maybeSingle(),
+    supabase.from('action_steps').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('ball_mastery').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('voice_journal').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('workouts_log').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('action_steps').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('shark_used', true),
+    supabase.from('badges_earned').select('badge_id').eq('user_id', userId),
+  ])
+
+  const streak       = profileRes.data?.streak || 0
+  const actionsCount = actionRes.count || 0
+  const ballCount    = ballRes.count || 0
+  const voiceCount   = voiceRes.count || 0
+  const workoutCount = workoutRes.count || 0
+  const sharkCount   = sharkRes.count || 0
+  const owned        = new Set((earnedRes.data || []).map(r => r.badge_id))
+
+  const rules = [
+    { id: 'week-streak',     when: streak >= 7 },
+    { id: 'month-streak',    when: streak >= 30 },
+    { id: 'century',         when: streak >= 100 },
+    { id: 'shark-mentality', when: sharkCount >= 20 },
+    { id: 'mental-rep-50',   when: voiceCount >= 50 },
+    { id: 'first-pr',        when: workoutCount >= 1 },          // first workout finished
+    { id: 'triple-crown',    when: actionsCount >= 25 && workoutCount >= 10 && voiceCount >= 5 },
+  ]
+
+  for (const r of rules) {
+    if (r.when && !owned.has(r.id)) {
+      const { error } = await earnBadge(userId, r.id)
+      if (!error) newly.push(r.id)
+    }
+  }
+  return newly
 }
 
 // Derive level from total XP using the LEVELS table in gamification.js
