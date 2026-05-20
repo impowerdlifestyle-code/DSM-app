@@ -527,12 +527,13 @@ export async function getVoiceJournalHistory(userId, limit = 20) {
 // Pulls a snapshot of everything Coach V should know about this athlete
 // right now: profile, recent actions, ball mastery, last check-in, voice journal.
 export async function getAthleteStateDigest(userId) {
-  const [profileRes, actionRes, ballRes, checkinRes, journalRes] = await Promise.all([
+  const [profileRes, actionRes, ballRes, checkinRes, journalRes, matchRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
     supabase.from('action_steps').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
     supabase.from('ball_mastery').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
     supabase.from('weekly_checkins').select('*').eq('user_id', userId).order('week', { ascending: false }).limit(1),
     supabase.from('voice_journal').select('*').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(3),
+    supabase.from('match_log').select('*').eq('user_id', userId).not('post_logged_at', 'is', null).order('match_date', { ascending: false }).limit(5),
   ])
   return {
     profile: profileRes.data,
@@ -540,6 +541,7 @@ export async function getAthleteStateDigest(userId) {
     recentBallMastery: ballRes.data || [],
     lastCheckin: checkinRes.data?.[0],
     recentJournal: journalRes.data || [],
+    recentMatches: matchRes.data || [],
   }
 }
 
@@ -901,6 +903,183 @@ export async function evaluateBadges(userId) {
     }
   }
   return newly
+}
+
+// ─── ONBOARDING ─────────────────────────────────────────────
+export async function saveOnboarding(userId, payload) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      onboarded_at: new Date().toISOString(),
+      position:       payload.position || null,
+      age:            payload.age || null,
+      club_team:      payload.clubTeam || null,
+      identity_goal:  payload.identityGoal || null,
+      baseline:       payload.baseline || {},
+      obstacles:      payload.obstacles || [],
+      match_cadence:  payload.matchCadence || null,
+      starter_focus:  payload.starterFocus || {},
+    })
+    .eq('id', userId)
+    .select()
+    .single()
+  return { data, error }
+}
+
+// ─── MATCH LOG ──────────────────────────────────────────────
+export async function getMatches(userId, limit = 20) {
+  const { data, error } = await supabase
+    .from('match_log').select('*')
+    .eq('user_id', userId)
+    .order('match_date', { ascending: false })
+    .limit(limit)
+  return { data, error }
+}
+
+export async function createMatchPre(userId, payload) {
+  const { data, error } = await supabase
+    .from('match_log')
+    .insert([{
+      user_id: userId,
+      match_date:    payload.matchDate,
+      opponent:      payload.opponent || null,
+      competition:   payload.competition || null,
+      is_home:       payload.isHome ?? null,
+      pre_mood:      payload.preMood ?? null,
+      pre_intention: payload.preIntention || null,
+      pre_focus_cue: payload.preFocusCue || null,
+      pre_tactical:  payload.preTactical || null,
+      pre_logged_at: new Date().toISOString(),
+    }])
+    .select().single()
+  return { data, error }
+}
+
+export async function updateMatchPost(matchId, payload) {
+  const { data, error } = await supabase
+    .from('match_log')
+    .update({
+      result:         payload.result || null,
+      score_for:      payload.scoreFor ?? null,
+      score_against:  payload.scoreAgainst ?? null,
+      minutes_played: payload.minutesPlayed ?? null,
+      goals:          payload.goals ?? 0,
+      assists:        payload.assists ?? 0,
+      performance:    payload.performance ?? null,
+      went_well:      payload.wentWell || null,
+      to_fix:         payload.toFix || null,
+      cues_used:      payload.cuesUsed || [],
+      post_logged_at: new Date().toISOString(),
+    })
+    .eq('id', matchId)
+    .select().single()
+  return { data, error }
+}
+
+export async function getActiveMatch(userId) {
+  // any match with pre logged but no post
+  const today = new Date().toISOString().split('T')[0]
+  const { data, error } = await supabase
+    .from('match_log').select('*')
+    .eq('user_id', userId)
+    .is('post_logged_at', null)
+    .gte('match_date', today)
+    .order('match_date', { ascending: true })
+    .limit(1).maybeSingle()
+  return { data, error }
+}
+
+// ─── PARENT LINKS ───────────────────────────────────────────
+function genInviteCode() {
+  // 6-char readable, no ambiguous chars
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let s = ''
+  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)]
+  return s
+}
+
+export async function createParentInvite(athleteId) {
+  const code = genInviteCode()
+  const { data, error } = await supabase
+    .from('parent_invites')
+    .insert([{ athlete_id: athleteId, code }])
+    .select().single()
+  return { data, error }
+}
+
+export async function listParentInvites(athleteId) {
+  const { data, error } = await supabase
+    .from('parent_invites').select('*')
+    .eq('athlete_id', athleteId)
+    .order('created_at', { ascending: false })
+  return { data, error }
+}
+
+export async function redeemParentInvite(parentId, code) {
+  const upperCode = String(code || '').toUpperCase().trim()
+  const { data: invite, error: lookupErr } = await supabase
+    .from('parent_invites').select('*')
+    .eq('code', upperCode)
+    .maybeSingle()
+  if (lookupErr || !invite) return { error: lookupErr || new Error('Invite code not found') }
+  if (invite.consumed_at) return { error: new Error('Invite code already used') }
+  if (new Date(invite.expires_at) < new Date()) return { error: new Error('Invite code expired') }
+
+  // 1. create link
+  const { error: linkErr } = await supabase
+    .from('parent_links')
+    .insert([{ parent_id: parentId, athlete_id: invite.athlete_id }])
+  if (linkErr && !String(linkErr.message || '').includes('duplicate')) return { error: linkErr }
+
+  // 2. mark consumed
+  await supabase.from('parent_invites')
+    .update({ consumed_at: new Date().toISOString(), consumed_by: parentId })
+    .eq('id', invite.id)
+
+  // 3. ensure parent role
+  await supabase.from('profiles').update({ role: 'parent' }).eq('id', parentId)
+
+  return { athleteId: invite.athlete_id }
+}
+
+export async function getLinkedAthletes(parentId) {
+  const { data: links, error } = await supabase
+    .from('parent_links').select('athlete_id, created_at')
+    .eq('parent_id', parentId)
+  if (error || !links?.length) return { data: [], error }
+  const ids = links.map(l => l.athlete_id)
+  const { data: profiles } = await supabase
+    .from('profiles').select('*').in('id', ids)
+  return { data: profiles || [], error: null }
+}
+
+export async function getParentDashboard(parentId, athleteId) {
+  // RLS enforces parent_link existence; we just run the reads
+  const [p, as, ci, ml, mem] = await Promise.all([
+    supabase.from('profiles').select('full_name, streak, program_start_date, position, identity_goal, starter_focus').eq('id', athleteId).maybeSingle(),
+    supabase.from('action_steps').select('date, mental, did_action_steps').eq('user_id', athleteId).order('date', { ascending: false }).limit(14),
+    supabase.from('weekly_checkins').select('week, mental, wins, struggles').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(4),
+    supabase.from('match_log').select('match_date, opponent, result, score_for, score_against, performance, went_well').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(5),
+    supabase.from('coach_memory').select('themes').eq('user_id', athleteId).maybeSingle(),
+  ])
+  return {
+    profile:  p.data,
+    actions:  as.data || [],
+    checkins: ci.data || [],
+    matches:  ml.data || [],
+    themes:   mem.data?.themes || {},
+  }
+}
+
+// ─── WEEKLY RECAP (in-app surface) ──────────────────────────
+export async function getLatestRecap(userId) {
+  const { data, error } = await supabase
+    .from('recap_log').select('*')
+    .eq('user_id', userId)
+    .eq('audience', 'athlete')
+    .order('created_at', { ascending: false })
+    .limit(1).maybeSingle()
+  return { data, error }
 }
 
 // Derive level from total XP using the LEVELS table in gamification.js

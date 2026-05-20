@@ -77,6 +77,12 @@ function buildSystemPrompt({ athleteContext, memorySummary, memoryThemes }) {
     ).join('\n')}\n\n`
   }
 
+  if (ctx.recentMatches?.length) {
+    prompt += `─── LAST 5 MATCHES ───\n${ctx.recentMatches.slice(0, 5).map(m =>
+      `${m.match_date} vs ${m.opponent || '—'} (${m.competition || '—'}): ${m.result || '—'} ${m.score_for ?? '?'}-${m.score_against ?? '?'} | perf ${m.performance || '—'}/10 | cues=[${(m.cues_used || []).join(',')}] | well: ${(m.went_well || '').slice(0,80)} | fix: ${(m.to_fix || '').slice(0,80)}`
+    ).join('\n')}\n\n`
+  }
+
   prompt += `─── INSTRUCTION ───\nRespond in 2–4 sentences max. Reference their data when relevant. Match their energy.`
 
   return prompt
@@ -121,6 +127,23 @@ Decide ONE of:
 Return STRICT JSON: { "send": boolean, "kind": "missed-workout"|"low-mood"|"plateau"|"streak-risk"|"win"|"none", "message": "...", "signal": "..." }
 
 Message rules: 1-2 sentences, athlete voice, no preaching, name what you noticed (specific). Signal: 1 line describing the trigger. No prose outside the JSON.
+`.trim()
+
+const STARTER_PLAN_PROMPT = `
+You are Coach Valentino DiLorenzo building a 4-week mental-game starter plan for a new athlete.
+
+Inputs include their identity goal, position, age, baseline scores (1-10 across shark/goldfish/selftalk/tuneout/confidence), top obstacles, and match cadence.
+
+Output STRICT JSON: { "weeks": [ { "focus": "...", "cue": "...", "action": "..." }, ... ] }
+
+Rules:
+- Exactly 4 weeks.
+- "focus" = short title (3-6 words, athletic, no fluff).
+- "cue" = a short trigger phrase the athlete can say to themselves (≤8 words). Use 🦈 🐠 🔇 sparingly when it fits.
+- "action" = one concrete weekly action (≤25 words, imperative voice).
+- Week 1 targets the lowest baseline score. Week 2-3 stack on obstacles. Week 4 integrates into match-day.
+- Personalize using their position and identity goal. No generic motivational filler.
+- No prose outside the JSON.
 `.trim()
 
 const EXTRACT_ACTIONS_PROMPT = `
@@ -220,6 +243,32 @@ export default async function handler(req, res) {
       })
       const raw = resp.content?.[0]?.text || '{}'
       const parsed = parseJsonOrEmpty(raw, { send: false, kind: 'none', message: '', signal: '' })
+      return res.status(200).json({ ...parsed, usage: resp.usage })
+    }
+
+    if (action === 'starter_plan') {
+      const onboarding = body.onboarding || {}
+      const profile = body.profile || {}
+      const resp = await client.messages.create({
+        model: MODEL,
+        max_tokens: 700,
+        system: STARTER_PLAN_PROMPT,
+        messages: [{
+          role: 'user',
+          content: JSON.stringify({
+            name: profile.full_name,
+            identityGoal: onboarding.identityGoal,
+            position: onboarding.position,
+            age: onboarding.age,
+            clubTeam: onboarding.clubTeam,
+            baseline: onboarding.baseline,
+            obstacles: onboarding.obstacles,
+            matchCadence: onboarding.matchCadence,
+          }, null, 2),
+        }],
+      })
+      const raw = resp.content?.[0]?.text || '{}'
+      const parsed = parseJsonOrEmpty(raw, { weeks: [] })
       return res.status(200).json({ ...parsed, usage: resp.usage })
     }
 
