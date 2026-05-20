@@ -108,9 +108,12 @@ import CourseTab from './tabs/CourseTab.jsx'
 import SquadTab from './tabs/SquadTab.jsx'
 import LockerRoomTab from './tabs/LockerRoomTab.jsx'
 import AdminTab from './tabs/AdminTab.jsx'
+import Onboarding from './Onboarding.jsx'
+import MatchDayTab from './tabs/MatchDayTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
+import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
 
@@ -594,7 +597,7 @@ export default function Main({ user }) {
 
   const navTabs = [
     { id: 'home',      label: 'Home',   matches: ['home', 'weekly', 'tracker', 'parents', 'course'] },
-    { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental'] },
+    { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
     { id: 'nutrition', label: 'Body',   matches: ['nutrition', 'body'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
     { id: 'locker',    label: 'Locker' },
@@ -603,8 +606,19 @@ export default function Main({ user }) {
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
 
+  const needsOnboarding = profile
+    && !profile.onboarded_at
+    && (profile.role === 'athlete' || !profile.role)
+
   return (
     <div style={C.app}>
+      {needsOnboarding && (
+        <Onboarding
+          user={user}
+          profile={profile}
+          onDone={() => loadUserData()}
+        />
+      )}
       {badgeNotice && (
         <div style={{
           position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)',
@@ -751,6 +765,8 @@ export default function Main({ user }) {
               {profile?.full_name?.split(' ')[0] || 'Athlete'}<span style={{ color: '#4a4a4a' }}>.</span>
             </div>
           </div>
+
+          <WeeklyRecapCard user={user} />
 
           {/* Mindset fuel — athletic pull quote */}
           <TiltCard tiltLimit={10} scale={1.02} style={{ borderRadius: 16, marginBottom: 14 }}>
@@ -2184,6 +2200,14 @@ export default function Main({ user }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── MATCH DAY ── */}
+      {tab === 'match' && (
+        <div className="fade">
+          <ActionsSubNav active="match" setTab={setTab} />
+          <MatchDayTab user={user} profile={profile} />
         </div>
       )}
 

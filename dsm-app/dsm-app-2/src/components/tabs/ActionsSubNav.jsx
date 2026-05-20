@@ -5,6 +5,7 @@ export default function ActionsSubNav({ active, setTab }) {
     { id: 'steps',    label: 'Steps',    target: 'actions' },
     { id: 'ball',     label: 'Ball',     target: 'ball' },
     { id: 'workouts', label: 'Workouts', target: 'workouts' },
+    { id: 'match',    label: 'Match',    target: 'match' },
   ]
   return (
     <div style={{ padding: '8px 22px 0' }}>
