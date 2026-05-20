@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signIn, signUp } from '../lib/supabase.js'
+import { signIn, signUp, redeemParentInvite, supabase } from '../lib/supabase.js'
 import { tokens as t } from '../styles.js'
 import TiltCard from './widgets/TiltCard.jsx'
 
@@ -201,27 +201,45 @@ const s = {
 }
 
 export default function Auth() {
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState('login')      // login | signup | parent
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [parentCode, setParentCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
   const handleSubmit = async () => {
     if (!email || !password) return setError('Please fill in all fields.')
-    if (mode === 'signup' && !name) return setError('Please enter your name.')
+    if ((mode === 'signup' || mode === 'parent') && !name) return setError('Please enter your name.')
+    if (mode === 'parent' && parentCode.length !== 6) return setError('Enter the 6-char invite code from your athlete.')
     setLoading(true)
     setError('')
     setMessage('')
     if (mode === 'login') {
       const { error } = await signIn(email, password)
       if (error) setError(error.message)
-    } else {
+    } else if (mode === 'signup') {
       const { error } = await signUp(email, password, name)
       if (error) setError(error.message)
       else setMessage('Check your email to confirm your account, then sign in.')
+    } else if (mode === 'parent') {
+      // parent flow: signup -> auto-signin (if email confirm disabled) -> redeem
+      const { error } = await signUp(email, password, name)
+      if (error) { setError(error.message); setLoading(false); return }
+      // try immediate sign-in (works if email confirm is off)
+      const { error: signInErr } = await signIn(email, password)
+      if (signInErr) {
+        setMessage('Account created. Check your email to confirm, then sign in with your code.')
+      } else {
+        const { data: { user: u } } = await supabase.auth.getUser()
+        if (u) {
+          const { error: linkErr } = await redeemParentInvite(u.id, parentCode)
+          if (linkErr) setError(`Account created but link failed: ${linkErr.message}`)
+          else setMessage('Linked! Loading dashboard…')
+        }
+      }
     }
     setLoading(false)
   }
@@ -254,22 +272,38 @@ export default function Auth() {
               Sign in
             </button>
             <button style={s.modeBtn(mode === 'signup')} onClick={() => { setMode('signup'); setError(''); setMessage('') }}>
-              Join program
+              Join
+            </button>
+            <button style={s.modeBtn(mode === 'parent')} onClick={() => { setMode('parent'); setError(''); setMessage('') }}>
+              Parent
             </button>
           </div>
 
           {error && <div style={s.alert('err')}>{error}</div>}
           {message && <div style={s.alert('ok')}>{message}</div>}
 
-          {mode === 'signup' && (
+          {(mode === 'signup' || mode === 'parent') && (
             <>
               <span style={s.lbl}>Full name</span>
               <input
                 style={s.inp}
-                placeholder="Marco DiLorenzo"
+                placeholder={mode === 'parent' ? 'Sarah DiLorenzo' : 'Marco DiLorenzo'}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
+              />
+            </>
+          )}
+
+          {mode === 'parent' && (
+            <>
+              <span style={s.lbl}>Athlete invite code</span>
+              <input
+                style={{ ...s.inp, textTransform: 'uppercase', letterSpacing: 4, textAlign: 'center', fontFamily: t.font.mono, fontSize: 17 }}
+                placeholder="ABC123"
+                maxLength={6}
+                value={parentCode}
+                onChange={(e) => setParentCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
               />
             </>
           )}
@@ -300,7 +334,10 @@ export default function Auth() {
             onClick={handleSubmit}
             disabled={loading}
           >
-            {loading ? 'Working…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {loading ? 'Working…'
+              : mode === 'login'  ? 'Sign in'
+              : mode === 'parent' ? 'Link to my athlete'
+                                  : 'Create account'}
             {!loading && <span aria-hidden style={{ fontSize: 14 }}>→</span>}
           </button>
         </TiltCard>

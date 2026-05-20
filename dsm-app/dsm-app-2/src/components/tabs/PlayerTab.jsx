@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
 import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS } from '../../data/gamification.js'
-import { getXpTotals, getEarnedBadges, levelFromXp } from '../../lib/supabase.js'
+import { getXpTotals, getEarnedBadges, levelFromXp, createParentInvite, listParentInvites } from '../../lib/supabase.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 import BadgeTile from '../widgets/BadgeTile.jsx'
 
@@ -140,7 +140,8 @@ export default function PlayerTab({ profile, user }) {
           { id: 'overview', label: 'Overview' },
           { id: 'badges',   label: 'Badges' },
           { id: 'squad',    label: 'Squad' },
-          { id: 'skills',     label: 'Skills' },
+          { id: 'skills',   label: 'Skills' },
+          { id: 'family',   label: 'Family' },
         ].map(it => {
           const a = tab === it.id
           return (
@@ -160,8 +161,109 @@ export default function PlayerTab({ profile, user }) {
       {tab === 'overview' && <Overview />}
       {tab === 'badges'   && <BadgesView earnedFromDb={earned} />}
       {tab === 'squad'    && <SquadView />}
-      {tab === 'skills'     && <SkillTreeView />}
+      {tab === 'skills'   && <SkillTreeView />}
+      {tab === 'family'   && <FamilyView user={user} />}
     </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+
+function FamilyView({ user }) {
+  const [invites, setInvites] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await listParentInvites(user.id)
+      setInvites(data || [])
+      setLoading(false)
+    })()
+  }, [user.id])
+
+  async function generate() {
+    setCreating(true)
+    const { data } = await createParentInvite(user.id)
+    if (data) setInvites(i => [data, ...i])
+    setCreating(false)
+  }
+
+  async function copy(code) {
+    try { await navigator.clipboard.writeText(code); setCopied(code); setTimeout(() => setCopied(''), 1400) } catch {}
+  }
+
+  const live = invites.filter(i => !i.consumed_at && new Date(i.expires_at) > new Date())
+
+  return (
+    <>
+      <div style={{
+        background: t.color.surface, border: `1px solid ${t.color.line}`,
+        borderRadius: 16, padding: 18, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>
+          Invite a parent
+        </div>
+        <h3 style={{
+          fontFamily: t.font.athletic, fontSize: 22, color: t.color.text,
+          marginTop: 4, letterSpacing: 1, textTransform: 'uppercase',
+        }}>Share progress</h3>
+        <p style={{ fontSize: 13, color: t.color.textDim, marginTop: 8, lineHeight: 1.5 }}>
+          Parents see a sanitized read-only view: streak, recent matches, focus area.
+          They never see your private chat with Coach V.
+        </p>
+        <button
+          onClick={generate}
+          disabled={creating}
+          style={{
+            marginTop: 14, padding: '12px 18px',
+            background: t.color.text, border: 'none', borderRadius: 12,
+            color: t.color.bg, fontSize: 12, fontWeight: 700, letterSpacing: 1.4,
+            textTransform: 'uppercase', cursor: 'pointer', width: '100%',
+          }}
+        >{creating ? 'Generating…' : 'Generate invite code'}</button>
+      </div>
+
+      <span style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+        Active codes
+      </span>
+      {loading && <div style={{ color: t.color.textMute, fontSize: 13 }}>Loading…</div>}
+      {!loading && live.length === 0 && (
+        <div style={{ color: t.color.textMute, fontSize: 13, marginBottom: 14 }}>
+          No active codes. Generate one above to invite a parent.
+        </div>
+      )}
+      {live.map(inv => (
+        <div key={inv.id} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 14px', marginBottom: 8,
+          background: t.color.surface, border: `1px solid ${t.color.line}`,
+          borderRadius: 12,
+        }}>
+          <div style={{
+            fontFamily: t.font.mono, fontSize: 20, letterSpacing: 4,
+            color: t.color.text, flex: 1,
+          }}>{inv.code}</div>
+          <button
+            onClick={() => copy(inv.code)}
+            style={{
+              padding: '6px 12px', fontSize: 10, letterSpacing: 1.4,
+              border: `1px solid ${t.color.line2}`, borderRadius: 999,
+              background: copied === inv.code ? t.color.ok : 'transparent',
+              color: copied === inv.code ? t.color.bg : t.color.text,
+              fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer',
+              fontFamily: t.font.sans,
+            }}
+          >{copied === inv.code ? 'Copied' : 'Copy'}</button>
+        </div>
+      ))}
+      {live.length > 0 && (
+        <div style={{ fontSize: 11, color: t.color.textMute, marginTop: 6, letterSpacing: 1 }}>
+          Codes expire in 14 days. Each works once.
+        </div>
+      )}
+    </>
   )
 }
 
