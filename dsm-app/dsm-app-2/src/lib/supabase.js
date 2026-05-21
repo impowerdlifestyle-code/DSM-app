@@ -984,14 +984,15 @@ export async function updateMatchPost(matchId, payload) {
 }
 
 export async function getActiveMatch(userId) {
-  // any match with pre logged but no post
-  const today = new Date().toISOString().split('T')[0]
+  // any match with pre logged but no post in the last 3 days — date-tolerant
+  // (UTC vs local timezone slop, late-night pre-logging)
+  const since = new Date(Date.now() - 3 * 86400 * 1000).toISOString().split('T')[0]
   const { data, error } = await supabase
     .from('match_log').select('*')
     .eq('user_id', userId)
     .is('post_logged_at', null)
-    .gte('match_date', today)
-    .order('match_date', { ascending: true })
+    .gte('match_date', since)
+    .order('match_date', { ascending: false })
     .limit(1).maybeSingle()
   return { data, error }
 }

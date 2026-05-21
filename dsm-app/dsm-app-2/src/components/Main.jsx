@@ -587,7 +587,7 @@ export default function Main({ user }) {
           <div style={{ fontSize:11, color:'#444', lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
             After payment, your coach will activate your account within 24 hours.
           </div>
-          <button onClick={signOut} style={{ background:'none', border:'1px solid #333', borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+          <button onClick={() => signOut()} style={{ background:'none', border:'1px solid #333', borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
             SIGN OUT
           </button>
         </div>
@@ -696,7 +696,7 @@ export default function Main({ user }) {
             color: tab === 'locker' ? '#000' : '#8e8e8e', cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Locker</button>
-          <button onClick={signOut} style={{
+          <button onClick={() => signOut()} style={{
             background: 'transparent', border: '1px solid #1c1c1c',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
             color: '#8e8e8e', cursor: 'pointer', fontWeight: 600,

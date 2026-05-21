@@ -147,6 +147,14 @@ export default async function handler(req, res) {
     .filter(k => !process.env[k])
   if (missing.length) return res.status(500).json({ error: `missing env: ${missing.join(',')}` })
 
+  // Vercel Hobby cron only supports daily — gate to Monday in code so this
+  // can fire daily and exit fast 6/7 days. Manual triggers (?force=1) bypass.
+  const force = req.query?.force === '1' || req.query?.dryRun === '1' || req.query?.userId
+  const isMonday = new Date().getUTCDay() === 1
+  if (!force && !isMonday) {
+    return res.status(200).json({ skipped: true, reason: 'not-monday', utcDay: new Date().getUTCDay() })
+  }
+
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const FROM = process.env.RECAP_FROM_EMAIL

@@ -100,21 +100,24 @@ function BreathTimer({ onDone }) {
   const [cycle, setCycle] = useState(1)
   useEffect(() => {
     const seq = [['in', 4000], ['hold', 7000], ['out', 8000]]
+    let alive = true
     let i = 0, c = 1
     let timer
     function step() {
+      if (!alive) return
       const [p, dur] = seq[i]
       setPhase(p); setCycle(c)
       timer = setTimeout(() => {
+        if (!alive) return
         i++
         if (i >= seq.length) { i = 0; c++ }
-        if (c > 3) return onDone?.()
+        if (c > 3) { onDone?.(); return }
         step()
       }, dur)
     }
     step()
-    return () => clearTimeout(timer)
-  }, [])
+    return () => { alive = false; clearTimeout(timer) }
+  }, [onDone])
   return (
     <div style={{ textAlign: 'center', padding: '20px 0' }}>
       <div style={{ fontFamily: t.font.athletic, fontSize: 28, letterSpacing: 2, marginBottom: 16 }}>
@@ -129,6 +132,7 @@ function BreathTimer({ onDone }) {
 }
 
 export default function MatchDayTab({ user, profile }) {
+  const PRE_KEY = `dsm_pre_match_${user.id}`
   const [mode, setMode] = useState('home')    // home | pre | live | post
   const [active, setActive] = useState(null)
   const [history, setHistory] = useState([])
@@ -137,13 +141,26 @@ export default function MatchDayTab({ user, profile }) {
   const [ok, setOk] = useState('')
   const [showBreath, setShowBreath] = useState(false)
 
-  // pre-match form
-  const [pre, setPre] = useState({
-    matchDate: new Date().toISOString().split('T')[0],
-    opponent: '', competition: 'league', isHome: true,
-    preMood: 7, preIntention: profile?.identity_goal || '',
-    preFocusCue: '', preTactical: '',
+  // pre-match form — restore from localStorage if user navigated away mid-fill
+  const [pre, setPre] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PRE_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return {
+      matchDate: new Date().toISOString().split('T')[0],
+      opponent: '', competition: 'league', isHome: true,
+      preMood: 7, preIntention: profile?.identity_goal || '',
+      preFocusCue: '', preTactical: '',
+    }
   })
+
+  // persist pre-match draft on every change so nav doesn't lose it
+  useEffect(() => {
+    if (mode === 'pre') {
+      try { localStorage.setItem(PRE_KEY, JSON.stringify(pre)) } catch {}
+    }
+  }, [pre, mode, PRE_KEY])
 
   // post-match form
   const [post, setPost] = useState({
@@ -170,6 +187,7 @@ export default function MatchDayTab({ user, profile }) {
     setErr(''); setOk('')
     const { data, error } = await createMatchPre(user.id, pre)
     if (error) return setErr(error.message)
+    try { localStorage.removeItem(PRE_KEY) } catch {}
     setActive(data); setMode('live'); setOk('Locked in. Go warm up.')
     setHistory(h => [data, ...h])
   }

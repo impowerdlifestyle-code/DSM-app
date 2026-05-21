@@ -116,7 +116,7 @@ export default function ParentDashboardTab({ user }) {
           </div>
         </div>
 
-        <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, marginTop: 18 }} onClick={signOut}>
+        <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, marginTop: 18 }} onClick={() => signOut()}>
           Sign out
         </button>
       </div>
@@ -243,7 +243,7 @@ export default function ParentDashboardTab({ user }) {
         </>
       )}
 
-      <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, marginTop: 18 }} onClick={signOut}>
+      <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, marginTop: 18 }} onClick={() => signOut()}>
         Sign out
       </button>
     </div>

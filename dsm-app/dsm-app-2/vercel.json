@@ -7,6 +7,6 @@
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "crons": [
-    { "path": "/api/recap", "schedule": "0 12 * * 1" }
+    { "path": "/api/recap", "schedule": "0 12 * * *" }
   ]
 }
