@@ -10,6 +10,16 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
+  const [minHoldDone, setMinHoldDone] = useState(false)
+
+  // Loading screen minimum hold — 4s on first login (no cached name),
+  // 1.2s on returning sessions so it doesn't feel slow.
+  useEffect(() => {
+    const firstLogin = !localStorage.getItem('dsm_player_name')
+    const ms = firstLogin ? 4000 : 1200
+    const t = setTimeout(() => setMinHoldDone(true), ms)
+    return () => clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,7 +50,7 @@ export default function App() {
     })()
   }, [user?.id])
 
-  if (loading || (user && roleLoading)) return <LoadingBall />
+  if (loading || (user && roleLoading) || !minHoldDone) return <LoadingBall />
   if (!user) return <Auth />
   if (role === 'parent') return <ParentShell user={user} />
   return <Main user={user} />
