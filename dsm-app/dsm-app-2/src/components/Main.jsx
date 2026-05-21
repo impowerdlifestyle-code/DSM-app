@@ -599,10 +599,9 @@ export default function Main({ user }) {
   const navTabs = [
     { id: 'home',      label: 'Home',   matches: ['home'] },
     { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
-    { id: 'nutrition', label: 'Body',   matches: ['nutrition', 'body'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
     { id: 'squad',     label: 'Squad' },
-    { id: 'more',      label: 'More',   matches: ['more', 'tracker', 'weekly', 'parents', 'course'] },
+    { id: 'more',      label: 'More',   matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course'] },
     ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
@@ -2008,12 +2007,14 @@ export default function Main({ user }) {
       {tab === 'more' && (
         <div className="fade" style={C.scroll}>
           <div style={C.title}>MORE</div>
-          <div style={C.sub}>Habits · check-ins · resources</div>
+          <div style={C.sub}>Body · habits · check-ins · resources</div>
           {[
-            { id: 'tracker', label: 'Habit Tracker',   sub: 'Weekly habits + day streak' },
-            { id: 'weekly',  label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
-            { id: 'course',  label: 'Course',          sub: 'Modules + resources' },
-            { id: 'parents', label: 'Parent Guide',    sub: 'For the people in your corner' },
+            { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },
+            { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
+            { id: 'tracker',   label: 'Habit Tracker', sub: 'Weekly habits + day streak' },
+            { id: 'weekly',    label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
+            { id: 'course',    label: 'Course',        sub: 'Modules + resources' },
+            { id: 'parents',   label: 'Parent Guide',  sub: 'For the people in your corner' },
           ].map(item => (
             <button key={item.id} onClick={() => setTab(item.id)} style={{
               width: '100%', textAlign: 'left',
