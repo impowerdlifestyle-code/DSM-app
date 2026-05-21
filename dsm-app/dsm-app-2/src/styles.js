@@ -23,6 +23,13 @@ export const tokens = {
     emberSoft: 'rgba(255,255,255,0.06)',
     bone:      '#f4f4f4',
 
+    // CTA — soccer-pitch grass green for primary action buttons.
+    // Bright FIFA-marketing green; high-contrast on black, energetic.
+    pitch:     '#4ade80',
+    pitchDeep: '#22c55e',
+    pitchSoft: 'rgba(74,222,128,0.14)',
+    pitchEdge: 'rgba(74,222,128,0.55)',
+
     // Semantic only — kept for state signaling (workout set done, errors)
     ok:        '#4ade80',
     okBg:      'rgba(74,222,128,0.08)',
@@ -42,6 +49,8 @@ export const tokens = {
     card:  '0 1px 0 rgba(255,255,255,0.025) inset, 0 8px 24px -12px rgba(0,0,0,0.6)',
     raised:'0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 50px -20px rgba(0,0,0,0.7)',
     ember: '0 10px 30px -10px rgba(255,255,255,0.18)',  // soft white halo
+    // Pitch-green button halo — paired with linear gradient fill for depth.
+    pitch: '0 1px 0 rgba(255,255,255,0.3) inset, 0 -1px 0 rgba(0,0,0,0.25) inset, 0 6px 16px -6px rgba(74,222,128,0.6), 0 14px 36px -14px rgba(74,222,128,0.45)',
   },
   motion: {
     fast: '120ms cubic-bezier(.2,.7,.2,1)',
@@ -146,35 +155,37 @@ export const C = {
     textTransform: 'uppercase',
   },
 
-  // CTA — white pill on black
+  // CTA — pitch-green pill on black, with subtle top-edge highlight + green halo.
   btn: {
-    background: t.color.text,
-    border: 'none',
+    background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+    border: `1px solid ${t.color.pitchEdge}`,
     borderRadius: t.radius.md,
     padding: '15px 20px',
     fontSize: 13,
     fontWeight: 700,
     letterSpacing: 1.4,
-    color: t.color.bg,
+    color: '#ffffff',
     cursor: 'pointer',
     width: '100%',
     fontFamily: t.font.sans,
     marginBottom: 8,
     textTransform: 'uppercase',
-    transition: `transform ${t.motion.fast}, background ${t.motion.fast}, color ${t.motion.fast}`,
+    boxShadow: t.shadow.pitch,
+    transition: `transform ${t.motion.fast}, filter ${t.motion.fast}`,
   },
   bsm: {
-    background: t.color.text,
-    border: 'none',
+    background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+    border: `1px solid ${t.color.pitchEdge}`,
     borderRadius: t.radius.sm,
     padding: '7px 13px',
     fontSize: 10,
     fontWeight: 700,
     letterSpacing: 1,
-    color: t.color.bg,
+    color: '#ffffff',
     cursor: 'pointer',
     fontFamily: t.font.sans,
     textTransform: 'uppercase',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 10px -4px rgba(58,165,68,0.5)',
   },
 
   inp: {

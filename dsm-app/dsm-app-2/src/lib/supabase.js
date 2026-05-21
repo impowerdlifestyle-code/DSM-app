@@ -88,22 +88,22 @@ export async function getAllActionSteps() {
 }
 
 // ─── HABITS ──────────────────────────────────────────────────
+// habits is one row per athlete (no week column) — the blob gets overwritten
+// each save. Reverse-engineered from the live voxsrn- schema after the
+// week-keyed writes were silently rejecting for every athlete.
 export async function saveHabits(userId, habits) {
-  const week = getWeekKey()
   const { data, error } = await supabase
     .from('habits')
-    .upsert([{ user_id: userId, week, habits: JSON.stringify(habits) }], { onConflict: 'user_id,week' })
+    .upsert([{ user_id: userId, habits: JSON.stringify(habits), updated_at: new Date().toISOString() }], { onConflict: 'user_id' })
   return { data, error }
 }
 
 export async function getHabits(userId) {
-  const week = getWeekKey()
   const { data, error } = await supabase
     .from('habits')
     .select('*')
     .eq('user_id', userId)
-    .eq('week', week)
-    .single()
+    .maybeSingle()
   return { data, error }
 }
 
@@ -410,29 +410,65 @@ export async function deleteLockerRoomNote(noteId) {
 // Pulls EVERYTHING about an athlete in one shot. Used by both the athlete's
 // own Locker Room tab and the admin dashboard.
 export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
+  // Each query is per-query-tolerant: a missing table, RLS denial, or schema
+  // drift on any one source degrades that section to empty instead of blowing
+  // up the whole locker room load. Surfaces the failed table names via console
+  // so we can spot config drift without breaking the user-facing view.
+  const safe = (label, p) => p.then(
+    r => (r?.error ? (console.warn(`[locker] ${label}:`, r.error.message), { data: r.data ?? null }) : r),
+  ).catch(err => { console.warn(`[locker] ${label}:`, err?.message || err); return { data: null } })
+
   const [
     profileRes, memoryRes, actionRes, ballRes, checkinRes, voiceRes,
     chatRes, workoutRes, foodRes, bodyRes, xpRes, badgeRes, nudgeRes,
     squadRes, notesRes, questRes, matchRes,
+    habitsRes, futureSelfRes, nutritionTgtRes, feedbackRes, parentsRes,
+    recapsRes,
   ] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', athleteId).maybeSingle(),
-    supabase.from('coach_memory').select('*').eq('user_id', athleteId).maybeSingle(),
-    supabase.from('action_steps').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20),
-    supabase.from('ball_mastery').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20),
-    supabase.from('weekly_checkins').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(10),
-    supabase.from('voice_journal').select('*').eq('user_id', athleteId).order('recorded_at', { ascending: false }).limit(20),
-    supabase.from('chat_history').select('id, role, content, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(30),
-    supabase.from('workouts_log').select('*').eq('user_id', athleteId).order('completed_at', { ascending: false }).limit(15),
-    supabase.from('food_log').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(20),
-    supabase.from('body_stats').select('*').eq('user_id', athleteId).order('measured_at', { ascending: false }).limit(15),
-    supabase.from('xp_log').select('xp, source, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(50),
-    supabase.from('badges_earned').select('badge_id, earned_at').eq('user_id', athleteId),
-    supabase.from('coach_nudges').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(15),
-    supabase.from('squad_members').select('squad_id, joined_at, squads(*)').eq('user_id', athleteId),
-    isAdmin ? supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
-    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('quest_date', { ascending: false }).limit(30),
-    supabase.from('match_log').select('*').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(20),
+    safe('profiles',        supabase.from('profiles').select('*').eq('id', athleteId).maybeSingle()),
+    safe('coach_memory',    supabase.from('coach_memory').select('*').eq('user_id', athleteId).maybeSingle()),
+    safe('action_steps',    supabase.from('action_steps').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20)),
+    safe('ball_mastery',    supabase.from('ball_mastery').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(20)),
+    safe('weekly_checkins', supabase.from('weekly_checkins').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(10)),
+    safe('voice_journal',   supabase.from('voice_journal').select('*').eq('user_id', athleteId).order('recorded_at', { ascending: false }).limit(20)),
+    safe('chat_history',    supabase.from('chat_history').select('id, role, content, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(30)),
+    safe('workouts_log',    supabase.from('workouts_log').select('*').eq('user_id', athleteId).order('completed_at', { ascending: false }).limit(15)),
+    safe('food_log',        supabase.from('food_log').select('*').eq('user_id', athleteId).order('logged_at', { ascending: false }).limit(20)),
+    safe('body_stats',      supabase.from('body_stats').select('*').eq('user_id', athleteId).order('measured_at', { ascending: false }).limit(15)),
+    safe('xp_log',          supabase.from('xp_log').select('xp, source, created_at').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(50)),
+    safe('badges_earned',   supabase.from('badges_earned').select('badge_id, earned_at').eq('user_id', athleteId)),
+    safe('coach_nudges',    supabase.from('coach_nudges').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(15)),
+    safe('squad_members',   supabase.from('squad_members').select('squad_id, joined_at, squads(*)').eq('user_id', athleteId)),
+    isAdmin ? safe('locker_room_notes', supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false })) : Promise.resolve({ data: [] }),
+    safe('daily_quests',    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('quest_date', { ascending: false }).limit(30)),
+    safe('match_log',       supabase.from('match_log').select('*').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(20)),
+    safe('habits',          supabase.from('habits').select('*').eq('user_id', athleteId).maybeSingle()),
+    safe('future_self_checkins', supabase.from('future_self_checkins').select('*').eq('user_id', athleteId).order('month', { ascending: false }).limit(12)),
+    safe('nutrition_targets', supabase.from('nutrition_targets').select('*').eq('user_id', athleteId).maybeSingle()),
+    safe('message_feedback', supabase.from('message_feedback').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(30)),
+    isAdmin
+      ? safe('parent_links', supabase.from('parent_links').select('parent_id, created_at, profiles!parent_links_parent_id_fkey(full_name, email)').eq('athlete_id', athleteId))
+      : Promise.resolve({ data: [] }),
+    safe('recap_log',       supabase.from('recap_log')
+      .select('id, week_key, highlights, created_at, sent_at')
+      .eq('user_id', athleteId).eq('audience', 'athlete')
+      .order('created_at', { ascending: false }).limit(12)),
   ])
+
+  // Progress photos need signed URLs — fetch separately so failures don't block the rest.
+  let photos = []
+  try {
+    const { data: photoRows } = await supabase
+      .from('progress_photos').select('*').eq('user_id', athleteId)
+      .order('taken_at', { ascending: false }).limit(12)
+    photos = await Promise.all((photoRows || []).map(async (p) => {
+      const { data: signed } = await supabase.storage
+        .from('progress-photos')
+        .createSignedUrl(p.storage_path, 3600)
+      return { ...p, url: signed?.signedUrl || null }
+    }))
+  } catch { /* progress-photos bucket may not exist yet; skip silently */ }
+
   const totalXp = (xpRes.data || []).reduce((a, r) => a + (r.xp || 0), 0)
   return {
     profile:    profileRes.data,
@@ -453,6 +489,13 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     notes:      notesRes.data || [],
     dailyQuests: questRes.data || [],
     matches:    matchRes.data || [],
+    habits:     habitsRes.data || null,
+    futureSelf: futureSelfRes.data || [],
+    nutritionTargets: nutritionTgtRes.data || null,
+    messageFeedback: feedbackRes.data || [],
+    parents:    parentsRes.data || [],
+    photos,
+    recaps:     recapsRes.data || [],
   }
 }
 
@@ -1082,6 +1125,16 @@ export async function getLatestRecap(userId) {
     .eq('audience', 'athlete')
     .order('created_at', { ascending: false })
     .limit(1).maybeSingle()
+  return { data, error }
+}
+
+export async function getRecapHistory(userId, limit = 12) {
+  const { data, error } = await supabase
+    .from('recap_log').select('id, week_key, summary, highlights, created_at, sent_at')
+    .eq('user_id', userId)
+    .eq('audience', 'athlete')
+    .order('created_at', { ascending: false })
+    .limit(limit)
   return { data, error }
 }
 

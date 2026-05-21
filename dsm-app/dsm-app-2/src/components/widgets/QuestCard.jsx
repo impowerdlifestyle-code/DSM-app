@@ -1,5 +1,6 @@
 import { tokens as t } from '../../styles.js'
 import TiltCard from './TiltCard.jsx'
+import ProgressBar from './ProgressBar.jsx'
 
 /**
  * QuestCard — single daily quest row with progress + XP reward.
@@ -40,16 +41,13 @@ export default function QuestCard({ quest, onClick }) {
             display: 'flex', alignItems: 'center', gap: 10,
             marginTop: 6,
           }}>
-            <div style={{
-              flex: 1, height: 3, background: t.color.line, borderRadius: 2, overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${pct}%`, height: '100%',
-                background: done ? '#4ade80' : t.color.text,
-                borderRadius: 2,
-                transition: 'width 500ms cubic-bezier(.2,.7,.2,1)',
-              }} />
-            </div>
+            <ProgressBar
+              pct={pct}
+              height={4}
+              color={done ? '#4ade80' : t.color.text}
+              style={{ flex: 1 }}
+              duration={500}
+            />
             <span style={{
               fontSize: 10, letterSpacing: 1, color: t.color.textMute,
               fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0,

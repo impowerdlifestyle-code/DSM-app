@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { saveOnboarding } from '../lib/supabase.js'
 import { tokens as t, C } from '../styles.js'
+import ProgressBar from './widgets/ProgressBar.jsx'
 
 const POSITIONS = ['GK', 'CB', 'FB', 'CDM', 'CM', 'CAM', 'W', 'ST']
 const CADENCES  = [
@@ -162,7 +163,7 @@ export default function Onboarding({ user, profile, onDone }) {
     <div style={s.overlay}>
       <div style={s.shell}>
         <div style={s.step}>Step {step + 1} of {STEPS.length}</div>
-        <div style={s.bar}><div style={s.barFill(pct)} /></div>
+        <ProgressBar pct={pct} height={4} style={{ marginBottom: 22 }} duration={240} />
 
         {step === 0 && (
           <>

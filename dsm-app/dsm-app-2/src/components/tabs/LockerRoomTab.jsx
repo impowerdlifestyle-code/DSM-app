@@ -79,8 +79,20 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
   const { profile, memory, actionSteps, ballMastery, checkins, voiceJournal, chat,
           workouts, food, body, badges, nudges, squads, notes, totalXp,
-          dailyQuests = [], matches = [] } = data
+          dailyQuests = [], matches = [],
+          habits = null, futureSelf = [], nutritionTargets = null,
+          messageFeedback = [], parents = [], photos = [],
+          recaps = [] } = data
   const name = profile?.full_name || profile?.email || 'Athlete'
+
+  // Onboarding snapshot — what we know about who this athlete is before any work begins.
+  const hasOnboarding = !!(profile?.identity_goal || profile?.position || profile?.age
+    || profile?.club_team || profile?.obstacles?.length
+    || (profile?.baseline && Object.keys(profile.baseline).length))
+
+  const feedbackUp   = messageFeedback.filter(f => f.rating === 'positive').length
+  const feedbackDown = messageFeedback.filter(f => f.rating === 'negative').length
+  const recentDownNotes = messageFeedback.filter(f => f.rating === 'negative' && f.note).slice(0, 5)
 
   const sections = [
     { id: 'overview',   label: 'Overview' },
@@ -106,10 +118,12 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           ) : <span />}
           {adminView && (
             <button onClick={handleExportPdf} style={{
-              background: t.color.text, border: 'none',
-              color: t.color.bg, padding: '7px 14px',
+              background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+              border: `1px solid ${t.color.pitchEdge}`,
+              color: '#ffffff', padding: '7px 14px',
               fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
               borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans,
+              boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 12px -4px rgba(74,222,128,0.6)',
             }}>📄 Export PDF</button>
           )}
         </div>
@@ -139,6 +153,44 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
       {section === 'overview' && (
         <div>
+          {adminView && hasOnboarding && (
+            <Card title="Athlete profile">
+              {profile?.identity_goal && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Identity goal</div>
+                  <div style={{ fontSize: 14, color: t.color.text, lineHeight: 1.5, fontStyle: 'italic' }}>"{profile.identity_goal}"</div>
+                </div>
+              )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                {profile?.position   && <span style={tag}>{profile.position}</span>}
+                {profile?.age        && <span style={tag}>Age {profile.age}</span>}
+                {profile?.club_team  && <span style={tag}>{profile.club_team}</span>}
+                {profile?.match_cadence && <span style={tag}>{profile.match_cadence}</span>}
+              </div>
+              {profile?.baseline && Object.keys(profile.baseline).length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Self-rated baseline</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 6 }}>
+                    {Object.entries(profile.baseline).map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12 }}>
+                        <span style={{ color: t.color.textDim, textTransform: 'capitalize' }}>{k}</span>
+                        <span style={{ color: t.color.text, fontFamily: t.font.mono }}>{v}/10</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {profile?.obstacles?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Top obstacles</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {profile.obstacles.map(o => <span key={o} style={tag}>{o}</span>)}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 14 }}>
             <Stat label="Streak"        value={`${profile?.streak || 0}d`}     onClick={canJump ? () => jumpTo('tracker') : null} />
             <Stat label="Total XP"      value={totalXp.toLocaleString()}        onClick={canJump ? () => jumpTo('player') : null} />
@@ -197,11 +249,14 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             </div>
           ))}
           <button onClick={saveThemes} disabled={themesSaving} style={{
-            padding: '10px 16px', background: themesSaving ? t.color.surface2 : t.color.text,
-            color: themesSaving ? t.color.textDim : t.color.bg,
-            border: 'none', borderRadius: 10,
+            padding: '10px 16px',
+            background: themesSaving ? t.color.surface2 : `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+            color: themesSaving ? t.color.textDim : '#ffffff',
+            border: themesSaving ? 'none' : `1px solid ${t.color.pitchEdge}`,
+            borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
             cursor: themesSaving ? 'wait' : 'pointer', fontFamily: t.font.sans,
+            boxShadow: themesSaving ? 'none' : '0 1px 0 rgba(255,255,255,0.25) inset, 0 6px 14px -6px rgba(74,222,128,0.6)',
           }}>{themesSaving ? 'Saving…' : themesSavedAt ? '✓ Saved' : 'Save themes'}</button>
 
           {memory?.athlete_summary && (
@@ -236,18 +291,81 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           </Card>
 
           <Card title={`Weekly check-ins (${checkins.length})`} onJump={canJump ? () => jumpTo('weekly') : null}>
-            {checkins.slice(0, 6).map(c => (
-              <div key={c.id} style={entry()}>
-                <div style={entryHeader}>
-                  <span>{c.week}</span>
-                  <span>Mental {c.mental || '—'}/10 · Conf {c.confidence_level || '—'}/10</span>
+            {checkins.slice(0, 6).map(c => {
+              const win      = c.biggest_win       || c.wins
+              const struggle = c.biggest_challenge || c.struggles
+              const goal     = c.goal_next_week    || c.goal
+              const message  = c.message_to_coach
+              return (
+                <div key={c.id} style={entry()}>
+                  <div style={entryHeader}>
+                    <span>{c.week}</span>
+                    <span>Energy {c.energy_level ?? c.mental ?? '—'}/10 · Conf {c.confidence_level ?? '—'}/10</span>
+                  </div>
+                  {win && <div style={{ fontSize: 12, color: t.color.text, marginTop: 4 }}><b>Win:</b> {win}</div>}
+                  {struggle && <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 2 }}><b>Struggle:</b> {struggle}</div>}
+                  {goal && <div style={{ fontSize: 12, color: t.color.text, marginTop: 2 }}><b>Goal:</b> {goal}</div>}
+                  {adminView && message && <div style={{ fontSize: 12, color: t.color.text, marginTop: 6, fontStyle: 'italic', padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}><b style={{ color: t.color.textMute, letterSpacing: 1 }}>FOR COACH · </b>{message}</div>}
                 </div>
-                {c.wins && <div style={{ fontSize: 12, color: t.color.text, marginTop: 4 }}><b>Win:</b> {c.wins}</div>}
-                {c.struggles && <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 2 }}><b>Struggle:</b> {c.struggles}</div>}
-                {c.goal && <div style={{ fontSize: 12, color: t.color.text, marginTop: 2 }}><b>Goal:</b> {c.goal}</div>}
+              )
+            })}
+            {checkins.length === 0 && <Empty />}
+          </Card>
+
+          <Card title={`Weekly recaps (${recaps.length})`}>
+            {recaps.slice(0, 8).map(r => {
+              const h = r.highlights || {}
+              return (
+                <div key={r.id} style={entry()}>
+                  <div style={entryHeader}>
+                    <span>{r.week_key}</span>
+                    <span>{new Date(r.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {h.headline && (
+                    <div style={{ fontSize: 12, color: t.color.text, marginTop: 4, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      {h.headline}
+                    </div>
+                  )}
+                  {h.wins?.length > 0 && (
+                    <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 4, lineHeight: 1.5 }}>
+                      <b style={{ color: t.color.textMute, letterSpacing: 1 }}>WINS · </b>
+                      {h.wins.join(' · ')}
+                    </div>
+                  )}
+                  {h.fix && (
+                    <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2, lineHeight: 1.5 }}>
+                      <b style={{ color: t.color.textMute, letterSpacing: 1 }}>FIX · </b>
+                      {h.fix}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {recaps.length === 0 && <Empty />}
+          </Card>
+
+          <Card title={`Future self check-ins (${futureSelf.length})`}>
+            {futureSelf.slice(0, 6).map(f => (
+              <div key={f.id} style={entry()}>
+                <div style={entryHeader}>
+                  <span>{f.month}</span>
+                  {f.response_audio_url && <span style={{ color: t.color.text }}>🎙</span>}
+                </div>
+                {f.prompt && <div style={{ fontSize: 11, color: t.color.textMute, marginTop: 4, fontStyle: 'italic' }}>"{f.prompt}"</div>}
+                {f.response_transcript && (
+                  <div style={{ fontSize: 12, color: t.color.text, marginTop: 6, lineHeight: 1.5 }}>
+                    {f.response_transcript.slice(0, 280)}{f.response_transcript.length > 280 ? '…' : ''}
+                  </div>
+                )}
+                {f.ai_reflection && (
+                  <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 6, lineHeight: 1.5, padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
+                    <b style={{ color: t.color.textMute, letterSpacing: 1 }}>COACH V REFLECTION · </b>
+                    {f.ai_reflection}
+                  </div>
+                )}
               </div>
             ))}
-            {checkins.length === 0 && <Empty />}
+            {futureSelf.length === 0 && <Empty />}
           </Card>
 
           <Card title={`Coach V chat (last ${chat.length})`} onJump={canJump ? () => jumpTo('bot') : null}>
@@ -268,6 +386,31 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             </div>
             {chat.length === 0 && <Empty />}
           </Card>
+
+          {adminView && messageFeedback.length > 0 && (
+            <Card title={`Coach V quality (${messageFeedback.length} rated)`}>
+              <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
+                <div style={{ flex: 1, padding: 10, background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase' }}>Helpful 👍</div>
+                  <div style={{ fontFamily: t.font.athletic, fontSize: 24, color: t.color.ok, marginTop: 2 }}>{feedbackUp}</div>
+                </div>
+                <div style={{ flex: 1, padding: 10, background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase' }}>Off 👎</div>
+                  <div style={{ fontFamily: t.font.athletic, fontSize: 24, color: t.color.err, marginTop: 2 }}>{feedbackDown}</div>
+                </div>
+              </div>
+              {recentDownNotes.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Why athlete flagged them</div>
+                  {recentDownNotes.map(f => (
+                    <div key={f.id} style={{ fontSize: 12, color: t.color.textDim, padding: '6px 0', borderBottom: `1px solid ${t.color.line}`, lineHeight: 1.5 }}>
+                      "{f.note}"
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
         </>
       )}
 
@@ -343,6 +486,36 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {matches.length === 0 && <Empty />}
           </Card>
 
+          <Card title="Habits" onJump={canJump ? () => jumpTo('tracker') : null}>
+            {(() => {
+              if (!habits) return <Empty />
+              let parsed = {}
+              try { parsed = typeof habits.habits === 'string' ? JSON.parse(habits.habits) : (habits.habits || {}) } catch {}
+              const keys = Object.keys(parsed)
+              const completed = keys.filter(k => parsed[k]).length
+              if (keys.length === 0) return <Empty />
+              return (
+                <div style={entry()}>
+                  <div style={entryHeader}>
+                    <span>Updated {habits.updated_at ? new Date(habits.updated_at).toLocaleDateString() : '—'}</span>
+                    <span style={{ color: completed === keys.length ? t.color.ok : t.color.textDim }}>
+                      {completed}/{keys.length} done
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                    {keys.map(k => (
+                      <span key={k} style={{
+                        ...tag,
+                        opacity: parsed[k] ? 1 : 0.35,
+                        color: parsed[k] ? t.color.text : t.color.textMute,
+                      }}>{parsed[k] ? '✓' : '·'} {k}</span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+          </Card>
+
           <Card title={`Daily quests (last ${dailyQuests.length} days)`} onJump={canJump ? () => jumpTo('home') : null}>
             {dailyQuests.slice(0, 10).map(q => (
               <div key={q.id} style={entry()}>
@@ -373,6 +546,24 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {body.length === 0 && <Empty />}
           </Card>
 
+          {nutritionTargets && (
+            <Card title="Nutrition targets" onJump={canJump ? () => jumpTo('nutrition') : null}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+                {[
+                  ['Calories', nutritionTargets.cal,        'kcal'],
+                  ['Protein',  nutritionTargets.protein_g,  'g'],
+                  ['Carbs',    nutritionTargets.carbs_g,    'g'],
+                  ['Fat',      nutritionTargets.fat_g,      'g'],
+                ].filter(([, v]) => v != null).map(([k, v, u]) => (
+                  <div key={k} style={{ padding: 10, background: t.color.bg, border: `1px solid ${t.color.line2}`, borderRadius: 8 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase' }}>{k}</div>
+                    <div style={{ fontFamily: t.font.athletic, fontSize: 22, color: t.color.text, marginTop: 2, letterSpacing: 1 }}>{v}{u && <span style={{ fontSize: 11, color: t.color.textDim, marginLeft: 4 }}>{u}</span>}</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           <Card title={`Nutrition (last ${food.length} logs)`} onJump={canJump ? () => jumpTo('nutrition') : null}>
             {food.slice(0, 10).map(f => (
               <div key={f.id} style={entry()}>
@@ -385,6 +576,36 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             ))}
             {food.length === 0 && <Empty />}
           </Card>
+
+          {photos.length > 0 && (
+            <Card title={`Progress photos (${photos.length})`}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+                {photos.slice(0, 9).map(p => p.url ? (
+                  <a key={p.id} href={p.url} target="_blank" rel="noreferrer" style={{
+                    display: 'block', aspectRatio: '3 / 4',
+                    background: t.color.bg, border: `1px solid ${t.color.line2}`,
+                    borderRadius: 8, overflow: 'hidden', position: 'relative',
+                  }}>
+                    <img src={p.url} alt={p.angle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      padding: '4px 6px',
+                      background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                      fontSize: 9, letterSpacing: 1.4, color: t.color.text,
+                      fontWeight: 700, textTransform: 'uppercase',
+                    }}>{p.angle} · {new Date(p.taken_at || p.created_at).toLocaleDateString()}</div>
+                  </a>
+                ) : (
+                  <div key={p.id} style={{
+                    aspectRatio: '3 / 4', background: t.color.bg,
+                    border: `1px solid ${t.color.line2}`, borderRadius: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, color: t.color.textMute,
+                  }}>{p.angle}</div>
+                ))}
+              </div>
+            </Card>
+          )}
         </>
       )}
 
@@ -401,6 +622,21 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
               </div>
             ))}
           </Card>
+
+          {adminView && (
+            <Card title={`Linked parents (${parents.length})`}>
+              {parents.map(p => (
+                <div key={p.parent_id} style={entry()}>
+                  <div style={{ fontSize: 13, color: t.color.text }}>{p.profiles?.full_name || '—'}</div>
+                  <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2 }}>{p.profiles?.email || ''}</div>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: t.color.textMute, marginTop: 4, textTransform: 'uppercase' }}>
+                    Linked {new Date(p.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+              {parents.length === 0 && <Empty />}
+            </Card>
+          )}
 
           <Card title="Badges earned" onJump={canJump ? () => jumpTo('player') : null}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -427,10 +663,13 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             }}
           />
           <button onClick={handleAddNote} disabled={savingNote || !newNote.trim()} style={{
-            padding: '10px 16px', background: t.color.text, color: t.color.bg,
-            border: 'none', borderRadius: 10,
+            padding: '10px 16px',
+            background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+            color: '#ffffff',
+            border: `1px solid ${t.color.pitchEdge}`, borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
             cursor: 'pointer', fontFamily: t.font.sans,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 6px 14px -6px rgba(74,222,128,0.6)',
             opacity: (!newNote.trim() || savingNote) ? 0.4 : 1,
           }}>{savingNote ? 'Saving…' : 'Add note'}</button>
 

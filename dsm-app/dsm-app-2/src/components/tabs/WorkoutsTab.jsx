@@ -5,6 +5,7 @@ import { finishWorkout, getRecentWorkouts, awardXp, evaluateBadges } from '../..
 import { XP_TABLE } from '../../data/gamification.js'
 import RestTimer from '../widgets/RestTimer.jsx'
 import TiltCard from '../widgets/TiltCard.jsx'
+import ProgressBar from '../widgets/ProgressBar.jsx'
 
 const findEx = (id) => EXERCISES.find(e => e.id === id)
 
@@ -150,15 +151,7 @@ function TodayView({ user }) {
           <span style={{ color: t.color.line2 }}>·</span>
           <span>{doneSets}/{totalSets} sets</span>
         </div>
-        <div style={{
-          marginTop: 14, height: 4, background: t.color.line,
-          borderRadius: 2, overflow: 'hidden',
-        }}>
-          <div style={{
-            width: `${pct}%`, height: '100%', background: t.color.ember,
-            borderRadius: 2, transition: 'width 400ms cubic-bezier(.2,.7,.2,1)',
-          }} />
-        </div>
+        <ProgressBar pct={pct} height={4} color={t.color.ember} duration={400} style={{ marginTop: 14 }} />
       </div>
       </TiltCard>
 
