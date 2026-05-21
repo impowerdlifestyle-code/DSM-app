@@ -413,7 +413,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
   const [
     profileRes, memoryRes, actionRes, ballRes, checkinRes, voiceRes,
     chatRes, workoutRes, foodRes, bodyRes, xpRes, badgeRes, nudgeRes,
-    squadRes, notesRes,
+    squadRes, notesRes, questRes, matchRes,
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', athleteId).maybeSingle(),
     supabase.from('coach_memory').select('*').eq('user_id', athleteId).maybeSingle(),
@@ -430,6 +430,8 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     supabase.from('coach_nudges').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(15),
     supabase.from('squad_members').select('squad_id, joined_at, squads(*)').eq('user_id', athleteId),
     isAdmin ? supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('quest_date', { ascending: false }).limit(30),
+    supabase.from('match_log').select('*').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(20),
   ])
   const totalXp = (xpRes.data || []).reduce((a, r) => a + (r.xp || 0), 0)
   return {
@@ -449,6 +451,8 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     nudges:     nudgeRes.data || [],
     squads:     (squadRes.data || []).map(m => ({ ...m.squads, joined_at: m.joined_at })),
     notes:      notesRes.data || [],
+    dailyQuests: questRes.data || [],
+    matches:    matchRes.data || [],
   }
 }
 

@@ -69,6 +69,15 @@ export const DAILY_QUESTS = [
     progress: 0,
     target: 1,
   },
+  {
+    id: 'quest-voice',
+    icon: 'J',
+    title: 'Record a voice journal',
+    sub: '30-second mindset reflection',
+    xp: 60,
+    progress: 0,
+    target: 1,
+  },
 ]
 
 // Badges — earned + locked

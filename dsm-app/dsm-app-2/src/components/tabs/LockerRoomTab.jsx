@@ -67,7 +67,8 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
   )
 
   const { profile, memory, actionSteps, ballMastery, checkins, voiceJournal, chat,
-          workouts, food, body, badges, nudges, squads, notes, totalXp } = data
+          workouts, food, body, badges, nudges, squads, notes, totalXp,
+          dailyQuests = [], matches = [] } = data
   const name = profile?.full_name || profile?.email || 'Athlete'
 
   const sections = [
@@ -291,6 +292,46 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
               </div>
             ))}
             {workouts.length === 0 && <Empty />}
+          </Card>
+
+          <Card title={`Matches (${matches.length})`}>
+            {matches.slice(0, 8).map(m => (
+              <div key={m.id} style={entry()}>
+                <div style={entryHeader}>
+                  <span>{m.match_date} · {m.opponent || 'Opponent'}</span>
+                  <span style={{
+                    fontFamily: t.font.athletic, letterSpacing: 1,
+                    color: m.result === 'W' ? t.color.ok : m.result === 'L' ? t.color.err : t.color.textDim,
+                  }}>
+                    {m.result || '—'} {m.score_for != null ? `${m.score_for}-${m.score_against}` : ''}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: t.color.textMute, marginTop: 4, letterSpacing: 0.5 }}>
+                  Perf {m.performance || '—'}/10 · cues: {(m.cues_used || []).join(', ') || 'none'}
+                </div>
+                {(m.went_well || m.to_fix) && (
+                  <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 4, lineHeight: 1.4 }}>
+                    {m.went_well && <div>✓ {m.went_well}</div>}
+                    {m.to_fix && <div style={{ marginTop: 2 }}>→ {m.to_fix}</div>}
+                  </div>
+                )}
+              </div>
+            ))}
+            {matches.length === 0 && <Empty />}
+          </Card>
+
+          <Card title={`Daily quests (last ${dailyQuests.length} days)`}>
+            {dailyQuests.slice(0, 10).map(q => (
+              <div key={q.id} style={entry()}>
+                <div style={entryHeader}>
+                  <span>{q.quest_date} · {q.quest_id?.replace('quest-', '') || 'quest'}</span>
+                  <span style={{
+                    color: q.progress >= q.target ? t.color.ok : t.color.textDim,
+                  }}>{q.progress || 0}/{q.target || 1} {q.progress >= q.target ? '✓' : ''}</span>
+                </div>
+              </div>
+            ))}
+            {dailyQuests.length === 0 && <Empty />}
           </Card>
         </>
       )}

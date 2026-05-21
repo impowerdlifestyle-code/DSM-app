@@ -114,6 +114,7 @@ import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
+import BadgeHints, { shouldShowBadgeHintsAutomatically, markBadgeHintsSeen } from './BadgeHints.jsx'
 import HomeView from '../views/HomeView.jsx'
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
@@ -610,6 +611,16 @@ export default function Main({ user }) {
     && !profile.onboarded_at
     && (profile.role === 'athlete' || !profile.role)
 
+  const [showBadgeHints, setShowBadgeHints] = useState(false)
+  useEffect(() => {
+    // Auto-show hints once after onboarding completes
+    if (profile?.onboarded_at && shouldShowBadgeHintsAutomatically()) {
+      const tm = setTimeout(() => setShowBadgeHints(true), 1800)
+      return () => clearTimeout(tm)
+    }
+  }, [profile?.onboarded_at])
+  function closeBadgeHints() { setShowBadgeHints(false); markBadgeHintsSeen() }
+
   return (
     <div style={C.app}>
       {needsOnboarding && (
@@ -619,6 +630,11 @@ export default function Main({ user }) {
           onDone={() => loadUserData()}
         />
       )}
+      <BadgeHints
+        open={showBadgeHints}
+        onClose={closeBadgeHints}
+        onJumpTo={(targetTab) => setTab(targetTab)}
+      />
       {badgeNotice && (
         <div style={{
           position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)',
@@ -2015,6 +2031,7 @@ export default function Main({ user }) {
           <div style={C.title}>MORE</div>
           <div style={C.sub}>Body · habits · check-ins · resources</div>
           {[
+            { id: 'tips',      label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
             { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },
             { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
             { id: 'tracker',   label: 'Habit Tracker', sub: 'Weekly habits + day streak' },
@@ -2022,7 +2039,7 @@ export default function Main({ user }) {
             { id: 'course',    label: 'Course',        sub: 'Modules + resources' },
             { id: 'parents',   label: 'Parent Guide',  sub: 'For the people in your corner' },
           ].map(item => (
-            <button key={item.id} onClick={() => setTab(item.id)} style={{
+            <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
               width: '100%', textAlign: 'left',
               padding: 16, marginBottom: 10,
               background: '#0a0a0a', border: '1px solid #252528',

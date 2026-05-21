@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
-import { saveVoiceJournal, awardXp, evaluateBadges, supabase } from '../../lib/supabase.js'
+import { saveVoiceJournal, awardXp, evaluateBadges, supabase, bumpQuest } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
 
@@ -144,6 +144,7 @@ export default function VoiceJournal({ user }) {
         duration_seconds: elapsed,
       })
       await awardXp(user.id, 'voice_journal', XP_TABLE.voiceJournal, data?.id, result.sentiment)
+      await bumpQuest(user.id, 'quest-voice', 1)
       await evaluateBadges(user.id)
       await saveProposedActions(data?.id)
       setSaved(true)
