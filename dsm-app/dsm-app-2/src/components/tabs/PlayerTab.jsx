@@ -4,6 +4,7 @@ import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS } from '../../data/ga
 import { getXpTotals, getEarnedBadges, levelFromXp, createParentInvite, listParentInvites } from '../../lib/supabase.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 import BadgeTile from '../widgets/BadgeTile.jsx'
+import ProgressBar from '../widgets/ProgressBar.jsx'
 import FutureSelfSettings from '../../features/future-self/Settings.jsx'
 
 export default function PlayerTab({ profile, user }) {
@@ -95,15 +96,7 @@ export default function PlayerTab({ profile, user }) {
                 {xpTotal.toLocaleString()} / {lvl.xpToNext.toLocaleString()} XP
               </span>
             </div>
-            <div style={{
-              height: 6, background: t.color.line, borderRadius: 3, overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${xpPct}%`, height: '100%', background: t.color.text,
-                borderRadius: 3,
-                transition: 'width 800ms cubic-bezier(.2,.7,.2,1)',
-              }} />
-            </div>
+            <ProgressBar pct={xpPct} height={6} duration={800} />
           </div>
 
           {/* Quick stats row */}
@@ -305,14 +298,7 @@ function Overview({ name }) {
             </div>
           </div>
 
-          <div style={{
-            marginTop: 12, height: 4, background: t.color.line, borderRadius: 2, overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${seasonPct}%`, height: '100%', background: t.color.text,
-              borderRadius: 2, transition: 'width 600ms cubic-bezier(.2,.7,.2,1)',
-            }} />
-          </div>
+          <ProgressBar pct={seasonPct} height={4} duration={600} style={{ marginTop: 12 }} />
 
           <div style={{
             marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10,

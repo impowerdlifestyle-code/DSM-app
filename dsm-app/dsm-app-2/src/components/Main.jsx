@@ -112,6 +112,7 @@ import Onboarding from './Onboarding.jsx'
 import MatchDayTab from './tabs/MatchDayTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
+import ProgressBar from './widgets/ProgressBar.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
 import MonthlyCheckin from '../features/future-self/MonthlyCheckin.jsx'
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
@@ -367,7 +368,7 @@ export default function Main({ user }) {
   const todayBMLogged = ballHistory.some(b => b.date === today)
   const todayActionLogged = submissions.some(s => s.date === today)
   const isCoach = profile?.role === 'coach'
-  const isAdmin = user?.email === 'valentino@dilorenzosoccermindset.com' || profile?.is_admin === true
+  const isAdmin = user?.email?.toLowerCase() === 'valentino@dilorenzosoccermindset.com' || profile?.is_admin === true
   const myName = profile?.full_name || user?.email
   const isEliteLocked = profile?.access_level !== 'paid' && profile?.access_level !== 'mentoring_elite'
 
@@ -1218,9 +1219,7 @@ export default function Main({ user }) {
                 {pct>=70?'🔥 ELITE':pct>=40?'⚡ GOOD':'📈 GROW'}
               </div>
             </div>
-            <div style={{ height:4,background:'#1e1e1e',borderRadius:3,marginTop:10,overflow:'hidden' }}>
-              <div style={{ height:'100%',width:`${pct}%`,background:'#fafafa',borderRadius:3 }}/>
-            </div>
+            <ProgressBar pct={pct} height={4} background="#1e1e1e" style={{ marginTop: 10 }} />
           </div>
         </div>
       )}
@@ -1354,9 +1353,7 @@ export default function Main({ user }) {
                               <span style={{ fontSize:12, fontWeight:700 }}>{icon} {lbl}</span>
                               <span style={{ fontSize:12, fontWeight:900, color:'#fafafa' }}>{pct}% <span style={{ fontSize:9,color:'#555' }}>({cnt}/{submissions.length})</span></span>
                             </div>
-                            <div style={{ height:5, background:'#1e1e1e', borderRadius:3, overflow:'hidden' }}>
-                              <div style={{ height:'100%', width:`${pct}%`, background:'#fafafa', borderRadius:3 }}/>
-                            </div>
+                            <ProgressBar pct={pct} height={5} background="#1e1e1e" />
                           </div>
                         )
                       })}
@@ -1634,9 +1631,11 @@ export default function Main({ user }) {
                   <div style={{ fontSize:13, color:'#555', marginBottom:8 }}>
                     {['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length}/{drills.length} completed today
                   </div>
-                  <div style={{ height:6, background:'#1e1e1e', borderRadius:3, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${(['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length/drills.length)*100}%`, background:'#fafafa', borderRadius:3 }} />
-                  </div>
+                  <ProgressBar
+                    pct={(['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length/drills.length)*100}
+                    height={6}
+                    background="#1e1e1e"
+                  />
                 </div>
               </>
             )
@@ -1963,17 +1962,23 @@ export default function Main({ user }) {
                 <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM BALL MASTERY SESSIONS</div>
                 <div style={{ fontSize:48, fontWeight:900, color:'#fafafa', marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.bmCount,0)}</div>
                 <div style={{ fontSize:11, color:'#555', marginBottom:16 }}>sessions logged by the whole team</div>
-                <div style={{ height:8, background:'#1e1e1e', borderRadius:5, overflow:'hidden', marginBottom:8 }}>
-                  <div style={{ height:'100%', width:`${Math.min((leaderboard.reduce((a,b)=>a+b.bmCount,0)/100)*100, 100)}%`, background:'#fafafa', borderRadius:5 }} />
-                </div>
+                <ProgressBar
+                  pct={Math.min((leaderboard.reduce((a,b)=>a+b.bmCount,0)/100)*100, 100)}
+                  height={8}
+                  background="#1e1e1e"
+                  style={{ marginBottom: 8 }}
+                />
                 <div style={{ fontSize:10, color:'#555' }}>Goal: 100 team sessions 🎯</div>
               </div>
               <div style={{ ...C.card, textAlign:'center', padding:24 }}>
                 <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM ACTION STEPS</div>
                 <div style={{ fontSize:48, fontWeight:900, color:'#fafafa', marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.asCount,0)}</div>
-                <div style={{ height:8, background:'#1e1e1e', borderRadius:5, overflow:'hidden', marginBottom:8 }}>
-                  <div style={{ height:'100%', width:`${Math.min((leaderboard.reduce((a,b)=>a+b.asCount,0)/50)*100, 100)}%`, background:'#fafafa', borderRadius:5 }} />
-                </div>
+                <ProgressBar
+                  pct={Math.min((leaderboard.reduce((a,b)=>a+b.asCount,0)/50)*100, 100)}
+                  height={8}
+                  background="#1e1e1e"
+                  style={{ marginBottom: 8 }}
+                />
                 <div style={{ fontSize:10, color:'#555' }}>Goal: 50 team action steps 🎯</div>
               </div>
             </>
@@ -2438,9 +2443,7 @@ export default function Main({ user }) {
                         <span style={{ fontSize:11,fontWeight:700 }}>{label}</span>
                         <span style={{ fontSize:11,color:'#fafafa',fontWeight:800 }}>{pct}% ({used}/{athleteActionSteps.length})</span>
                       </div>
-                      <div style={{ height:6,background:'#1e1e1e',borderRadius:3,overflow:'hidden' }}>
-                        <div style={{ height:'100%',width:`${pct}%`,background:'#fafafa',borderRadius:3 }} />
-                      </div>
+                      <ProgressBar pct={pct} height={6} background="#1e1e1e" />
                     </div>
                   )
                 })}

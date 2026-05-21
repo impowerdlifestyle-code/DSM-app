@@ -1,4 +1,5 @@
 import { tokens as t } from '../../styles.js'
+import ProgressBar from './ProgressBar.jsx'
 
 /**
  * MacroRing — donut showing macro split with calories in the center.
@@ -84,12 +85,7 @@ export default function MacroRing({ totals, targets, size = 160, stroke = 14 }) 
                   {Math.round(m.val)}<span style={{ color: t.color.textMute }}> / {m.tgt}{m.unit}</span>
                 </span>
               </div>
-              <div style={{ height: 5, background: t.color.line, borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{
-                  width: `${pct}%`, height: '100%', background: m.color, borderRadius: 3,
-                  transition: 'width 500ms cubic-bezier(.2,.7,.2,1)',
-                }} />
-              </div>
+              <ProgressBar pct={pct} height={5} color={m.color} duration={500} />
             </div>
           )
         })}

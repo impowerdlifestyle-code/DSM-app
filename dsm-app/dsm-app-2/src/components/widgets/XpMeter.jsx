@@ -1,4 +1,5 @@
 import { tokens as t } from '../../styles.js'
+import ProgressBar from './ProgressBar.jsx'
 
 /**
  * XpMeter — compact level + XP bar for the header.
@@ -23,15 +24,7 @@ export default function XpMeter({ player, onClick }) {
           color: t.color.text, lineHeight: 0.9, letterSpacing: 1,
         }}>LV {player.level}</span>
       </div>
-      <div style={{
-        width: 46, height: 4, background: t.color.line,
-        borderRadius: 2, overflow: 'hidden',
-      }}>
-        <div style={{
-          width: `${pct}%`, height: '100%', background: t.color.text,
-          borderRadius: 2, transition: 'width 600ms cubic-bezier(.2,.7,.2,1)',
-        }} />
-      </div>
+      <ProgressBar pct={pct} height={4} style={{ width: 46 }} duration={600} />
       <div style={{
         width: 22, height: 22, borderRadius: '50%',
         background: t.color.text, color: t.color.bg,
