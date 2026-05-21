@@ -97,12 +97,14 @@ export default function AdminTab({ user }) {
           athletes={athletes}
           onAddCoach={() => setAddCoachOpen(true)}
           onChangeTier={async (coach, tier) => {
-            await setCoachTier(coach.id, tier)
+            const { error } = await setCoachTier(coach.id, tier)
+            if (error) { alert(error.message || 'Failed to set tier'); return }
             await load()
           }}
           onDemote={async (coach) => {
             if (!confirm(`Remove coach role from ${coachLabel(coach)}?`)) return
-            await demoteCoach(coach.id)
+            const { error } = await demoteCoach(coach.id)
+            if (error) { alert(error.message || 'Failed to demote'); return }
             await load()
           }}
         />
@@ -123,12 +125,14 @@ export default function AdminTab({ user }) {
           athletes={athletes}
           onClose={() => setAssignFor(null)}
           onAssigned={async (label) => {
-            await assignCoachToAthlete(assignFor.id, label)
+            const { error } = await assignCoachToAthlete(assignFor.id, label)
+            if (error) { alert(error.message || 'Failed to assign'); return }
             setAssignFor(null)
             await load()
           }}
           onUnassign={async () => {
-            await unassignAthleteCoach(assignFor.id)
+            const { error } = await unassignAthleteCoach(assignFor.id)
+            if (error) { alert(error.message || 'Failed to unassign'); return }
             setAssignFor(null)
             await load()
           }}

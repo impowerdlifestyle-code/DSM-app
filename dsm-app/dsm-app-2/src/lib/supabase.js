@@ -533,8 +533,10 @@ export async function assignCoachToAthlete(athleteId, coachLabel) {
     .update({ assigned_coach: coachLabel })
     .eq('id', athleteId)
     .select('id, assigned_coach')
-    .single()
-  return { data, error }
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
 }
 
 export async function unassignAthleteCoach(athleteId) {
@@ -543,8 +545,10 @@ export async function unassignAthleteCoach(athleteId) {
     .update({ assigned_coach: null })
     .eq('id', athleteId)
     .select('id')
-    .single()
-  return { data, error }
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
 }
 
 export async function promoteUserToCoach(email) {
@@ -565,8 +569,10 @@ export async function promoteUserToCoach(email) {
     .update({ role: 'coach' })
     .eq('id', existing.id)
     .select('id, email, full_name, role')
-    .single()
-  return { data, error }
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
 }
 
 export async function demoteCoach(coachId) {
@@ -575,8 +581,10 @@ export async function demoteCoach(coachId) {
     .update({ role: 'athlete', coach_tier: null })
     .eq('id', coachId)
     .select('id, role')
-    .single()
-  return { data, error }
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
 }
 
 export async function setCoachTier(coachId, tier) {
@@ -586,8 +594,10 @@ export async function setCoachTier(coachId, tier) {
     .update({ coach_tier: value })
     .eq('id', coachId)
     .select('id, coach_tier')
-    .single()
-  return { data, error }
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
 }
 
 // ─── ADMIN: COACH TASKS ──────────────────────────────────────
