@@ -4,6 +4,7 @@ import Auth from './components/Auth.jsx'
 import Main from './components/Main.jsx'
 import ParentShell from './components/ParentShell.jsx'
 import LoadingBall from './components/LoadingBall.jsx'
+import BugReporter from './components/BugReporter.jsx'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -51,7 +52,15 @@ export default function App() {
   }, [user?.id])
 
   if (loading || (user && roleLoading) || !minHoldDone) return <LoadingBall />
-  if (!user) return <Auth />
-  if (role === 'parent') return <ParentShell user={user} />
-  return <Main user={user} />
+
+  const content = !user
+    ? <Auth />
+    : role === 'parent'
+      ? <ParentShell user={user} />
+      : <Main user={user} />
+
+  return <>
+    {content}
+    <BugReporter user={user} />
+  </>
 }
