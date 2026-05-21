@@ -11,7 +11,8 @@ import { logAudit } from './lib/voiceIdentity.js'
 //   context    — 'pre_match' | 'post_mistake' | 'monthly_check' | 'custom' | 'onboarding'
 //   matchId    — optional, FK passthrough
 //   label      — CTA text (defaults to context-aware)
-//   onPlayed   — callback fired after audio reaches end
+//   onReady    — callback fired with { script, audioUrl, clipId } once the clip is generated
+//   onPlayed   — callback fired with { clipId, script } after audio reaches end
 //   autoGenerate — if true, fires generate-clip on mount instead of waiting for tap
 
 const DEFAULT_LABELS = {
@@ -22,7 +23,7 @@ const DEFAULT_LABELS = {
   custom: 'Hear your future self',
 }
 
-export default function FutureSelfPlayer({ user, context = 'custom', matchId = null, label, onPlayed, autoGenerate = false }) {
+export default function FutureSelfPlayer({ user, context = 'custom', matchId = null, label, onReady, onPlayed, autoGenerate = false }) {
   const [phase, setPhase] = useState('idle')        // idle | generating | ready | playing | done | error | gated
   const [script, setScript] = useState('')
   const [audioUrl, setAudioUrl] = useState(null)
@@ -54,6 +55,7 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
       setAudioUrl(json.audioUrl || null)
       setClipId(json.clipId || null)
       setPhase('ready')
+      onReady?.({ script: json.script || '', audioUrl: json.audioUrl || null, clipId: json.clipId || null })
     } catch (e) {
       setErrCode('network'); setErrMsg(e?.message || 'Network error'); setPhase('error')
     }
@@ -77,7 +79,7 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
     if (clipId && user?.id) {
       await logAudit({ userId: user.id, actorId: user.id, event: 'clip_played', refId: clipId })
     }
-    onPlayed?.({ clipId })
+    onPlayed?.({ clipId, script })
   }
 
   // ─── GATED: consent or capture not done yet ─────────────────────────────
