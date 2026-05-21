@@ -3,6 +3,7 @@ import {
   getMatches, createMatchPre, updateMatchPost, getActiveMatch,
 } from '../../lib/supabase.js'
 import { tokens as t, C } from '../../styles.js'
+import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
 
 const COMPETITIONS = [
   { v: 'league', label: 'League' },
@@ -254,6 +255,8 @@ export default function MatchDayTab({ user, profile }) {
       <div style={C.scroll}>
         <div style={s.title}>LOCK IN</div>
         <div style={s.sub}>Pre-match · mental warmup</div>
+
+        <FutureSelfPlayer user={user} context="pre_match" />
 
         <div style={s.bigCard}>
           <div style={s.lbl}>Date</div>

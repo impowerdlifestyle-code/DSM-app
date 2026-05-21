@@ -3,6 +3,9 @@ import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
 import { saveVoiceJournal, awardXp, evaluateBadges, supabase } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
+import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
+
+const POST_MISTAKE_SENTIMENTS = ['frustrated', 'anxious', 'flat']
 
 /**
  * VoiceJournal — UI shell for voice-to-AI mindset journaling.
@@ -321,6 +324,13 @@ export default function VoiceJournal({ user }) {
               borderRadius: 10,
               fontSize: 12, color: '#f87171',
             }}>{error}</div>
+          )}
+
+          {/* Future-self bounce-back: auto-triggers after saving a frustrated/anxious/flat entry */}
+          {saved && POST_MISTAKE_SENTIMENTS.includes(result?.sentiment) && (
+            <div style={{ marginTop: 14 }}>
+              <FutureSelfPlayer user={user} context="post_mistake" autoGenerate />
+            </div>
           )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>

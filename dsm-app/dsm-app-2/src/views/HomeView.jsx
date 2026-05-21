@@ -4,6 +4,7 @@ import TiltCard from '../components/widgets/TiltCard.jsx'
 import QuestCard from '../components/widgets/QuestCard.jsx'
 import VoiceJournal from '../components/widgets/VoiceJournal.jsx'
 import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
+import FutureSelfPlayer from '../features/future-self/FutureSelfPlayer.jsx'
 
 export default function HomeView({
   user, profile, streak, quests, activeNudge, badgeNotice,
@@ -121,6 +122,9 @@ export default function HomeView({
         <div style={{ marginBottom: 16 }}>
           <VoiceJournal user={user} />
         </div>
+
+        {/* Future self — monthly identity ritual */}
+        <FutureSelfPlayer user={user} context="monthly_check" />
 
         {/* Today progress strip */}
         <TiltCard tiltLimit={8} scale={1.015} style={{ borderRadius: 16, marginBottom: 12 }}>
