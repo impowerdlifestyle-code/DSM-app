@@ -3,6 +3,7 @@ import { supabase, redeemParentInvite } from './lib/supabase.js'
 import Auth from './components/Auth.jsx'
 import Main from './components/Main.jsx'
 import ParentShell from './components/ParentShell.jsx'
+import LoadingBall from './components/LoadingBall.jsx'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -17,14 +18,11 @@ export default function App() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      setRole(null)  // re-fetch on auth change
+      setRole(null)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  // fetch role once we know the user — and if there's a pending parent-invite
-  // code from the Auth flow, redeem it before reading the role (so the user
-  // lands in ParentShell on first paint instead of Main).
   useEffect(() => {
     if (!user?.id) { setRole(null); return }
     setRoleLoading(true)
@@ -32,23 +30,17 @@ export default function App() {
       const pending = sessionStorage.getItem('dsm_pending_parent_code')
       if (pending) {
         sessionStorage.removeItem('dsm_pending_parent_code')
-        await redeemParentInvite(user.id, pending)  // RPC ignores arg, uses auth.uid()
+        await redeemParentInvite(user.id, pending)
       }
-      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+      const { data } = await supabase.from('profiles')
+        .select('role, full_name').eq('id', user.id).maybeSingle()
       setRole(data?.role || 'athlete')
+      if (data?.full_name) localStorage.setItem('dsm_player_name', data.full_name)
       setRoleLoading(false)
     })()
   }, [user?.id])
 
-  if (loading || (user && roleLoading)) return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 6, color: '#fff', fontFamily: 'Arial Narrow, Arial, sans-serif' }}>DSM</div>
-        <div style={{ fontSize: 10, letterSpacing: 3, color: '#ff3d00', fontWeight: 700, marginTop: 4 }}>LOADING...</div>
-      </div>
-    </div>
-  )
-
+  if (loading || (user && roleLoading)) return <LoadingBall />
   if (!user) return <Auth />
   if (role === 'parent') return <ParentShell user={user} />
   return <Main user={user} />
