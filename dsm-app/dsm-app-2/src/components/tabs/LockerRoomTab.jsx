@@ -12,7 +12,12 @@ import {
  *   - athleteId provided + adminView=false → "my locker room" (read + edit own memory)
  *   - athleteId provided + adminView=true  → admin reading any athlete (+ private notes)
  */
-export default function LockerRoomTab({ user, athleteId, adminView = false, onBack = null }) {
+export default function LockerRoomTab({ user, athleteId, adminView = false, onBack = null, setTab = null }) {
+  // Jump-to-source only when viewing own locker. In admin view, jumping out of
+  // the athlete's locker would land you in your own tabs — confusing — so we
+  // hide the Open buttons and show a PDF export instead.
+  const canJump = !adminView && typeof setTab === 'function'
+  const jumpTo = (id) => canJump && setTab(id)
   const targetId = athleteId || user?.id
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -62,6 +67,12 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
     await load()
   }
 
+  async function handleExportPdf() {
+    if (!data) return
+    const { exportLockerPdf } = await import('../../lib/lockerPdf.js')
+    exportLockerPdf(data)
+  }
+
   if (loading || !data) return (
     <div style={{ padding: '40px 22px', color: t.color.textDim, fontSize: 13 }}>Loading locker room…</div>
   )
@@ -83,13 +94,25 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
   return (
     <div style={{ padding: '18px 22px 32px' }}>
-      {onBack && (
-        <button onClick={onBack} style={{
-          background: 'transparent', border: `1px solid ${t.color.line2}`,
-          color: t.color.textDim, padding: '6px 12px',
-          fontSize: 10, fontWeight: 600, letterSpacing: 1.4, textTransform: 'uppercase',
-          borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans, marginBottom: 14,
-        }}>← Athletes</button>
+      {(onBack || adminView) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          {onBack ? (
+            <button onClick={onBack} style={{
+              background: 'transparent', border: `1px solid ${t.color.line2}`,
+              color: t.color.textDim, padding: '6px 12px',
+              fontSize: 10, fontWeight: 600, letterSpacing: 1.4, textTransform: 'uppercase',
+              borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans,
+            }}>← Athletes</button>
+          ) : <span />}
+          {adminView && (
+            <button onClick={handleExportPdf} style={{
+              background: t.color.text, border: 'none',
+              color: t.color.bg, padding: '7px 14px',
+              fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
+              borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans,
+            }}>📄 Export PDF</button>
+          )}
+        </div>
       )}
 
       {/* Header */}
@@ -117,18 +140,18 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
       {section === 'overview' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 14 }}>
-            <Stat label="Streak"        value={`${profile?.streak || 0}d`} />
-            <Stat label="Total XP"      value={totalXp.toLocaleString()} />
-            <Stat label="Action logs"   value={actionSteps.length} />
-            <Stat label="Voice entries" value={voiceJournal.length} />
-            <Stat label="Ball mastery"  value={ballMastery.length} />
-            <Stat label="Workouts"      value={workouts.length} />
-            <Stat label="Check-ins"     value={checkins.length} />
-            <Stat label="Badges"        value={badges.length} />
+            <Stat label="Streak"        value={`${profile?.streak || 0}d`}     onClick={canJump ? () => jumpTo('tracker') : null} />
+            <Stat label="Total XP"      value={totalXp.toLocaleString()}        onClick={canJump ? () => jumpTo('player') : null} />
+            <Stat label="Action logs"   value={actionSteps.length}              onClick={canJump ? () => jumpTo('actions') : null} />
+            <Stat label="Voice entries" value={voiceJournal.length}             onClick={canJump ? () => jumpTo('voice') : null} />
+            <Stat label="Ball mastery"  value={ballMastery.length}              onClick={canJump ? () => jumpTo('ball') : null} />
+            <Stat label="Workouts"      value={workouts.length}                 onClick={canJump ? () => jumpTo('workouts') : null} />
+            <Stat label="Check-ins"     value={checkins.length}                 onClick={canJump ? () => jumpTo('weekly') : null} />
+            <Stat label="Badges"        value={badges.length}                   onClick={canJump ? () => jumpTo('player') : null} />
           </div>
 
           {squads.length > 0 && (
-            <Card title="Squads">
+            <Card title="Squads" onJump={canJump ? () => jumpTo('squad') : null}>
               {squads.map(s => (
                 <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.color.line}` }}>
                   <span style={{ fontSize: 13, color: t.color.text }}>{s.name}</span>
@@ -139,7 +162,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           )}
 
           {nudges.length > 0 && (
-            <Card title="Recent Coach nudges">
+            <Card title="Recent Coach nudges" onJump={canJump ? () => jumpTo('bot') : null}>
               {nudges.slice(0, 5).map(n => (
                 <div key={n.id} style={{ padding: '8px 0', borderBottom: `1px solid ${t.color.line}` }}>
                   <div style={{ fontSize: 9, letterSpacing: 1.4, color: t.color.textMute, textTransform: 'uppercase', fontWeight: 600 }}>{n.kind} · {new Date(n.created_at).toLocaleDateString()}</div>
@@ -152,7 +175,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
       )}
 
       {section === 'memory' && (
-        <Card title="Coach memory — themes">
+        <Card title="Coach memory — themes" onJump={canJump ? () => jumpTo('bot') : null}>
           <div style={{ fontSize: 11, color: t.color.textDim, lineHeight: 1.5, marginBottom: 14 }}>
             What Coach V remembers about this athlete across mindset, technique, recovery, and goals. Updated by Coach V every 10 chat messages — you can also edit directly.
           </div>
@@ -192,7 +215,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
       {section === 'mental' && (
         <>
-          <Card title={`Voice journal (${voiceJournal.length})`}>
+          <Card title={`Voice journal (${voiceJournal.length})`} onJump={canJump ? () => jumpTo('voice') : null}>
             {voiceJournal.slice(0, 8).map(j => (
               <div key={j.id} style={entry()}>
                 <div style={entryHeader}>
@@ -212,7 +235,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {voiceJournal.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Weekly check-ins (${checkins.length})`}>
+          <Card title={`Weekly check-ins (${checkins.length})`} onJump={canJump ? () => jumpTo('weekly') : null}>
             {checkins.slice(0, 6).map(c => (
               <div key={c.id} style={entry()}>
                 <div style={entryHeader}>
@@ -227,7 +250,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {checkins.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Coach V chat (last ${chat.length})`}>
+          <Card title={`Coach V chat (last ${chat.length})`} onJump={canJump ? () => jumpTo('bot') : null}>
             <div style={{ maxHeight: 320, overflowY: 'auto' }}>
               {chat.slice(-20).map(m => (
                 <div key={m.id} style={{
@@ -250,7 +273,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
       {section === 'training' && (
         <>
-          <Card title={`Action steps (${actionSteps.length})`}>
+          <Card title={`Action steps (${actionSteps.length})`} onJump={canJump ? () => jumpTo('actions') : null}>
             {actionSteps.slice(0, 8).map(s => {
               const used = ['shark','goldfish','selftalk','tuneout'].filter(k => s[`${k}_used`])
               return (
@@ -268,7 +291,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {actionSteps.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Ball mastery (${ballMastery.length})`}>
+          <Card title={`Ball mastery (${ballMastery.length})`} onJump={canJump ? () => jumpTo('ball') : null}>
             {ballMastery.slice(0, 8).map(b => (
               <div key={b.id} style={entry()}>
                 <div style={entryHeader}>
@@ -281,7 +304,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {ballMastery.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Workouts (${workouts.length})`}>
+          <Card title={`Workouts (${workouts.length})`} onJump={canJump ? () => jumpTo('workouts') : null}>
             {workouts.slice(0, 8).map(w => (
               <div key={w.id} style={entry()}>
                 <div style={entryHeader}>
@@ -294,7 +317,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {workouts.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Matches (${matches.length})`}>
+          <Card title={`Matches (${matches.length})`} onJump={canJump ? () => jumpTo('match') : null}>
             {matches.slice(0, 8).map(m => (
               <div key={m.id} style={entry()}>
                 <div style={entryHeader}>
@@ -320,7 +343,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {matches.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Daily quests (last ${dailyQuests.length} days)`}>
+          <Card title={`Daily quests (last ${dailyQuests.length} days)`} onJump={canJump ? () => jumpTo('home') : null}>
             {dailyQuests.slice(0, 10).map(q => (
               <div key={q.id} style={entry()}>
                 <div style={entryHeader}>
@@ -338,7 +361,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
       {section === 'body' && (
         <>
-          <Card title={`Body stats (${body.length})`}>
+          <Card title={`Body stats (${body.length})`} onJump={canJump ? () => jumpTo('body') : null}>
             {body.slice(0, 8).map(b => (
               <div key={b.id} style={entry()}>
                 <div style={entryHeader}>
@@ -350,7 +373,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {body.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Nutrition (last ${food.length} logs)`}>
+          <Card title={`Nutrition (last ${food.length} logs)`} onJump={canJump ? () => jumpTo('nutrition') : null}>
             {food.slice(0, 10).map(f => (
               <div key={f.id} style={entry()}>
                 <div style={entryHeader}>
@@ -367,7 +390,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
       {section === 'social' && (
         <>
-          <Card title="Squads">
+          <Card title="Squads" onJump={canJump ? () => jumpTo('squad') : null}>
             {squads.length === 0 && <Empty />}
             {squads.map(s => (
               <div key={s.id} style={entry()}>
@@ -379,7 +402,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             ))}
           </Card>
 
-          <Card title="Badges earned">
+          <Card title="Badges earned" onJump={canJump ? () => jumpTo('player') : null}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {badges.map(b => <span key={b.badge_id} style={tag}>{b.badge_id}</span>)}
               {badges.length === 0 && <Empty />}
@@ -438,26 +461,46 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
   )
 }
 
-function Card({ title, children }) {
+function Card({ title, children, onJump }) {
   return (
     <div style={{
       padding: 16, background: t.color.surface,
       border: `1px solid ${t.color.line}`, borderRadius: 16, marginBottom: 14,
     }}>
-      <div style={{ fontSize: 10, letterSpacing: 2, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>{title}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 10, letterSpacing: 2, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase' }}>{title}</div>
+        {onJump && (
+          <button onClick={onJump} style={{
+            background: 'transparent', border: `1px solid ${t.color.line2}`,
+            color: t.color.text, fontSize: 9, letterSpacing: 1.4, fontWeight: 700,
+            textTransform: 'uppercase', padding: '4px 10px', borderRadius: 999,
+            cursor: 'pointer', fontFamily: t.font.sans,
+          }}>Open →</button>
+        )}
+      </div>
       {children}
     </div>
   )
 }
-function Stat({ label, value }) {
+function Stat({ label, value, onClick }) {
   return (
-    <div style={{
-      padding: 14, background: t.color.surface,
-      border: `1px solid ${t.color.line}`, borderRadius: 12,
-    }}>
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      style={{
+        padding: 14, background: t.color.surface,
+        border: `1px solid ${t.color.line}`, borderRadius: 12,
+        textAlign: 'left', fontFamily: t.font.sans,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'border-color 120ms ease, background 120ms ease',
+        width: '100%',
+      }}
+      onMouseEnter={(e) => { if (onClick) e.currentTarget.style.borderColor = t.color.text }}
+      onMouseLeave={(e) => { if (onClick) e.currentTarget.style.borderColor = t.color.line }}
+    >
       <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: t.font.athletic, fontSize: 26, color: t.color.text, marginTop: 4, letterSpacing: 1 }}>{value}</div>
-    </div>
+    </button>
   )
 }
 function Empty() { return <div style={{ fontSize: 12, color: t.color.textDim }}>Nothing logged yet.</div> }

@@ -2184,7 +2184,7 @@ export default function Main({ user }) {
       {tab === 'squad' && <SquadTab user={user} />}
 
       {/* ── LOCKER ROOM (athlete-facing) ── */}
-      {tab === 'locker' && <LockerRoomTab user={user} adminView={false} />}
+      {tab === 'locker' && <LockerRoomTab user={user} adminView={false} setTab={setTab} />}
 
       {/* ── ADMIN DASHBOARD ── */}
       {tab === 'admin' && isAdmin && <AdminTab user={user} />}
