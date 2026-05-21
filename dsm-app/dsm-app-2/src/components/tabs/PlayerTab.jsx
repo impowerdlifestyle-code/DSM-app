@@ -4,6 +4,7 @@ import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS } from '../../data/ga
 import { getXpTotals, getEarnedBadges, levelFromXp, createParentInvite, listParentInvites } from '../../lib/supabase.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 import BadgeTile from '../widgets/BadgeTile.jsx'
+import FutureSelfSettings from '../../features/future-self/Settings.jsx'
 
 export default function PlayerTab({ profile, user }) {
   const [tab, setTab] = useState('overview')
@@ -141,6 +142,7 @@ export default function PlayerTab({ profile, user }) {
           { id: 'badges',   label: 'Badges' },
           { id: 'squad',    label: 'Squad' },
           { id: 'skills',   label: 'Skills' },
+          { id: 'voice',    label: 'Voice' },
           { id: 'family',   label: 'Family' },
         ].map(it => {
           const a = tab === it.id
@@ -162,6 +164,7 @@ export default function PlayerTab({ profile, user }) {
       {tab === 'badges'   && <BadgesView earnedFromDb={earned} />}
       {tab === 'squad'    && <SquadView />}
       {tab === 'skills'   && <SkillTreeView />}
+      {tab === 'voice'    && <FutureSelfSettings user={user} />}
       {tab === 'family'   && <FamilyView user={user} />}
     </div>
   )
