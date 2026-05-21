@@ -4,9 +4,10 @@ import TiltCard from '../components/widgets/TiltCard.jsx'
 import QuestCard from '../components/widgets/QuestCard.jsx'
 import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
 import CoachTasksCard from '../components/widgets/CoachTasksCard.jsx'
+import TrialBanner from '../components/widgets/TrialBanner.jsx'
 
 export default function HomeView({
-  user, profile, streak, quests, activeNudge, badgeNotice,
+  user, profile, access, streak, quests, activeNudge, badgeNotice,
   setTab, onQuestClick, onDismissNudge, onActOnNudge,
   quote, currentWeek, checkinDone, pct, completedHabits, totalHabits,
   todayBMLogged, todayActionLogged, isCoach, onLogDay,
@@ -78,6 +79,8 @@ export default function HomeView({
             {profile?.full_name?.split(' ')[0] || 'Athlete'}<span style={{ color: '#4a4a4a' }}>.</span>
           </div>
         </div>
+
+        <TrialBanner access={access} />
 
         <CoachTasksCard user={user} />
 

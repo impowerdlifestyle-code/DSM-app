@@ -33,6 +33,7 @@ export default function AdminTab({ user }) {
   const [assignFor, setAssignFor] = useState(null)
   const [taskFor, setTaskFor] = useState(null)
   const [addCoachOpen, setAddCoachOpen] = useState(false)
+  const [manualAddOpen, setManualAddOpen] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -96,6 +97,7 @@ export default function AdminTab({ user }) {
           coaches={coaches}
           athletes={athletes}
           onAddCoach={() => setAddCoachOpen(true)}
+          onManualAdd={() => setManualAddOpen(true)}
           onChangeTier={async (coach, tier) => {
             const { error } = await setCoachTier(coach.id, tier)
             if (error) { alert(error.message || 'Failed to set tier'); return }
@@ -155,6 +157,13 @@ export default function AdminTab({ user }) {
             setAddCoachOpen(false)
             await load()
           }}
+        />
+      )}
+
+      {manualAddOpen && (
+        <ManualAddAthleteModal
+          coaches={coaches}
+          onClose={() => setManualAddOpen(false)}
         />
       )}
     </div>
@@ -295,7 +304,8 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
   )
 }
 
-function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onDemote }) {
+function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onDemote, onManualAdd }) {
+  const [copied, setCopied] = useState(null)
   const counts = useMemo(() => {
     const m = {}
     for (const c of coaches) m[coachKey(c)] = 0
@@ -307,19 +317,44 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
     return m
   }, [coaches, athletes])
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dsm-app-2.vercel.app'
+
+  async function copy(text, id) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(id)
+      setTimeout(() => setCopied(null), 1800)
+    } catch {
+      prompt('Copy this invite link:', text)
+    }
+  }
+
+  const genericInvite = `${baseUrl}/?coach=${encodeURIComponent('Coach Valentino')}`
+
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 11, color: t.color.textDim, letterSpacing: 1, fontWeight: 600, textTransform: 'uppercase' }}>
           {coaches.length} coach{coaches.length === 1 ? '' : 'es'}
         </div>
-        <button onClick={onAddCoach} style={addBtn}>+ Add coach</button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button onClick={() => copy(genericInvite, 'generic')} style={addBtn}>
+            {copied === 'generic' ? '✓ Copied' : '🔗 Copy invite link'}
+          </button>
+          <button onClick={onManualAdd} style={addBtn}>+ Manually add</button>
+          <button onClick={onAddCoach} style={addBtn}>+ Add coach</button>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 10, color: t.color.textMute, marginBottom: 14, lineHeight: 1.4 }}>
+        Share the invite link by text or DM — new athletes land on signup with a 14-day trial + Coach Valentino pre-assigned. Use "Manually add" to generate a personalized link with the athlete's name and email already filled in.
       </div>
 
       {loading && <div style={{ color: t.color.textDim, fontSize: 13 }}>Loading coaches…</div>}
 
       {!loading && coaches.map(c => {
         const label = c.full_name || c.email
+        const inviteUrl = `${baseUrl}/?coach=${encodeURIComponent(label)}`
         return (
           <div key={c.id} style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
@@ -345,6 +380,14 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
               </select>
               <span style={tierBadge(c.coach_tier)}>{c.coach_tier ? `T${c.coach_tier} · ${TIER_LABELS[c.coach_tier]}` : 'No tier'}</span>
               <button onClick={() => onDemote(c)} style={{ ...demoteBtn, marginLeft: 'auto' }}>Remove</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${t.color.line}` }}>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 11, color: t.color.textDim, fontFamily: t.font.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {inviteUrl}
+              </div>
+              <button onClick={() => copy(inviteUrl, c.id)} style={copyBtn}>
+                {copied === c.id ? '✓ Copied' : 'Copy'}
+              </button>
             </div>
           </div>
         )
@@ -893,6 +936,81 @@ function AddMemberModal({ groupId, coaches, athletes, existingIds, onClose, onAd
   )
 }
 
+function ManualAddAthleteModal({ coaches, onClose }) {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [coach, setCoach] = useState(coaches[0]?.full_name || coaches[0]?.email || 'Coach Valentino')
+  const [copied, setCopied] = useState(false)
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dsm-app-2.vercel.app'
+  const params = new URLSearchParams()
+  if (coach) params.set('coach', coach)
+  if (email) params.set('email', email)
+  if (name)  params.set('name', name)
+  const url = `${baseUrl}/?${params.toString()}`
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      prompt('Copy this invite link:', url)
+    }
+  }
+
+  return (
+    <div style={overlay} onClick={onClose}>
+      <div style={modal} onClick={e => e.stopPropagation()}>
+        <div style={modalHead}>
+          <div>
+            <div style={modalEyebrow}>Manually add athlete</div>
+            <div style={modalTitle}>Generate a personal signup link</div>
+          </div>
+          <button onClick={onClose} style={closeBtn}>✕</button>
+        </div>
+
+        <div style={{ fontSize: 11, color: t.color.textMute, marginBottom: 10, lineHeight: 1.5 }}>
+          Fill in what you know — the athlete clicks the link and lands on signup with everything pre-filled. They pick a password, hit join, get a 14-day trial.
+        </div>
+
+        <div style={subLabel}>Athlete name</div>
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Marco Rossi" style={inputStyle()} />
+
+        <div style={{ ...subLabel, marginTop: 10 }}>Email (optional)</div>
+        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="athlete@example.com" style={inputStyle()} />
+
+        <div style={{ ...subLabel, marginTop: 10 }}>Assign to coach</div>
+        <select value={coach} onChange={e => setCoach(e.target.value)} style={inputStyle()}>
+          {coaches.length === 0 && <option value="Coach Valentino">Coach Valentino (default)</option>}
+          {coaches.map(c => {
+            const label = c.full_name || c.email
+            return <option key={c.id} value={label}>{label}{c.coach_tier ? ` · T${c.coach_tier}` : ''}</option>
+          })}
+        </select>
+
+        <div style={{ ...subLabel, marginTop: 14 }}>Generated link</div>
+        <div style={{
+          padding: '10px 12px', background: t.color.bg,
+          border: `1px solid ${t.color.line2}`, borderRadius: 10,
+          fontSize: 11, color: t.color.textDim, fontFamily: t.font.mono,
+          wordBreak: 'break-all', lineHeight: 1.4,
+        }}>
+          {url}
+        </div>
+
+        <button onClick={copy} style={{ ...sendBtn, background: copied ? '#4ade80' : t.color.text, color: copied ? '#000' : t.color.bg }}>
+          {copied ? '✓ Copied — share it' : '📋 Copy link'}
+        </button>
+
+        <div style={{ fontSize: 10, color: t.color.textMute, marginTop: 8, lineHeight: 1.4, textAlign: 'center' }}>
+          Stays valid forever · no expiry · safe to share by SMS, WhatsApp, or DM.
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── HELPERS ──────────────────────────────────────────────────
 
 function coachKey(c) {
@@ -1003,6 +1121,13 @@ const demoteBtn = {
   color: t.color.textDim, borderRadius: 8, padding: '6px 10px',
   fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
   cursor: 'pointer', fontFamily: t.font.sans,
+}
+
+const copyBtn = {
+  background: t.color.text, color: t.color.bg, border: 'none',
+  borderRadius: 8, padding: '6px 10px',
+  fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+  cursor: 'pointer', fontFamily: t.font.sans, flexShrink: 0,
 }
 
 const tinyRemoveBtn = {

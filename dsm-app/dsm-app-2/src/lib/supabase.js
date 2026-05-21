@@ -14,6 +14,43 @@ export async function signUp(email, password, fullName) {
   return { data, error }
 }
 
+// ─── ACCESS GATE ─────────────────────────────────────────────
+// Single source of truth for whether a logged-in user can use the app.
+// Returns { ok, reason, trialDaysLeft }.
+//   reason ∈ 'paid' | 'elite' | 'trial' | 'coach' | 'parent' | 'admin'
+//          | 'trial-expired' | 'locked' | 'unknown'
+export function evaluateAccess(profile) {
+  if (!profile) return { ok: false, reason: 'unknown' }
+  if (profile.role === 'coach' || profile.role === 'parent' || profile.is_admin) {
+    return { ok: true, reason: profile.is_admin ? 'admin' : profile.role }
+  }
+  const level = profile.access_level
+  if (level === 'paid')            return { ok: true, reason: 'paid' }
+  if (level === 'mentoring_elite') return { ok: true, reason: 'elite' }
+  if (level === 'locked')          return { ok: false, reason: 'locked' }
+  if (level === 'trial') {
+    const ends = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null
+    if (!ends) return { ok: true, reason: 'trial', trialDaysLeft: null }
+    const ms   = ends.getTime() - Date.now()
+    const days = Math.ceil(ms / 86400000)
+    if (ms > 0) return { ok: true, reason: 'trial', trialDaysLeft: days, trialEndsAt: ends }
+    return { ok: false, reason: 'trial-expired', trialEndsAt: ends }
+  }
+  return { ok: false, reason: 'unknown' }
+}
+
+export async function updateProfileAssignedCoach(userId, coachLabel) {
+  const clean = (coachLabel || '').trim().slice(0, 80)
+  if (!clean) return { data: null, error: { message: 'Coach label required' } }
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ assigned_coach: clean })
+    .eq('id', userId)
+    .select('id, assigned_coach')
+    .maybeSingle()
+  return { data, error }
+}
+
 export async function signIn(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   return { data, error }

@@ -81,7 +81,8 @@ import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHa
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
   rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
   getOrSeedDailyQuests, bumpQuest, evaluateBadges,
-  getActiveNudge, createNudge, dismissNudge, markNudgeActedOn, nudgeCreatedToday } from '../lib/supabase.js'
+  getActiveNudge, createNudge, dismissNudge, markNudgeActedOn, nudgeCreatedToday,
+  evaluateAccess } from '../lib/supabase.js'
 import {
   QUOTES, HABITS_LIST, DAYS, WEEKDAYS, BALL_MASTERY_SKILLS, PARENT_GUIDE, RESOURCES,
   AI_SYSTEM, emptyCheckin,
@@ -560,11 +561,12 @@ export default function Main({ user }) {
     } catch { alert('Voice not supported.') }
   }
 
-  // PAYWALL CHECK
-  const isLocked = profile && profile.role !== 'coach' && profile.access_level === 'locked'
-  const isPending = profile && profile.role !== 'coach' && !profile.access_level
+  // PAYWALL CHECK — see lib/supabase.js → evaluateAccess
+  const access = profile ? evaluateAccess(profile) : { ok: true }
+  const showPaywall = profile && !access.ok && profile.role !== 'coach'
+  const isTrialExpired = access.reason === 'trial-expired'
 
-  if (isLocked || isPending) {
+  if (showPaywall) {
     return (
       <div style={C.app}>
         <style>{`
@@ -575,10 +577,14 @@ export default function Main({ user }) {
         `}</style>
         <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'30px 24px', textAlign:'center' }} className="fade">
           <img src="/dsm-logo.png" alt="Di Lorenzo Mindset" style={{ width: 160, height: 160, objectFit: 'contain', marginBottom: 28, filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.10))' }} />
-          <div style={{ fontSize:60, marginBottom:20 }}>🔒</div>
-          <div style={{ fontSize:24, fontWeight:900, letterSpacing:2, marginBottom:12 }}>UNLOCK YOUR ACCESS</div>
+          <div style={{ fontSize:60, marginBottom:20 }}>{isTrialExpired ? '⏳' : '🔒'}</div>
+          <div style={{ fontSize:24, fontWeight:900, letterSpacing:2, marginBottom:12 }}>
+            {isTrialExpired ? 'YOUR TRIAL ENDED' : 'UNLOCK YOUR ACCESS'}
+          </div>
           <div style={{ fontSize:14, color:'#888', lineHeight:1.6, marginBottom:32, maxWidth:320 }}>
-            You're one step away from the full DSM program. Join now to unlock Coach Valentino, Ball Mastery tracking, Weekly Check-ins and more.
+            {isTrialExpired
+              ? "Your 14-day trial wrapped. Continue the work with Coach Valentino — Ball Mastery, weekly check-ins, voice journal and the full DSM program."
+              : "You're one step away from the full DSM program. Join now to unlock Coach Valentino, Ball Mastery tracking, Weekly Check-ins and more."}
           </div>
           <div style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:14, padding:'20px 18px', marginBottom:24, width:'100%', maxWidth:340 }}>
             <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:12 }}>WHAT YOU GET</div>
@@ -829,6 +835,7 @@ export default function Main({ user }) {
         <HomeView
           user={user}
           profile={profile}
+          access={access}
           streak={streak}
           quests={quests}
           activeNudge={activeNudge}

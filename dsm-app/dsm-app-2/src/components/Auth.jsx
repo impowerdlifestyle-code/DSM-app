@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn, signUp, redeemParentInvite, sendPasswordReset, supabase } from '../lib/supabase.js'
 import { tokens as t } from '../styles.js'
 import TiltCard from './widgets/TiltCard.jsx'
@@ -209,6 +209,26 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [invitedBy, setInvitedBy] = useState(null)
+
+  // Read invite + prefill params from the URL once. Lets admins share a link
+  // like /?coach=Valentino&email=x@y.com&name=John that lands ready-to-sign-up.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const coach    = params.get('coach')
+    const eParam   = params.get('email')
+    const nParam   = params.get('name')
+    if (coach) {
+      sessionStorage.setItem('dsm_pending_coach', coach)
+      setInvitedBy(coach)
+      setMode('signup')
+    } else {
+      const stored = sessionStorage.getItem('dsm_pending_coach')
+      if (stored) setInvitedBy(stored)
+    }
+    if (eParam) setEmail(eParam)
+    if (nParam) { setName(nParam); setMode('signup') }
+  }, [])
 
   const handleForgot = async () => {
     if (!email) return setError('Enter your email first, then tap reset.')
@@ -273,6 +293,23 @@ export default function Auth() {
             filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.10))',
           }} />
         </div>
+
+        {invitedBy && (
+          <div style={{
+            padding: '10px 14px', marginBottom: 18,
+            background: 'rgba(74,222,128,0.08)',
+            border: '1px solid rgba(74,222,128,0.3)',
+            borderRadius: 12, textAlign: 'center',
+            fontSize: 12, color: t.color.text, lineHeight: 1.4,
+          }}>
+            <span style={{ fontSize: 10, letterSpacing: 1.6, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>
+              Invited by {decodeURIComponent(invitedBy)}
+            </span>
+            <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2 }}>
+              14-day free trial · full access starts the moment you sign up.
+            </div>
+          </div>
+        )}
 
         <div style={s.eyebrow}>Elite Soccer Mindset Program</div>
         <h1 style={s.heading}>

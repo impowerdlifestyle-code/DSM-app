@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, redeemParentInvite } from './lib/supabase.js'
+import { supabase, redeemParentInvite, updateProfileAssignedCoach } from './lib/supabase.js'
 import Auth from './components/Auth.jsx'
 import Main from './components/Main.jsx'
 import ParentShell from './components/ParentShell.jsx'
@@ -43,8 +43,13 @@ export default function App() {
         sessionStorage.removeItem('dsm_pending_parent_code')
         await redeemParentInvite(user.id, pending)
       }
+      const pendingCoach = sessionStorage.getItem('dsm_pending_coach')
       const { data } = await supabase.from('profiles')
-        .select('role, full_name').eq('id', user.id).maybeSingle()
+        .select('role, full_name, assigned_coach').eq('id', user.id).maybeSingle()
+      if (pendingCoach && data && !data.assigned_coach) {
+        sessionStorage.removeItem('dsm_pending_coach')
+        await updateProfileAssignedCoach(user.id, decodeURIComponent(pendingCoach))
+      }
       setRole(data?.role || 'athlete')
       if (data?.full_name) localStorage.setItem('dsm_player_name', data.full_name)
       setRoleLoading(false)
