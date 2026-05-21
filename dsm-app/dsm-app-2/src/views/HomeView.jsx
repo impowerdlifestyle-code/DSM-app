@@ -3,6 +3,7 @@ import { C } from '../styles.js'
 import TiltCard from '../components/widgets/TiltCard.jsx'
 import QuestCard from '../components/widgets/QuestCard.jsx'
 import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
+import CoachTasksCard from '../components/widgets/CoachTasksCard.jsx'
 
 export default function HomeView({
   user, profile, streak, quests, activeNudge, badgeNotice,
@@ -77,6 +78,8 @@ export default function HomeView({
             {profile?.full_name?.split(' ')[0] || 'Athlete'}<span style={{ color: '#4a4a4a' }}>.</span>
           </div>
         </div>
+
+        <CoachTasksCard user={user} />
 
         <WeeklyRecapCard user={user} />
 

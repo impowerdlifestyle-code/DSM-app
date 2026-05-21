@@ -503,7 +503,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
 export async function getAdminAthleteList() {
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at')
+    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier')
     .order('created_at', { ascending: false })
   if (!profiles) return { data: [], error: null }
 
@@ -524,6 +524,245 @@ export async function getAdminAthleteList() {
     }
   }))
   return { data: enriched, error: null }
+}
+
+// ─── ADMIN: COACHES ──────────────────────────────────────────
+export async function assignCoachToAthlete(athleteId, coachLabel) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ assigned_coach: coachLabel })
+    .eq('id', athleteId)
+    .select('id, assigned_coach')
+    .single()
+  return { data, error }
+}
+
+export async function unassignAthleteCoach(athleteId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ assigned_coach: null })
+    .eq('id', athleteId)
+    .select('id')
+    .single()
+  return { data, error }
+}
+
+export async function promoteUserToCoach(email) {
+  const normalized = (email || '').trim().toLowerCase()
+  if (!normalized) return { data: null, error: { message: 'Email is required' } }
+  const { data: existing, error: lookupErr } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, role')
+    .ilike('email', normalized)
+    .maybeSingle()
+  if (lookupErr) return { data: null, error: lookupErr }
+  if (!existing) {
+    return { data: null, error: { message: `No account found for ${normalized}. Have them sign up first.` } }
+  }
+  if (existing.role === 'coach') return { data: existing, error: null }
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role: 'coach' })
+    .eq('id', existing.id)
+    .select('id, email, full_name, role')
+    .single()
+  return { data, error }
+}
+
+export async function demoteCoach(coachId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role: 'athlete', coach_tier: null })
+    .eq('id', coachId)
+    .select('id, role')
+    .single()
+  return { data, error }
+}
+
+export async function setCoachTier(coachId, tier) {
+  const value = tier === null || tier === '' ? null : Number(tier)
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ coach_tier: value })
+    .eq('id', coachId)
+    .select('id, coach_tier')
+    .single()
+  return { data, error }
+}
+
+// ─── ADMIN: COACH TASKS ──────────────────────────────────────
+export async function createCoachTask({ athleteId, assignedBy, title, description, dueDate, priority }) {
+  const { data, error } = await supabase
+    .from('coach_tasks')
+    .insert([{
+      athlete_id:  athleteId,
+      assigned_by: assignedBy,
+      title:       (title || '').trim(),
+      description: (description || '').trim() || null,
+      due_date:    dueDate || null,
+      priority:    priority || 'medium',
+    }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function getAthleteTasks(athleteId, { status } = {}) {
+  let q = supabase.from('coach_tasks')
+    .select('*, assigner:profiles!coach_tasks_assigned_by_fkey(full_name, email)')
+    .eq('athlete_id', athleteId)
+    .order('created_at', { ascending: false })
+  if (status) q = q.eq('status', status)
+  const { data, error } = await q
+  return { data: data || [], error }
+}
+
+export async function getMyOpenTasks(userId) {
+  const { data, error } = await supabase
+    .from('coach_tasks')
+    .select('*')
+    .eq('athlete_id', userId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function markCoachTaskDone(taskId) {
+  const { data, error } = await supabase
+    .from('coach_tasks')
+    .update({ status: 'done', completed_at: new Date().toISOString() })
+    .eq('id', taskId)
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteCoachTask(taskId) {
+  const { error } = await supabase.from('coach_tasks').delete().eq('id', taskId)
+  return { error }
+}
+
+// ─── ADMIN: COACHING GROUPS ──────────────────────────────────
+export async function listCoachingGroups() {
+  const { data, error } = await supabase
+    .from('coaching_groups')
+    .select('id, name, description, lead_coach_id, created_at, lead:profiles!coaching_groups_lead_coach_id_fkey(full_name, email)')
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function createCoachingGroup({ name, description, leadCoachId }) {
+  const { data, error } = await supabase
+    .from('coaching_groups')
+    .insert([{
+      name:          (name || '').trim(),
+      description:   (description || '').trim() || null,
+      lead_coach_id: leadCoachId,
+    }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteCoachingGroup(groupId) {
+  const { error } = await supabase.from('coaching_groups').delete().eq('id', groupId)
+  return { error }
+}
+
+export async function listGroupMembers(groupId) {
+  const { data, error } = await supabase
+    .from('coaching_group_members')
+    .select('group_id, user_id, role_in_group, added_at, user:profiles!coaching_group_members_user_id_fkey(id, full_name, email, role)')
+    .eq('group_id', groupId)
+  return { data: data || [], error }
+}
+
+export async function addGroupMember(groupId, userId, roleInGroup = 'athlete') {
+  const { data, error } = await supabase
+    .from('coaching_group_members')
+    .insert([{ group_id: groupId, user_id: userId, role_in_group: roleInGroup }])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function removeGroupMember(groupId, userId) {
+  const { error } = await supabase
+    .from('coaching_group_members')
+    .delete()
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+  return { error }
+}
+
+// ─── ADMIN: RECENT ACTIVITY (coached athletes only) ──────────
+export async function getRecentActivity({ limit = 60 } = {}) {
+  const { data: coached } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, assigned_coach')
+    .not('assigned_coach', 'is', null)
+  const { data: groupMembers } = await supabase
+    .from('coaching_group_members')
+    .select('user_id')
+    .eq('role_in_group', 'athlete')
+
+  const coachedById = new Map()
+  for (const p of (coached || [])) coachedById.set(p.id, p)
+  if (groupMembers) {
+    const extraIds = groupMembers.map(m => m.user_id).filter(id => !coachedById.has(id))
+    if (extraIds.length) {
+      const { data: extras } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, assigned_coach')
+        .in('id', extraIds)
+      for (const p of (extras || [])) coachedById.set(p.id, p)
+    }
+  }
+  const ids = [...coachedById.keys()]
+  if (!ids.length) return { data: [], error: null }
+
+  const [actions, checkins, voice, chat, tasks] = await Promise.all([
+    supabase.from('action_steps')
+      .select('id, user_id, created_at, did_action_steps, mental, date')
+      .in('user_id', ids)
+      .order('created_at', { ascending: false }).limit(limit),
+    supabase.from('weekly_checkins')
+      .select('id, user_id, created_at, mood, week_number')
+      .in('user_id', ids)
+      .order('created_at', { ascending: false }).limit(limit),
+    supabase.from('voice_journal')
+      .select('id, user_id, created_at, title')
+      .in('user_id', ids)
+      .order('created_at', { ascending: false }).limit(limit),
+    supabase.from('chat_history')
+      .select('id, user_id, created_at, role')
+      .in('user_id', ids)
+      .eq('role', 'user')
+      .order('created_at', { ascending: false }).limit(limit),
+    supabase.from('coach_tasks')
+      .select('id, athlete_id, created_at, completed_at, status, title')
+      .in('athlete_id', ids)
+      .order('completed_at', { ascending: false, nullsFirst: false })
+      .limit(limit),
+  ])
+
+  const events = []
+  const nameFor = (id) => {
+    const p = coachedById.get(id)
+    return p?.full_name || p?.email || 'Athlete'
+  }
+  const coachFor = (id) => coachedById.get(id)?.assigned_coach || null
+
+  for (const r of (actions.data   || [])) events.push({ id: `as-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'action_step', summary: `Logged action step · mental ${r.mental ?? '—'}` })
+  for (const r of (checkins.data  || [])) events.push({ id: `ck-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'checkin',     summary: `Weekly check-in · mood ${r.mood ?? '—'} · wk ${r.week_number ?? '—'}` })
+  for (const r of (voice.data     || [])) events.push({ id: `vj-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'voice',       summary: `Voice journal · ${r.title || 'untitled'}` })
+  for (const r of (chat.data      || [])) events.push({ id: `ch-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'chat',        summary: 'Messaged Coach V' })
+  for (const r of (tasks.data     || [])) {
+    if (r.completed_at) events.push({ id: `tk-${r.id}`, at: r.completed_at, athleteId: r.athlete_id, athlete: nameFor(r.athlete_id), coach: coachFor(r.athlete_id), kind: 'task_done', summary: `Completed task · ${r.title}` })
+  }
+
+  events.sort((a, b) => (b.at || '').localeCompare(a.at || ''))
+  return { data: events.slice(0, limit), error: null }
 }
 
 // ─── MESSAGE FEEDBACK (👍/👎) ────────────────────────────────
