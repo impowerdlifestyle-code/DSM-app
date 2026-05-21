@@ -88,22 +88,22 @@ export async function getAllActionSteps() {
 }
 
 // ─── HABITS ──────────────────────────────────────────────────
+// habits is one row per athlete (no week column) — the blob gets overwritten
+// each save. Reverse-engineered from the live voxsrn- schema after the
+// week-keyed writes were silently rejecting for every athlete.
 export async function saveHabits(userId, habits) {
-  const week = getWeekKey()
   const { data, error } = await supabase
     .from('habits')
-    .upsert([{ user_id: userId, week, habits: JSON.stringify(habits) }], { onConflict: 'user_id,week' })
+    .upsert([{ user_id: userId, habits: JSON.stringify(habits), updated_at: new Date().toISOString() }], { onConflict: 'user_id' })
   return { data, error }
 }
 
 export async function getHabits(userId) {
-  const week = getWeekKey()
   const { data, error } = await supabase
     .from('habits')
     .select('*')
     .eq('user_id', userId)
-    .eq('week', week)
-    .single()
+    .maybeSingle()
   return { data, error }
 }
 
@@ -442,7 +442,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     isAdmin ? safe('locker_room_notes', supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false })) : Promise.resolve({ data: [] }),
     safe('daily_quests',    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('quest_date', { ascending: false }).limit(30)),
     safe('match_log',       supabase.from('match_log').select('*').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(20)),
-    safe('habits',          supabase.from('habits').select('*').eq('user_id', athleteId).order('week', { ascending: false }).limit(6)),
+    safe('habits',          supabase.from('habits').select('*').eq('user_id', athleteId).maybeSingle()),
     safe('future_self_checkins', supabase.from('future_self_checkins').select('*').eq('user_id', athleteId).order('month', { ascending: false }).limit(12)),
     safe('nutrition_targets', supabase.from('nutrition_targets').select('*').eq('user_id', athleteId).maybeSingle()),
     safe('message_feedback', supabase.from('message_feedback').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(30)),
@@ -489,7 +489,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     notes:      notesRes.data || [],
     dailyQuests: questRes.data || [],
     matches:    matchRes.data || [],
-    habits:     habitsRes.data || [],
+    habits:     habitsRes.data || null,
     futureSelf: futureSelfRes.data || [],
     nutritionTargets: nutritionTgtRes.data || null,
     messageFeedback: feedbackRes.data || [],

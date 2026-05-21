@@ -80,7 +80,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
   const { profile, memory, actionSteps, ballMastery, checkins, voiceJournal, chat,
           workouts, food, body, badges, nudges, squads, notes, totalXp,
           dailyQuests = [], matches = [],
-          habits = [], futureSelf = [], nutritionTargets = null,
+          habits = null, futureSelf = [], nutritionTargets = null,
           messageFeedback = [], parents = [], photos = [],
           recaps = [] } = data
   const name = profile?.full_name || profile?.email || 'Athlete'
@@ -90,9 +90,9 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
     || profile?.club_team || profile?.obstacles?.length
     || (profile?.baseline && Object.keys(profile.baseline).length))
 
-  const feedbackUp   = messageFeedback.filter(f => f.rating === 'up').length
-  const feedbackDown = messageFeedback.filter(f => f.rating === 'down').length
-  const recentDownNotes = messageFeedback.filter(f => f.rating === 'down' && f.note).slice(0, 5)
+  const feedbackUp   = messageFeedback.filter(f => f.rating === 'positive').length
+  const feedbackDown = messageFeedback.filter(f => f.rating === 'negative').length
+  const recentDownNotes = messageFeedback.filter(f => f.rating === 'negative' && f.note).slice(0, 5)
 
   const sections = [
     { id: 'overview',   label: 'Overview' },
@@ -118,10 +118,12 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           ) : <span />}
           {adminView && (
             <button onClick={handleExportPdf} style={{
-              background: t.color.text, border: 'none',
-              color: t.color.bg, padding: '7px 14px',
+              background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+              border: `1px solid ${t.color.pitchEdge}`,
+              color: '#ffffff', padding: '7px 14px',
               fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
               borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans,
+              boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 12px -4px rgba(74,222,128,0.6)',
             }}>📄 Export PDF</button>
           )}
         </div>
@@ -247,11 +249,14 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             </div>
           ))}
           <button onClick={saveThemes} disabled={themesSaving} style={{
-            padding: '10px 16px', background: themesSaving ? t.color.surface2 : t.color.text,
-            color: themesSaving ? t.color.textDim : t.color.bg,
-            border: 'none', borderRadius: 10,
+            padding: '10px 16px',
+            background: themesSaving ? t.color.surface2 : `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+            color: themesSaving ? t.color.textDim : '#ffffff',
+            border: themesSaving ? 'none' : `1px solid ${t.color.pitchEdge}`,
+            borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
             cursor: themesSaving ? 'wait' : 'pointer', fontFamily: t.font.sans,
+            boxShadow: themesSaving ? 'none' : '0 1px 0 rgba(255,255,255,0.25) inset, 0 6px 14px -6px rgba(74,222,128,0.6)',
           }}>{themesSaving ? 'Saving…' : themesSavedAt ? '✓ Saved' : 'Save themes'}</button>
 
           {memory?.athlete_summary && (
@@ -286,17 +291,24 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           </Card>
 
           <Card title={`Weekly check-ins (${checkins.length})`} onJump={canJump ? () => jumpTo('weekly') : null}>
-            {checkins.slice(0, 6).map(c => (
-              <div key={c.id} style={entry()}>
-                <div style={entryHeader}>
-                  <span>{c.week}</span>
-                  <span>Mental {c.mental || '—'}/10 · Conf {c.confidence_level || '—'}/10</span>
+            {checkins.slice(0, 6).map(c => {
+              const win      = c.biggest_win       || c.wins
+              const struggle = c.biggest_challenge || c.struggles
+              const goal     = c.goal_next_week    || c.goal
+              const message  = c.message_to_coach
+              return (
+                <div key={c.id} style={entry()}>
+                  <div style={entryHeader}>
+                    <span>{c.week}</span>
+                    <span>Energy {c.energy_level ?? c.mental ?? '—'}/10 · Conf {c.confidence_level ?? '—'}/10</span>
+                  </div>
+                  {win && <div style={{ fontSize: 12, color: t.color.text, marginTop: 4 }}><b>Win:</b> {win}</div>}
+                  {struggle && <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 2 }}><b>Struggle:</b> {struggle}</div>}
+                  {goal && <div style={{ fontSize: 12, color: t.color.text, marginTop: 2 }}><b>Goal:</b> {goal}</div>}
+                  {adminView && message && <div style={{ fontSize: 12, color: t.color.text, marginTop: 6, fontStyle: 'italic', padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}><b style={{ color: t.color.textMute, letterSpacing: 1 }}>FOR COACH · </b>{message}</div>}
                 </div>
-                {c.wins && <div style={{ fontSize: 12, color: t.color.text, marginTop: 4 }}><b>Win:</b> {c.wins}</div>}
-                {c.struggles && <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 2 }}><b>Struggle:</b> {c.struggles}</div>}
-                {c.goal && <div style={{ fontSize: 12, color: t.color.text, marginTop: 2 }}><b>Goal:</b> {c.goal}</div>}
-              </div>
-            ))}
+              )
+            })}
             {checkins.length === 0 && <Empty />}
           </Card>
 
@@ -474,35 +486,34 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             {matches.length === 0 && <Empty />}
           </Card>
 
-          <Card title={`Habits (${habits.length} weeks)`} onJump={canJump ? () => jumpTo('tracker') : null}>
-            {habits.slice(0, 6).map(h => {
+          <Card title="Habits" onJump={canJump ? () => jumpTo('tracker') : null}>
+            {(() => {
+              if (!habits) return <Empty />
               let parsed = {}
-              try { parsed = typeof h.habits === 'string' ? JSON.parse(h.habits) : (h.habits || {}) } catch {}
+              try { parsed = typeof habits.habits === 'string' ? JSON.parse(habits.habits) : (habits.habits || {}) } catch {}
               const keys = Object.keys(parsed)
               const completed = keys.filter(k => parsed[k]).length
+              if (keys.length === 0) return <Empty />
               return (
-                <div key={h.id || h.week} style={entry()}>
+                <div style={entry()}>
                   <div style={entryHeader}>
-                    <span>{h.week}</span>
-                    <span style={{ color: completed === keys.length && keys.length > 0 ? t.color.ok : t.color.textDim }}>
-                      {completed}/{keys.length || '—'} done
+                    <span>Updated {habits.updated_at ? new Date(habits.updated_at).toLocaleDateString() : '—'}</span>
+                    <span style={{ color: completed === keys.length ? t.color.ok : t.color.textDim }}>
+                      {completed}/{keys.length} done
                     </span>
                   </div>
-                  {keys.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                      {keys.map(k => (
-                        <span key={k} style={{
-                          ...tag,
-                          opacity: parsed[k] ? 1 : 0.35,
-                          color: parsed[k] ? t.color.text : t.color.textMute,
-                        }}>{parsed[k] ? '✓' : '·'} {k}</span>
-                      ))}
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                    {keys.map(k => (
+                      <span key={k} style={{
+                        ...tag,
+                        opacity: parsed[k] ? 1 : 0.35,
+                        color: parsed[k] ? t.color.text : t.color.textMute,
+                      }}>{parsed[k] ? '✓' : '·'} {k}</span>
+                    ))}
+                  </div>
                 </div>
               )
-            })}
-            {habits.length === 0 && <Empty />}
+            })()}
           </Card>
 
           <Card title={`Daily quests (last ${dailyQuests.length} days)`} onJump={canJump ? () => jumpTo('home') : null}>
@@ -652,10 +663,13 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             }}
           />
           <button onClick={handleAddNote} disabled={savingNote || !newNote.trim()} style={{
-            padding: '10px 16px', background: t.color.text, color: t.color.bg,
-            border: 'none', borderRadius: 10,
+            padding: '10px 16px',
+            background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+            color: '#ffffff',
+            border: `1px solid ${t.color.pitchEdge}`, borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
             cursor: 'pointer', fontFamily: t.font.sans,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 6px 14px -6px rgba(74,222,128,0.6)',
             opacity: (!newNote.trim() || savingNote) ? 0.4 : 1,
           }}>{savingNote ? 'Saving…' : 'Add note'}</button>
 
