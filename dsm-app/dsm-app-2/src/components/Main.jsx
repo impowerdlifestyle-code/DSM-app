@@ -643,6 +643,12 @@ export default function Main({ user }) {
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+        @keyframes dsmGlow {
+          0%,100% { text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.30), 0 0 56px rgba(255,255,255,0.15) }
+          50%     { text-shadow: 0 0 20px rgba(255,255,255,0.75), 0 0 40px rgba(255,255,255,0.42), 0 0 72px rgba(255,255,255,0.22) }
+        }
+        .dsm-glow { text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.30), 0 0 56px rgba(255,255,255,0.15); animation: dsmGlow 3.2s ease-in-out infinite; }
+        .dsm-glow-strong { text-shadow: 0 0 18px rgba(255,255,255,0.7), 0 0 36px rgba(255,255,255,0.4), 0 0 64px rgba(255,255,255,0.2); animation: dsmGlow 2.6s ease-in-out infinite; }
         .fade { animation: fadeIn 0.28s cubic-bezier(.2,.7,.2,1); }
         input::placeholder, textarea::placeholder { color: #54565c; }
         input, textarea, select { -webkit-user-select: text; user-select: text; }

@@ -124,7 +124,7 @@ export const C = {
     textTransform: 'uppercase',
   },
 
-  // Page title — athletic condensed
+  // Page title — athletic condensed with cinematic glow
   title: {
     fontFamily: t.font.athletic,
     fontSize: 42,
@@ -134,6 +134,8 @@ export const C = {
     marginBottom: 4,
     textTransform: 'uppercase',
     color: t.color.text,
+    textShadow: '0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.15)',
+    animation: 'dsmGlow 3.2s ease-in-out infinite',
   },
   sub: {
     fontSize: 10,
