@@ -113,6 +113,7 @@ import MatchDayTab from './tabs/MatchDayTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
+import MonthlyCheckin from '../features/future-self/MonthlyCheckin.jsx'
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
 import BadgeHints, { shouldShowBadgeHintsAutomatically, markBadgeHintsSeen } from './BadgeHints.jsx'
 import HomeView from '../views/HomeView.jsx'
@@ -602,7 +603,7 @@ export default function Main({ user }) {
     { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
     { id: 'squad',     label: 'Squad' },
-    { id: 'more',      label: 'More',   matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course'] },
+    { id: 'more',      label: 'More',   matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course', 'voice', 'future'] },
     ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
@@ -2025,6 +2026,24 @@ export default function Main({ user }) {
         </div>
       )}
 
+      {/* ── VOICE JOURNAL ── */}
+      {tab === 'voice' && (
+        <div className="fade" style={C.scroll}>
+          <div style={C.title}>VOICE JOURNAL</div>
+          <div style={C.sub}>30 seconds · Coach V listens</div>
+          <VoiceJournal user={user} />
+        </div>
+      )}
+
+      {/* ── FUTURE SELF ── */}
+      {tab === 'future' && (
+        <div className="fade" style={C.scroll}>
+          <div style={C.title}>FUTURE SELF</div>
+          <div style={C.sub}>Monthly identity ritual</div>
+          <MonthlyCheckin user={user} />
+        </div>
+      )}
+
       {/* ── MORE — overflow menu ── */}
       {tab === 'more' && (
         <div className="fade" style={C.scroll}>
@@ -2032,6 +2051,8 @@ export default function Main({ user }) {
           <div style={C.sub}>Body · habits · check-ins · resources</div>
           {[
             { id: 'tips',      label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
+            { id: 'voice',     label: 'Voice Journal', sub: '30-sec mindset reflection · +60 XP' },
+            { id: 'future',    label: 'Future Self',   sub: 'Monthly identity ritual' },
             { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },
             { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
             { id: 'tracker',   label: 'Habit Tracker', sub: 'Weekly habits + day streak' },
