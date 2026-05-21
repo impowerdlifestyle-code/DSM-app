@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { buildScriptPrompt, FUTURE_SELF_CONTEXTS } from '../lib/scriptPrompt.js'
 
-const sampleProfile = { full_name: 'Marco Diaz', position: 'CAM' }
-const sampleIdentity = 'I am the player who plays without fear and bounces back instantly.'
+const sampleProfile = {
+  full_name: 'Marco Diaz',
+  position: 'CAM',
+  age: 15,
+  identity_goal: 'I am the player who plays without fear and bounces back instantly.',
+}
 const sampleThemes = {
   mindset: 'shark mentality on second balls, struggles to reset after misses',
   technique: 'first touch under pressure',
@@ -12,19 +16,19 @@ const sampleThemes = {
 
 describe('buildScriptPrompt — shared envelope', () => {
   it('returns system + user strings and a tight max_tokens budget', () => {
-    const out = buildScriptPrompt({ context: 'custom', identityStatement: sampleIdentity, profile: sampleProfile })
+    const out = buildScriptPrompt({ context: 'custom', profile: sampleProfile })
     expect(typeof out.system).toBe('string')
     expect(typeof out.user).toBe('string')
     expect(out.maxTokens).toBeGreaterThan(0)
     expect(out.maxTokens).toBeLessThanOrEqual(300)
   })
 
-  it('system prompt enforces the future-self voice rules', () => {
+  it('system prompt enforces Coach V persona for TTS playback', () => {
     const { system } = buildScriptPrompt({ context: 'custom' })
-    expect(system).toMatch(/future self/i)
-    expect(system).toMatch(/second person/i)
+    expect(system).toMatch(/Coach Valentino/i)
     expect(system).toMatch(/15 to 30 seconds/i)
     expect(system).toMatch(/text-to-speech/i)
+    expect(system).toMatch(/no emojis/i)
   })
 
   it('falls back to "custom" for unknown contexts', () => {
@@ -38,23 +42,26 @@ describe('buildScriptPrompt — shared envelope', () => {
     )
   })
 
-  it('embeds identity statement and themes in the user payload', () => {
+  it('embeds profile fields and themes in the user payload', () => {
     const { user } = buildScriptPrompt({
       context: 'custom',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       themes: sampleThemes,
     })
     expect(user).toContain('Marco')
     expect(user).toContain('CAM')
+    expect(user).toContain('age 15')
     expect(user).toContain('bounces back instantly')
     expect(user).toContain('mindset:')
     expect(user).toContain('goals:')
   })
 
-  it('handles missing identity statement gracefully', () => {
-    const { user } = buildScriptPrompt({ context: 'custom', profile: sampleProfile })
-    expect(user).toMatch(/no stated identity|speak generically/i)
+  it('handles missing identity_goal gracefully', () => {
+    const { user } = buildScriptPrompt({
+      context: 'custom',
+      profile: { full_name: 'Sam', position: 'GK' },
+    })
+    expect(user).toMatch(/none on file/i)
   })
 })
 
@@ -62,7 +69,6 @@ describe('buildScriptPrompt — pre_match', () => {
   it('renders opponent, competition, venue, intention, focus cue', () => {
     const { user, context } = buildScriptPrompt({
       context: 'pre_match',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       matchContext: {
         opponent: 'Tampa Bay Rowdies U17',
@@ -82,7 +88,7 @@ describe('buildScriptPrompt — pre_match', () => {
   })
 
   it('falls back to placeholders when matchContext is missing', () => {
-    const { user } = buildScriptPrompt({ context: 'pre_match', identityStatement: sampleIdentity, profile: sampleProfile })
+    const { user } = buildScriptPrompt({ context: 'pre_match', profile: sampleProfile })
     expect(user).toMatch(/their opponent/)
     expect(user).toMatch(/a match/)
   })
@@ -92,7 +98,6 @@ describe('buildScriptPrompt — post_mistake', () => {
   it('embeds sentiment, journal transcript, and goldfish framing', () => {
     const { user, context } = buildScriptPrompt({
       context: 'post_mistake',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       journalContext: {
         sentiment: 'frustrated',
@@ -111,7 +116,6 @@ describe('buildScriptPrompt — post_mistake', () => {
     const huge = 'x'.repeat(5000)
     const { user } = buildScriptPrompt({
       context: 'post_mistake',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       journalContext: { sentiment: 'flat', transcript: huge },
     })
@@ -124,7 +128,6 @@ describe('buildScriptPrompt — monthly_check', () => {
   it('summarizes recent behavior and asks one question', () => {
     const { user, context } = buildScriptPrompt({
       context: 'monthly_check',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       themes: sampleThemes,
       monthlyContext: {
@@ -146,7 +149,6 @@ describe('buildScriptPrompt — monthly_check', () => {
   it('handles zero action steps and zero matches', () => {
     const { user } = buildScriptPrompt({
       context: 'monthly_check',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
       monthlyContext: { actionStepsCount: 0, recentMatches: [] },
     })
@@ -156,14 +158,13 @@ describe('buildScriptPrompt — monthly_check', () => {
 })
 
 describe('buildScriptPrompt — onboarding', () => {
-  it('frames the first listen as deliberately weird', () => {
+  it('frames the first listen as a Coach V welcome', () => {
     const { user, context } = buildScriptPrompt({
       context: 'onboarding',
-      identityStatement: sampleIdentity,
       profile: sampleProfile,
     })
     expect(context).toBe('onboarding')
     expect(user).toMatch(/ONBOARDING/)
-    expect(user).toMatch(/yeah, that's you/i)
+    expect(user).toMatch(/welcome them/i)
   })
 })

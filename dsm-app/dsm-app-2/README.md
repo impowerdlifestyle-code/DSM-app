@@ -91,35 +91,35 @@ From the Coach Dashboard, click any athlete and tap the access level buttons:
 
 ---
 
-## Future Self Voice
+## Coach V Voice Messages
 
-Each athlete records a 60-second voice sample once. ElevenLabs clones it. Coach V then plays short messages back to them in **their own voice** — before a match, after a mistake, and once a month for an identity check-in.
+Coach Valentino's actual voice — cloned once via ElevenLabs — speaking personalized 15-30s messages to each athlete. Surfaces in three places: before a match, after a frustrated/anxious voice journal entry, and once a month for a check-in.
 
-### Setup
-1. Run `supabase-future-self-migration.sql` in the Supabase SQL Editor. Creates `voice_identity`, `future_self_clips`, `future_self_checkins`, `voice_audit_log`, and the private `future-self-audio` storage bucket with path-prefixed RLS.
-2. Confirm `ELEVENLABS_API_KEY` and `ANTHROPIC_API_KEY` are set in Vercel (server-side).
-3. Get an ElevenLabs account on **Creator tier or higher** — Instant Voice Cloning is gated behind it.
+### Setup (one-time admin)
+1. Run `supabase-future-self-migration.sql` in the Supabase SQL Editor. Creates `future_self_clips`, `future_self_checkins`, `voice_audit_log`, and the private `future-self-audio` storage bucket with path-prefixed RLS. (`voice_identity` is also created but currently unused — kept for forward-compat.)
+2. ElevenLabs: account on **Creator tier or higher**, then clone Valentino's voice in the dashboard from a 60s recording. Copy the resulting voice ID.
+3. Vercel → Settings → Environment Variables:
+   - `ELEVENLABS_API_KEY` — server-side key
+   - `ELEVENLABS_VOICE_ID` — Valentino's cloned voice ID from step 2
+   - `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — already required by Coach V chat
+4. Redeploy.
 
 ### Surfaces
-- `src/features/future-self/ConsentFlow.jsx` — 3-slide consent gate (minors blocked, 13+ self-consent)
-- `src/features/future-self/VoiceCapture.jsx` — 60s capture + clone (Step 5, in progress)
-- `src/features/future-self/FutureSelfPlayer.jsx` — generates + plays clips, used at three integration points (HomeView, MatchDayTab, VoiceJournal)
-- `src/features/future-self/MonthlyCheckin.jsx` — monthly home-view ritual
-- `src/features/future-self/Settings.jsx` — clip list, deletion controls, audit trail (PlayerTab → Voice sub-tab)
+- `src/features/future-self/FutureSelfPlayer.jsx` — generates + plays a clip on demand. Wired into `MatchDayTab` (pre-match) and `VoiceJournal` (post-mistake autoGenerate when sentiment ∈ {frustrated, anxious, flat}).
+- `src/features/future-self/MonthlyCheckin.jsx` — once-per-month ritual; Coach V poses a question, kid responds via SpeechRecognition, Claude reflects on the gap between their identity goal and recent behavior.
+- `src/features/future-self/Settings.jsx` — clip list + per-clip play/delete + audit trail (PlayerTab → Voice sub-tab).
 
 ### Server endpoints (all under `api/future-self/`)
-- `generate-clip.js` — Claude script → ElevenLabs TTS → storage → DB
-- `clone-voice.js` — Instant Voice Cloning intake (Step 5)
-- `save-checkin.js` — monthly check-in with AI reflection on identity-vs-behavior gap
-- `delete-clip.js` — per-clip delete with storage cleanup + audit
-- `delete-voice.js` — full wipe (ElevenLabs DELETE + all clips + all storage + soft-delete identity)
+- `generate-clip.js` — athlete digest → Claude script (Coach V persona) → ElevenLabs TTS using `ELEVENLABS_VOICE_ID` → storage → DB row → signed URL
+- `save-checkin.js` — monthly check-in: row insert → 30-day behavior digest → Claude AI reflection → XP award → audit
+- `delete-clip.js` — single-clip delete with storage cleanup + audit
 
-### Privacy & consent
-- Under 13: parent must consent on parent shell first; athlete is hard-blocked otherwise.
-- 13+: explicit checkbox consent before any capture.
-- Voice is used only in the athlete's own account — never shared, never used to train models.
-- Every clone / generation / playback / deletion writes a row to `voice_audit_log` (append-only by RLS).
-- Athlete or linked parent can wipe the entire voice identity from PlayerTab → Voice. Deletion calls ElevenLabs `DELETE /v1/voices/{id}`, removes every clip and storage object, and soft-deletes the identity row.
+### Privacy
+- Only Coach V's voice is cloned, once, by you. Athletes never record their own voice for cloning.
+- Personalized scripts are generated from each athlete's own data (action steps, matches, voice journal, themes). That data stays in their account.
+- Athletes can delete any clip from PlayerTab → Voice.
+- Every clip generation / playback / deletion writes to `voice_audit_log` (append-only by RLS, self / linked parent / coach can read).
+- If `ELEVENLABS_VOICE_ID` is unset, every player surface returns `voice_not_configured` and shows a clean "admin task pending" gate.
 
 ---
 

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { tokens as t, C } from '../../styles.js'
 import { logAudit } from './lib/voiceIdentity.js'
 
-// Renders a "future self" CTA → on click, generates + plays the clip in the
-// athlete's cloned voice. Falls back to a consent/capture CTA when the API
-// reports the athlete hasn't completed Step 4/5 yet.
+// Renders a "Coach V message" CTA → on click, generates + plays a personalized
+// 15-30s message in Valentino's cloned voice. Gates with a 'voice_not_configured'
+// state if the admin hasn't set ELEVENLABS_VOICE_ID in env yet.
 //
 // Props:
 //   user       — auth user (required)
@@ -16,11 +16,11 @@ import { logAudit } from './lib/voiceIdentity.js'
 //   autoGenerate — if true, fires generate-clip on mount instead of waiting for tap
 
 const DEFAULT_LABELS = {
-  pre_match: 'Hear your future self · pre-match',
-  post_mistake: 'Hear your future self · bounce-back',
-  monthly_check: "Your future self has something to say",
-  onboarding: 'Meet your future self',
-  custom: 'Hear your future self',
+  pre_match: 'Coach V · pre-match',
+  post_mistake: 'Coach V · bounce-back',
+  monthly_check: 'Coach V · monthly check-in',
+  onboarding: 'Coach V · welcome',
+  custom: 'Coach V message',
 }
 
 export default function FutureSelfPlayer({ user, context = 'custom', matchId = null, label, onReady, onPlayed, autoGenerate = false }) {
@@ -45,7 +45,7 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        if (json.code === 'not_consented' || json.code === 'voice_not_cloned') {
+        if (json.code === 'voice_not_configured') {
           setErrCode(json.code); setPhase('gated'); return
         }
         setErrCode(json.code || 'unknown'); setErrMsg(json.error || `Request failed (${res.status})`)
@@ -66,7 +66,6 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoGenerate])
 
-  // Auto-play once we have audio
   useEffect(() => {
     if (phase !== 'ready' || !audioUrl) return
     const a = audioRef.current
@@ -82,42 +81,38 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
     onPlayed?.({ clipId, script })
   }
 
-  // ─── GATED: consent or capture not done yet ─────────────────────────────
+  // ─── GATED: admin hasn't configured Coach V's voice yet ─────────────────
   if (phase === 'gated') {
     return (
       <div style={card(t)}>
-        <div style={lbl(t)}>Future Self</div>
+        <div style={lbl(t)}>Coach V voice</div>
         <div style={{ fontSize: 13, color: t.color.text, lineHeight: 1.5, marginTop: 6 }}>
-          {errCode === 'not_consented'
-            ? "You haven't set up your future self yet. Tap to record your voice once — Coach V uses it for pre-match, post-mistake, and monthly check-ins."
-            : "Your voice hasn't been cloned yet. Finish the voice-capture step to unlock this."}
+          Coach V's voice messages aren't switched on yet — admin task pending. Check back soon.
         </div>
       </div>
     )
   }
 
-  // ─── ERROR ─────────────────────────────────────────────────────────────
   if (phase === 'error') {
     return (
       <div style={card(t)}>
-        <div style={lbl(t)}>Future Self</div>
+        <div style={lbl(t)}>Coach V voice</div>
         <div style={{ fontSize: 13, color: t.color.err, marginTop: 6 }}>{errMsg || 'Could not generate clip.'}</div>
         <button style={smallBtn(t)} onClick={generate}>Try again</button>
       </div>
     )
   }
 
-  // ─── IDLE / GENERATING / READY / PLAYING / DONE ─────────────────────────
   return (
     <div style={card(t)}>
-      <div style={lbl(t)}>Future Self</div>
+      <div style={lbl(t)}>Coach V voice</div>
       <div style={{ fontSize: 15, fontWeight: 600, color: t.color.text, marginTop: 4, lineHeight: 1.3 }}>{ctaLabel}</div>
 
       {phase === 'idle' && (
         <button style={primaryBtn(t)} onClick={generate}>Play</button>
       )}
       {phase === 'generating' && (
-        <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 10 }}>Cueing your voice…</div>
+        <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 10 }}>Coach V is recording…</div>
       )}
       {(phase === 'ready' || phase === 'playing' || phase === 'done') && audioUrl && (
         <>
@@ -132,7 +127,7 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
             }}>“{script}”</div>
           )}
           {phase === 'done' && (
-            <button style={smallBtn(t)} onClick={generate}>Generate another</button>
+            <button style={smallBtn(t)} onClick={generate}>Hear another</button>
           )}
         </>
       )}
@@ -140,7 +135,6 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
   )
 }
 
-// ─── style helpers (no JSX so they can stay short) ────────────────────────
 const card = (t) => ({
   background: t.color.surface,
   border: `1px solid ${t.color.line2}`,

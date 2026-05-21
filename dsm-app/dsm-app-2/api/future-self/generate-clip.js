@@ -1,16 +1,19 @@
-// Vercel serverless — Future Self clip generator.
+// Vercel serverless — Coach V voice-clip generator.
 // Pipeline:
-//   1. Load voice_identity (must have elevenlabs_voice_id and not be deleted)
-//   2. Load athlete digest (profile + coach_memory + recent journal/matches)
-//   3. Claude → 15–30s spoken script
-//   4. ElevenLabs TTS → audio bytes
-//   5. Supabase Storage upload → 'future-self-audio/{userId}/{clipId}.mp3'
-//   6. Insert future_self_clips row
-//   7. Insert voice_audit_log 'clip_generated'
-//   8. Return { clipId, script, audioUrl } (signed URL good for 1h)
+//   1. Load athlete digest (profile + coach_memory + recent journal/matches)
+//   2. Claude → 15–30s Coach V spoken script
+//   3. ElevenLabs TTS using ELEVENLABS_VOICE_ID (Valentino's cloned voice)
+//   4. Supabase Storage upload → 'future-self-audio/{userId}/{clipId}.mp3'
+//   5. Insert future_self_clips row
+//   6. Insert voice_audit_log 'clip_generated'
+//   7. Return { clipId, script, audioUrl } (signed URL good for 1h)
 //
 // Body: { userId, context, matchId? }
 // Errors return JSON with a stable `code` for the client to branch on.
+//
+// Setup: clone Coach V's voice in ElevenLabs once, set ELEVENLABS_VOICE_ID
+// in Vercel. Per-athlete cloning is intentionally NOT part of this design —
+// kids hear their actual coach, not themselves.
 
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
@@ -53,10 +56,12 @@ export default async function handler(req, res) {
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const elevenKey = process.env.ELEVENLABS_API_KEY
+  const coachVoiceId = process.env.ELEVENLABS_VOICE_ID
   const supaUrl = process.env.SUPABASE_URL
   const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!anthropicKey) return err(res, 500, 'env', 'ANTHROPIC_API_KEY not configured')
   if (!elevenKey)    return err(res, 500, 'env', 'ELEVENLABS_API_KEY not configured')
+  if (!coachVoiceId) return err(res, 503, 'voice_not_configured', "Coach V's voice isn't configured yet — admin task pending.")
   if (!supaUrl || !supaKey) return err(res, 500, 'env', 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured')
 
   let body
@@ -73,16 +78,10 @@ export default async function handler(req, res) {
   const anthropic = new Anthropic({ apiKey: anthropicKey })
 
   try {
-    // 1. Voice identity gate
-    const { data: identity, error: idErr } = await admin
-      .from('voice_identity').select('*').eq('user_id', userId).is('deleted_at', null).maybeSingle()
-    if (idErr) return err(res, 500, 'db', 'Failed to read voice identity', { detail: idErr.message })
-    if (!identity) return err(res, 412, 'not_consented', 'No voice identity on file. Complete consent + capture first.')
-    if (!identity.consent_given_at) return err(res, 412, 'not_consented', 'Consent missing.')
-    if (!identity.elevenlabs_voice_id) return err(res, 412, 'voice_not_cloned', 'Voice has not been cloned yet. Complete the capture step.')
-
-    // 2. Pull supporting context (athlete digest + optional match)
+    // 1. Pull supporting context (athlete digest + optional match)
     const digest = await loadAthleteDigest(admin, userId)
+    if (!digest.profile) return err(res, 404, 'no_profile', 'Athlete profile not found')
+
     let matchContext = null
     if (matchId) {
       const { data: m } = await admin.from('match_log').select('*').eq('id', matchId).maybeSingle()
@@ -96,10 +95,9 @@ export default async function handler(req, res) {
       ? { recentMatches: digest.recentMatches, actionStepsCount: digest.monthActionSteps }
       : null
 
-    // 3. Build prompt + call Claude
+    // 2. Build prompt + call Claude
     const { system, user, maxTokens } = buildScriptPrompt({
       context,
-      identityStatement: identity.identity_statement,
       profile: digest.profile,
       themes: digest.memory?.themes,
       matchContext, journalContext, monthlyContext,
@@ -111,8 +109,8 @@ export default async function handler(req, res) {
     const script = (resp.content?.[0]?.text || '').trim().replace(/^["']|["']$/g, '')
     if (!script) return err(res, 502, 'empty_script', 'Claude returned empty script')
 
-    // 4. ElevenLabs TTS
-    const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${identity.elevenlabs_voice_id}`, {
+    // 3. ElevenLabs TTS
+    const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${coachVoiceId}`, {
       method: 'POST',
       headers: { 'xi-api-key': elevenKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
       body: JSON.stringify({
@@ -126,7 +124,7 @@ export default async function handler(req, res) {
     }
     const audioBuf = Buffer.from(await ttsRes.arrayBuffer())
 
-    // 5. Upload to storage
+    // 4. Upload to storage
     const clipId = crypto.randomUUID()
     const path = `${userId}/${clipId}.mp3`
     const { error: upErr } = await admin.storage.from(STORAGE_BUCKET).upload(path, audioBuf, {
@@ -134,19 +132,19 @@ export default async function handler(req, res) {
     })
     if (upErr) return err(res, 500, 'storage', 'Failed to upload clip', { detail: upErr.message })
 
-    // 6. Insert clip row (store the storage path in audio_url; client gets signed URL below)
+    // 5. Insert clip row (audio_url stores the storage PATH; signed URL returned separately)
     const { data: clipRow, error: insErr } = await admin.from('future_self_clips').insert([{
       id: clipId, user_id: userId, context, script, audio_url: path, match_id: matchId,
     }]).select().single()
     if (insErr) return err(res, 500, 'db', 'Failed to record clip', { detail: insErr.message })
 
-    // 7. Audit
+    // 6. Audit
     await admin.from('voice_audit_log').insert([{
       user_id: userId, actor_id: null, event: 'clip_generated', ref_id: clipId,
       metadata: { context, match_id: matchId, model: MODEL, tts_model: TTS_MODEL, tokens: resp.usage },
     }])
 
-    // 8. Signed URL for immediate playback
+    // 7. Signed URL for immediate playback
     const { data: signed } = await admin.storage.from(STORAGE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SEC)
 
     return res.status(200).json({

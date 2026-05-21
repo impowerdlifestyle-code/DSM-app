@@ -3,9 +3,9 @@ import { tokens as t, C } from '../../styles.js'
 import FutureSelfPlayer from './FutureSelfPlayer.jsx'
 import { getCurrentMonth, getMonthlyCheckin } from './lib/checkin.js'
 
-// Once-per-month identity ritual on the home view.
-// Flow: available → asking (FutureSelfPlayer plays question) → recording
-//        (kid speaks response) → saving → done (AI reflection visible).
+// Once-per-month Coach V check-in.
+// Flow: available → asking (Coach V poses the question in his cloned voice)
+//        → recording (kid speaks response) → saving → done (AI reflection).
 // Already-checked-in months render a compact retrospective card.
 
 const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -102,7 +102,7 @@ export default function MonthlyCheckin({ user }) {
     const row = savedRow || existing
     return (
       <div style={card}>
-        <div style={lbl}>Future self · {monthLabel} check-in</div>
+        <div style={lbl}>Coach V · {monthLabel} check-in</div>
         <div style={{ fontSize: 13, color: t.color.text, marginTop: 6, lineHeight: 1.5 }}>
           <strong style={dim}>Q:</strong> {row.prompt}
         </div>
@@ -121,9 +121,9 @@ export default function MonthlyCheckin({ user }) {
   if (phase === 'available') {
     return (
       <div style={card}>
-        <div style={lbl}>Future self · {monthLabel} check-in</div>
+        <div style={lbl}>Coach V · {monthLabel} check-in</div>
         <div style={{ fontSize: 15, fontWeight: 600, color: t.color.text, marginTop: 4, lineHeight: 1.3 }}>
-          Your future self has a question for you.
+          Coach V has a question for you.
         </div>
         <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 6, lineHeight: 1.5 }}>
           Once a month. Listen, answer out loud, see how you've actually been showing up.
@@ -144,7 +144,7 @@ export default function MonthlyCheckin({ user }) {
         user={user}
         context="monthly_check"
         autoGenerate
-        label={`Listen — ${monthLabel} check-in`}
+        label={`Coach V — ${monthLabel} check-in`}
         onReady={({ script }) => setPrompt(script)}
         onPlayed={() => startRecord()}
       />
@@ -154,7 +154,7 @@ export default function MonthlyCheckin({ user }) {
   // Recording / saving
   return (
     <div style={card}>
-      <div style={lbl}>Future self · {monthLabel} check-in</div>
+      <div style={lbl}>Coach V · {monthLabel} check-in</div>
       <div style={{ fontSize: 13, color: t.color.text, marginTop: 6, lineHeight: 1.5 }}>
         <strong style={dim}>Q:</strong> {prompt}
       </div>
