@@ -113,6 +113,7 @@ export default function AdminTab({ user }) {
         <AssignCoachModal
           athlete={assignFor}
           coaches={coaches}
+          athletes={athletes}
           onClose={() => setAssignFor(null)}
           onAssigned={async (label) => {
             await assignCoachToAthlete(assignFor.id, label)
@@ -549,7 +550,17 @@ function ActivityView() {
 
 // ─── MODALS ───────────────────────────────────────────────────
 
-function AssignCoachModal({ athlete, coaches, onClose, onAssigned, onUnassign }) {
+function AssignCoachModal({ athlete, coaches, athletes = [], onClose, onAssigned, onUnassign }) {
+  const [pool, setPool] = useState('coaches')
+  const [filter, setFilter] = useState('')
+
+  const sourceList = pool === 'coaches' ? coaches : athletes.filter(a => a.id !== athlete.id)
+  const visible = filter
+    ? sourceList.filter(p =>
+        (p.full_name || '').toLowerCase().includes(filter.toLowerCase()) ||
+        (p.email     || '').toLowerCase().includes(filter.toLowerCase()))
+    : sourceList
+
   return (
     <div style={overlay} onClick={onClose}>
       <div style={modal} onClick={e => e.stopPropagation()}>
@@ -561,18 +572,46 @@ function AssignCoachModal({ athlete, coaches, onClose, onAssigned, onUnassign })
           <button onClick={onClose} style={closeBtn}>✕</button>
         </div>
 
-        {coaches.length === 0 && <div style={emptyBox}>No coaches available. Add one from the Coaches section first.</div>}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          <button onClick={() => setPool('coaches')}  style={miniTab(pool === 'coaches')}>Coaches · {coaches.length}</button>
+          <button onClick={() => setPool('athletes')} style={miniTab(pool === 'athletes')}>Athletes · {athletes.length}</button>
+        </div>
 
-        {coaches.map(c => {
-          const label = c.full_name || c.email
-          const active = (athlete.assigned_coach || '').toLowerCase() === label.toLowerCase()
-          return (
-            <button key={c.id} onClick={() => onAssigned(label)} style={pickerRow(active)}>
-              <span>👤 {label}{c.coach_tier ? ` · T${c.coach_tier}` : ''}</span>
-              {active && <span style={{ fontSize: 10, color: t.color.bg, fontWeight: 700, letterSpacing: 1 }}>CURRENT</span>}
-            </button>
-          )
-        })}
+        {pool === 'athletes' && (
+          <div style={{ fontSize: 10, color: t.color.textMute, marginBottom: 8, lineHeight: 1.4 }}>
+            Stand-in mode — picks an athlete's name as the assigned coach label. They won't gain coach permissions until you promote them in the Coaches tab.
+          </div>
+        )}
+
+        <input
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          placeholder="Search name or email…"
+          style={inputStyle()}
+        />
+
+        <div style={{ maxHeight: 360, overflowY: 'auto', marginTop: 8 }}>
+          {visible.length === 0 && (
+            <div style={emptyBox}>
+              {pool === 'coaches'
+                ? 'No coaches yet. Use the Coaches tab to add one, or pick from Athletes as a stand-in.'
+                : 'No athletes match this filter.'}
+            </div>
+          )}
+
+          {visible.map(p => {
+            const label = p.full_name || p.email
+            const active = (athlete.assigned_coach || '').toLowerCase() === label.toLowerCase()
+            const tier = pool === 'coaches' && p.coach_tier ? ` · T${p.coach_tier}` : ''
+            const tag  = pool === 'athletes' ? ' · athlete' : ''
+            return (
+              <button key={p.id} onClick={() => onAssigned(label)} style={pickerRow(active)}>
+                <span>👤 {label}{tier}{tag}</span>
+                {active && <span style={{ fontSize: 10, color: t.color.bg, fontWeight: 700, letterSpacing: 1 }}>CURRENT</span>}
+              </button>
+            )
+          })}
+        </div>
 
         {athlete.assigned_coach && (
           <button onClick={onUnassign} style={unassignBtn}>Unassign current coach</button>
