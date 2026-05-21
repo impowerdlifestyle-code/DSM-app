@@ -600,7 +600,6 @@ export default function Main({ user }) {
     { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
     { id: 'nutrition', label: 'Body',   matches: ['nutrition', 'body'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
-    { id: 'locker',    label: 'Locker' },
     { id: 'squad',     label: 'Squad' },
     ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
@@ -689,6 +688,13 @@ export default function Main({ user }) {
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, fontWeight: 400, color: '#000', fontVariantNumeric: 'tabular-nums', letterSpacing: 0.5 }}>{streak}</span>
             <span style={{ fontSize: 9, letterSpacing: 1.6, color: '#000', fontWeight: 700, textTransform: 'uppercase' }}>day</span>
           </div>
+          <button onClick={() => { setTab('locker'); setSelectedAthlete(null); }} style={{
+            background: tab === 'locker' ? '#fafafa' : 'transparent',
+            border: '1px solid #1c1c1c',
+            borderRadius: 8, padding: '6px 10px', fontSize: 10,
+            color: tab === 'locker' ? '#000' : '#8e8e8e', cursor: 'pointer', fontWeight: 600,
+            letterSpacing: 1.4, textTransform: 'uppercase',
+          }}>Locker</button>
           <button onClick={signOut} style={{
             background: 'transparent', border: '1px solid #1c1c1c',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
