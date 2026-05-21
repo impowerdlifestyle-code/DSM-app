@@ -117,12 +117,17 @@ import MonthlyCheckin from '../features/future-self/MonthlyCheckin.jsx'
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
 import BadgeHints, { markBadgeHintsSeen } from './BadgeHints.jsx'
 import WelcomeTour, { shouldShowTourAutomatically } from './WelcomeTour.jsx'
+import Spotlight from './Spotlight.jsx'
+import useTabHistory from '../lib/tabHistory.js'
 import HomeView from '../views/HomeView.jsx'
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
 
 export default function Main({ user }) {
-  const [tab, setTab] = useState('home')
+  const navHist = useTabHistory('home')
+  const tab = navHist.tab
+  const setTab = navHist.push
+  const [showSpotlight, setShowSpotlight] = useState(false)
   const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)])
   const [streak, setStreak] = useState(0)
   const [profile, setProfile] = useState(null)
@@ -613,6 +618,39 @@ export default function Main({ user }) {
     && !profile.onboarded_at
     && (profile.role === 'athlete' || !profile.role)
 
+  // Edge-swipe back: track touchstart on left edge, fire back if user drags right ≥80px
+  const swipeRef = useRef({ x: 0, y: 0, active: false })
+  useEffect(() => {
+    function onStart(e) {
+      const t0 = e.touches?.[0]
+      if (!t0) return
+      if (t0.clientX <= 24) {
+        swipeRef.current = { x: t0.clientX, y: t0.clientY, active: true }
+      }
+    }
+    function onMove(e) {
+      if (!swipeRef.current.active) return
+      const t0 = e.touches?.[0]
+      if (!t0) return
+      const dx = t0.clientX - swipeRef.current.x
+      const dy = Math.abs(t0.clientY - swipeRef.current.y)
+      // mostly horizontal, ≥80px right swipe from edge
+      if (dx >= 80 && dy < 50) {
+        swipeRef.current.active = false
+        if (navHist.canBack) navHist.back()
+      }
+    }
+    function onEnd() { swipeRef.current.active = false }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchmove', onMove, { passive: true })
+    window.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onEnd)
+    }
+  }, [navHist])
+
   const [showBadgeHints, setShowBadgeHints] = useState(false)
   const [showTour, setShowTour] = useState(false)
   useEffect(() => {
@@ -641,6 +679,37 @@ export default function Main({ user }) {
         open={showTour}
         onClose={() => setShowTour(false)}
       />
+      <Spotlight
+        open={showSpotlight}
+        onClose={() => setShowSpotlight(false)}
+        onJump={(id) => {
+          if (id === '__openSpotlight__') return setShowSpotlight(true)
+          setTab(id); setSelectedAthlete(null)
+        }}
+        isAdmin={isAdmin}
+        isCoach={isCoach}
+      />
+      <button
+        onClick={() => setShowSpotlight(true)}
+        aria-label="Jump to anything"
+        title="Jump (⌘K)"
+        style={{
+          position: 'fixed',
+          bottom: 'calc(134px + env(safe-area-inset-bottom))',
+          right: 14,
+          zIndex: 400,
+          width: 42, height: 42,
+          borderRadius: '50%',
+          background: 'rgba(10,10,10,0.92)',
+          border: '1px solid #36363c',
+          color: '#fafafa',
+          fontSize: 18,
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px -10px rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'inherit',
+        }}>⚡</button>
       {badgeNotice && (
         <div style={{
           position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)',
@@ -707,7 +776,29 @@ export default function Main({ user }) {
             <div style={{ fontSize: 9, letterSpacing: 2, color: '#8e8e8e', fontWeight: 600, marginTop: 3, textTransform: 'uppercase' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
           </div>
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {navHist.canBack && (
+            <button
+              onClick={() => navHist.back()}
+              aria-label="Back"
+              style={{
+                background: 'transparent', border: '1px solid #1c1c1c',
+                borderRadius: 8, padding: '6px 9px', fontSize: 13,
+                color: '#fafafa', cursor: 'pointer', fontWeight: 600,
+                lineHeight: 1, minWidth: 30,
+              }}>←</button>
+          )}
+          {navHist.canForward && (
+            <button
+              onClick={() => navHist.forward()}
+              aria-label="Forward"
+              style={{
+                background: 'transparent', border: '1px solid #1c1c1c',
+                borderRadius: 8, padding: '6px 9px', fontSize: 13,
+                color: '#fafafa', cursor: 'pointer', fontWeight: 600,
+                lineHeight: 1, minWidth: 30,
+              }}>→</button>
+          )}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 7,
             padding: '6px 12px', background: '#fafafa',
