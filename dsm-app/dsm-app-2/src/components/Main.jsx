@@ -596,11 +596,12 @@ export default function Main({ user }) {
   }
 
   const navTabs = [
-    { id: 'home',      label: 'Home',   matches: ['home', 'weekly', 'tracker', 'parents', 'course'] },
+    { id: 'home',      label: 'Home',   matches: ['home'] },
     { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
     { id: 'nutrition', label: 'Body',   matches: ['nutrition', 'body'] },
     { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
     { id: 'squad',     label: 'Squad' },
+    { id: 'more',      label: 'More',   matches: ['more', 'tracker', 'weekly', 'parents', 'course'] },
     ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
@@ -2214,6 +2215,38 @@ export default function Main({ user }) {
         <div className="fade">
           <ActionsSubNav active="match" setTab={setTab} />
           <MatchDayTab user={user} profile={profile} />
+        </div>
+      )}
+
+      {/* ── MORE — overflow menu ── */}
+      {tab === 'more' && (
+        <div className="fade" style={C.scroll}>
+          <div style={C.title}>MORE</div>
+          <div style={C.sub}>Habits · check-ins · resources</div>
+          {[
+            { id: 'tracker', label: 'Habit Tracker',   sub: 'Weekly habits + day streak' },
+            { id: 'weekly',  label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
+            { id: 'course',  label: 'Course',          sub: 'Modules + resources' },
+            { id: 'parents', label: 'Parent Guide',    sub: 'For the people in your corner' },
+          ].map(item => (
+            <button key={item.id} onClick={() => setTab(item.id)} style={{
+              width: '100%', textAlign: 'left',
+              padding: 16, marginBottom: 10,
+              background: '#0a0a0a', border: '1px solid #252528',
+              borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+              color: '#fafafa', display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: 11, color: '#8e8e8e', marginTop: 3, letterSpacing: 0.6 }}>
+                  {item.sub}
+                </div>
+              </div>
+              <div style={{ fontSize: 18, color: '#4a4a4a' }}>→</div>
+            </button>
+          ))}
         </div>
       )}
 
