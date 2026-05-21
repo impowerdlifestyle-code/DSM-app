@@ -7,12 +7,12 @@ const driveEmbed = (id) => `https://drive.google.com/file/d/${id}/preview`
 // REAL VIDEO LESSONS — uploaded to Valentino's Google Drive.
 // Replace title/duration when you confirm them.
 const LIVE_LESSONS = [
-  { n: 1, title: 'Lesson 1', duration: '—', driveId: '1TRqtHt6E6se9WIJXZ8R5mqOxlRrPyw28' },
-  { n: 2, title: 'Lesson 2', duration: '—', driveId: '14ZNnHrc6KuVfDb0ZIuRERcuuXr1MCuEe' },
-  { n: 3, title: 'Lesson 3', duration: '—', driveId: '1VX874igEAyjoZh1R3M97ztGdtxHSSDIf' },
-  { n: 4, title: 'Lesson 4', duration: '—', driveId: '1cdpJav9nFdBG6KWvRrtXPRFWZ5oZoFON' },
-  { n: 5, title: 'Lesson 5', duration: '—', driveId: '1iB8nNHpkwadEjUp7zNm961aXzVQFRQqF' },
-  { n: 6, title: 'Lesson 6', duration: '—', driveId: '17NgcLx_cU1VjodTGGF1vDt7e5HNPIf3S' },
+  { n: 1, title: 'Growth vs Fixed',                       driveId: '1TRqtHt6E6se9WIJXZ8R5mqOxlRrPyw28' },
+  { n: 2, title: 'Beliefs of Champions',                  driveId: '14ZNnHrc6KuVfDb0ZIuRERcuuXr1MCuEe' },
+  { n: 3, title: 'Positive Self-Talk',                    driveId: '1VX874igEAyjoZh1R3M97ztGdtxHSSDIf' },
+  { n: 4, title: 'Goal Setting',                          driveId: '1cdpJav9nFdBG6KWvRrtXPRFWZ5oZoFON' },
+  { n: 5, title: 'How We Help Players in the First Call', driveId: '1iB8nNHpkwadEjUp7zNm961aXzVQFRQqF' },
+  { n: 6, title: 'Full Webinar — Learn the Mentalities',  driveId: '17NgcLx_cU1VjodTGGF1vDt7e5HNPIf3S' },
 ]
 
 const PLACEHOLDER_MODULES = [
