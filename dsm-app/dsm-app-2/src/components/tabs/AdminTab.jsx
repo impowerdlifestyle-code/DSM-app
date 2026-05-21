@@ -80,6 +80,13 @@ export default function AdminTab({ user }) {
           onSelectAthlete={setSelectedId}
           onAssign={(a) => setAssignFor(a)}
           onAssignTask={(a) => setTaskFor(a)}
+          onPromote={async (a) => {
+            const label = a.full_name || a.email
+            if (!confirm(`Promote ${label} to coach?\n\nThey'll gain coach permissions and appear in the Coaches tab.`)) return
+            const { error } = await promoteUserToCoach(a.email)
+            if (error) { alert(error.message || 'Failed to promote'); return }
+            await load()
+          }}
         />
       )}
 
@@ -181,7 +188,7 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask }) {
+function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote }) {
   let visible = athletes
   if (filter) {
     const q = filter.toLowerCase()
@@ -266,11 +273,12 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
               <span>·</span>
               <span>{a.lastChatAt ? `Last chat ${daysAgo(a.lastChatAt)}` : 'No chat yet'}</span>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button onClick={() => onAssign(a)} style={assignBtn(!!a.assigned_coach)}>
                 {a.assigned_coach ? `👤 ${a.assigned_coach}` : '+ Coach'}
               </button>
               <button onClick={() => onAssignTask(a)} style={taskBtn}>+ Task</button>
+              <button onClick={() => onPromote(a)} style={promoteBtn} title="Make this athlete a coach">⇧ Coach</button>
             </div>
           </div>
         </div>
@@ -966,6 +974,14 @@ const assignBtn = (assigned) => ({
 const taskBtn = {
   background: 'transparent', color: t.color.text,
   border: `1px solid ${t.color.line2}`,
+  borderRadius: 8, padding: '6px 10px',
+  fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+  cursor: 'pointer', fontFamily: t.font.sans,
+}
+
+const promoteBtn = {
+  background: 'transparent', color: '#a3e635',
+  border: '1px solid rgba(163, 230, 53, 0.4)',
   borderRadius: 8, padding: '6px 10px',
   fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
   cursor: 'pointer', fontFamily: t.font.sans,
