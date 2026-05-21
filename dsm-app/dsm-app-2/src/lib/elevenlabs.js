@@ -1,23 +1,36 @@
-const ELEVEN_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY
-const ELEVEN_VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID
+// Client-side TTS — POSTs to /api/tts which holds ELEVENLABS_API_KEY server-side.
+// Falls back to the browser's SpeechSynthesis if the proxy is unavailable.
 
-export async function speakText(text) {
+export async function speakText(text, voiceId) {
   try {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+    const res = await fetch('/api/tts', {
       method: 'POST',
-      headers: { 'xi-api-key': ELEVEN_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_monolingual_v1',
-        voice_settings: { stability: 0.5, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true },
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(voiceId ? { text, voiceId } : { text }),
     })
-    if (!res.ok) throw new Error()
-    new Audio(URL.createObjectURL(await res.blob())).play()
-  } catch {
+    if (!res.ok) throw new Error(`TTS proxy ${res.status}`)
+    const blob = await res.blob()
+    const audio = new Audio(URL.createObjectURL(blob))
+    await audio.play()
+    return audio
+  } catch (err) {
     const u = new SpeechSynthesisUtterance(text)
     u.rate = 1.1
     u.pitch = 0.9
     window.speechSynthesis.speak(u)
+    return null
   }
+}
+
+export async function fetchTtsBlob(text, voiceId) {
+  const res = await fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(voiceId ? { text, voiceId } : { text }),
+  })
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}))
+    throw new Error(errBody.error || `TTS request failed (${res.status})`)
+  }
+  return res.blob()
 }
