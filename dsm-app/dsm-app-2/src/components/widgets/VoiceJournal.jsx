@@ -123,7 +123,7 @@ export default function VoiceJournal({ user }) {
       session_type: 'voice-journal',
       date: today,
       day_of_week: dow,
-      did_steps: text,
+      did_action_steps: text,
       conditioning: 7, strength: 7, technical: 7, mental: 7,
     }))
     await supabase.from('action_steps').insert(rows)

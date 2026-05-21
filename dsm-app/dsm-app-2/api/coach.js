@@ -57,7 +57,7 @@ function buildSystemPrompt({ athleteContext, memorySummary, memoryThemes }) {
   if (ctx.recentActionSteps?.length) {
     prompt += `─── LAST 5 ACTION-STEP LOGS ───\n${ctx.recentActionSteps.slice(0, 5).map(s => {
       const used = ['shark', 'goldfish', 'selftalk', 'tuneout'].filter(k => s[`${k}_used`]).join(', ') || 'none'
-      return `${s.date} ${s.session_type}: did=${s.did_steps}, used=[${used}], mental=${s.mental}/10`
+      return `${s.date} ${s.session_type}: did=${s.did_action_steps}, used=[${used}], mental=${s.mental}/10`
     }).join('\n')}\n\n`
   }
 

@@ -259,7 +259,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
                     <span>Mental {s.mental}/10</span>
                   </div>
                   <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 4 }}>
-                    Did steps: {s.did_steps || '—'} · Tools used: {used.length ? used.join(', ') : 'none'}
+                    Did steps: {s.did_action_steps || '—'} · Tools used: {used.length ? used.join(', ') : 'none'}
                   </div>
                 </div>
               )

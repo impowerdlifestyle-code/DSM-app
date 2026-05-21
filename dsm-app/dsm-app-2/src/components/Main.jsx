@@ -2721,7 +2721,7 @@ export default function Main({ user }) {
               <div key={i} style={C.card}>
                 <div style={{ display:'flex',justifyContent:'space-between',marginBottom:8 }}>
                   <div style={{ fontSize:10,color:'#fafafa',fontWeight:700,letterSpacing:2 }}>{s.date} · {s.session_type}</div>
-                  <div style={{ fontSize:10,color:'#555' }}>{s.did_steps==='Yes'?'✅':'❌'}</div>
+                  <div style={{ fontSize:10,color:'#555' }}>{s.did_action_steps==='Yes'?'✅':'❌'}</div>
                 </div>
                 <div style={{ display:'flex',gap:12,marginBottom:8 }}>
                   {['conditioning','strength','technical','mental'].map(k=>(
