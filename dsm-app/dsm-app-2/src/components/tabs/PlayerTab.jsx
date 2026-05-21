@@ -158,7 +158,7 @@ export default function PlayerTab({ profile, user }) {
         })}
       </div>
 
-      {tab === 'overview' && <Overview />}
+      {tab === 'overview' && <Overview name={name} />}
       {tab === 'badges'   && <BadgesView earnedFromDb={earned} />}
       {tab === 'squad'    && <SquadView />}
       {tab === 'skills'   && <SkillTreeView />}
@@ -269,7 +269,7 @@ function FamilyView({ user }) {
 
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function Overview() {
+function Overview({ name }) {
   const seasonPct = Math.round(SEASON.weeksElapsed / SEASON.weeksTotal * 100)
   return (
     <>

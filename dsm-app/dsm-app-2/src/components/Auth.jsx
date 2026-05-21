@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signIn, signUp, redeemParentInvite, supabase } from '../lib/supabase.js'
+import { signIn, signUp, redeemParentInvite, sendPasswordReset, supabase } from '../lib/supabase.js'
 import { tokens as t } from '../styles.js'
 import TiltCard from './widgets/TiltCard.jsx'
 
@@ -210,6 +210,15 @@ export default function Auth() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
+  const handleForgot = async () => {
+    if (!email) return setError('Enter your email first, then tap reset.')
+    setLoading(true); setError(''); setMessage('')
+    const { error } = await sendPasswordReset(email)
+    setLoading(false)
+    if (error) setError(error.message)
+    else setMessage('Reset link sent — check your inbox.')
+  }
+
   const handleSubmit = async () => {
     if (!email || !password) return setError('Please fill in all fields.')
     if ((mode === 'signup' || mode === 'parent') && !name) return setError('Please enter your name.')
@@ -318,7 +327,22 @@ export default function Auth() {
             autoComplete="email"
           />
 
-          <span style={s.lbl}>Password</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={s.lbl}>Password</span>
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={handleForgot}
+                disabled={loading}
+                style={{
+                  background: 'none', border: 'none', padding: 0,
+                  color: t.color.textDim, fontSize: 10, letterSpacing: 1.6,
+                  fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer',
+                  fontFamily: t.font.sans, marginBottom: 8,
+                }}
+              >Forgot?</button>
+            )}
+          </div>
           <input
             style={s.inp}
             type="password"

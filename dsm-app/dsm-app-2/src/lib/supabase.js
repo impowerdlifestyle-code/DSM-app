@@ -29,6 +29,13 @@ export async function getUser() {
   return user
 }
 
+export async function sendPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/?reset=1`,
+  })
+  return { error }
+}
+
 // ─── ACTION STEPS ────────────────────────────────────────────
 export async function submitActionSteps(formData, userId) {
   const { data, error } = await supabase
