@@ -132,6 +132,7 @@ export default function Onboarding({ user, profile, onDone }) {
       })
       if (!res.ok) throw new Error(`Plan request failed (${res.status})`)
       const json = await res.json()
+      if (!json?.weeks?.length) throw new Error('empty plan')
       setPlan(json)
     } catch (e) {
       // graceful fallback: deterministic plan
@@ -308,8 +309,8 @@ export default function Onboarding({ user, profile, onDone }) {
           )}
           {step === STEPS.length - 1 && (
             <button
-              style={{ ...s.next, opacity: saving || !plan ? 0.4 : 1 }}
-              disabled={saving || !plan}
+              style={{ ...s.next, opacity: saving || !plan?.weeks?.length ? 0.4 : 1 }}
+              disabled={saving || !plan?.weeks?.length}
               onClick={finish}
             >{saving ? 'Saving…' : 'Lock it in'}</button>
           )}

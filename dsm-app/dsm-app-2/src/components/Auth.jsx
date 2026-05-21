@@ -234,21 +234,31 @@ export default function Auth() {
       if (error) setError(error.message)
       else setMessage('Check your email to confirm your account, then sign in.')
     } else if (mode === 'parent') {
-      // parent flow: signup -> auto-signin (if email confirm disabled) -> redeem
-      const { error } = await signUp(email, password, name)
-      if (error) { setError(error.message); setLoading(false); return }
-      // try immediate sign-in (works if email confirm is off)
-      const { error: signInErr } = await signIn(email, password)
-      if (signInErr) {
-        setMessage('Account created. Check your email to confirm, then sign in with your code.')
-      } else {
-        const { data: { user: u } } = await supabase.auth.getUser()
-        if (u) {
-          const { error: linkErr } = await redeemParentInvite(u.id, parentCode)
-          if (linkErr) setError(`Account created but link failed: ${linkErr.message}`)
-          else setMessage('Linked! Loading dashboard…')
+      // Stash the code so App.jsx can auto-redeem after sign-in completes
+      // (covers both email-confirm-on and email-confirm-off flows).
+      sessionStorage.setItem('dsm_pending_parent_code', parentCode)
+
+      const { data: signUpData, error } = await signUp(email, password, name)
+      if (error) {
+        // existing account? fall through to sign-in attempt (parent adding 2nd athlete)
+        if (!/already registered|exists/i.test(error.message)) {
+          sessionStorage.removeItem('dsm_pending_parent_code')
+          setError(error.message); setLoading(false); return
         }
+        const { error: signInErr } = await signIn(email, password)
+        if (signInErr) {
+          sessionStorage.removeItem('dsm_pending_parent_code')
+          setError(signInErr.message); setLoading(false); return
+        }
+        // App.jsx will pick up the pending code and redeem
+        return
       }
+
+      if (!signUpData?.session) {
+        setMessage('Account created. Confirm your email, then sign in — your invite code is saved.')
+        return
+      }
+      // Session live (email confirm off) — App.jsx redeems on auth state change.
     }
     setLoading(false)
   }

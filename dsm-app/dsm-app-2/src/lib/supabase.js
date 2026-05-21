@@ -1022,31 +1022,21 @@ export async function listParentInvites(athleteId) {
   return { data, error }
 }
 
-export async function redeemParentInvite(parentId, code) {
-  const upperCode = String(code || '').toUpperCase().trim()
-  const { data: invite, error: lookupErr } = await supabase
-    .from('parent_invites').select('*')
-    .eq('code', upperCode)
-    .maybeSingle()
-  if (lookupErr || !invite) return { error: lookupErr || new Error('Invite code not found') }
-  if (invite.consumed_at) return { error: new Error('Invite code already used') }
-  if (new Date(invite.expires_at) < new Date()) return { error: new Error('Invite code expired') }
-
-  // 1. create link
-  const { error: linkErr } = await supabase
-    .from('parent_links')
-    .insert([{ parent_id: parentId, athlete_id: invite.athlete_id }])
-  if (linkErr && !String(linkErr.message || '').includes('duplicate')) return { error: linkErr }
-
-  // 2. mark consumed
-  await supabase.from('parent_invites')
-    .update({ consumed_at: new Date().toISOString(), consumed_by: parentId })
-    .eq('id', invite.id)
-
-  // 3. ensure parent role
-  await supabase.from('profiles').update({ role: 'parent' }).eq('id', parentId)
-
-  return { athleteId: invite.athlete_id }
+export async function redeemParentInvite(_parentId, code) {
+  // All work happens in the SECURITY DEFINER RPC: row-locks the invite,
+  // creates the parent_link, flips role. parentId arg kept for backward
+  // compatibility but ignored — auth.uid() is the source of truth server-side.
+  const { data, error } = await supabase.rpc('redeem_parent_invite', {
+    p_code: String(code || '').toUpperCase().trim(),
+  })
+  if (error) {
+    const msg = error.message || ''
+    if (msg.includes('not found'))      return { error: new Error('Invite code not found') }
+    if (msg.includes('already used'))   return { error: new Error('Invite code already used') }
+    if (msg.includes('expired'))        return { error: new Error('Invite code expired') }
+    return { error }
+  }
+  return { athleteId: data }
 }
 
 export async function getLinkedAthletes(parentId) {
@@ -1060,14 +1050,15 @@ export async function getLinkedAthletes(parentId) {
   return { data: profiles || [], error: null }
 }
 
-export async function getParentDashboard(parentId, athleteId) {
-  // RLS enforces parent_link existence; we just run the reads
+export async function getParentDashboard(_parentId, athleteId) {
+  // Read through restricted views (parent_visible_profile, parent_visible_themes)
+  // so even console-poking parents can't extract email / coach_memory.athlete_summary.
   const [p, as, ci, ml, mem] = await Promise.all([
-    supabase.from('profiles').select('full_name, streak, program_start_date, position, identity_goal, starter_focus').eq('id', athleteId).maybeSingle(),
+    supabase.from('parent_visible_profile').select('*').eq('id', athleteId).maybeSingle(),
     supabase.from('action_steps').select('date, mental, did_action_steps').eq('user_id', athleteId).order('date', { ascending: false }).limit(14),
     supabase.from('weekly_checkins').select('week, mental, wins, struggles').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(4),
     supabase.from('match_log').select('match_date, opponent, result, score_for, score_against, performance, went_well').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(5),
-    supabase.from('coach_memory').select('themes').eq('user_id', athleteId).maybeSingle(),
+    supabase.from('parent_visible_themes').select('themes').eq('user_id', athleteId).maybeSingle(),
   ])
   return {
     profile:  p.data,
