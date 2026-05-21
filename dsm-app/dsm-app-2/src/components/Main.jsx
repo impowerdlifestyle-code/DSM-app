@@ -115,7 +115,8 @@ import QuestCard from './widgets/QuestCard.jsx'
 import VoiceJournal from './widgets/VoiceJournal.jsx'
 import MonthlyCheckin from '../features/future-self/MonthlyCheckin.jsx'
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
-import BadgeHints, { shouldShowBadgeHintsAutomatically, markBadgeHintsSeen } from './BadgeHints.jsx'
+import BadgeHints, { markBadgeHintsSeen } from './BadgeHints.jsx'
+import WelcomeTour, { shouldShowTourAutomatically } from './WelcomeTour.jsx'
 import HomeView from '../views/HomeView.jsx'
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
@@ -613,10 +614,10 @@ export default function Main({ user }) {
     && (profile.role === 'athlete' || !profile.role)
 
   const [showBadgeHints, setShowBadgeHints] = useState(false)
+  const [showTour, setShowTour] = useState(false)
   useEffect(() => {
-    // Auto-show hints once after onboarding completes
-    if (profile?.onboarded_at && shouldShowBadgeHintsAutomatically()) {
-      const tm = setTimeout(() => setShowBadgeHints(true), 1800)
+    if (profile?.onboarded_at && shouldShowTourAutomatically()) {
+      const tm = setTimeout(() => setShowTour(true), 1500)
       return () => clearTimeout(tm)
     }
   }, [profile?.onboarded_at])
@@ -635,6 +636,10 @@ export default function Main({ user }) {
         open={showBadgeHints}
         onClose={closeBadgeHints}
         onJumpTo={(targetTab) => setTab(targetTab)}
+      />
+      <WelcomeTour
+        open={showTour}
+        onClose={() => setShowTour(false)}
       />
       {badgeNotice && (
         <div style={{
