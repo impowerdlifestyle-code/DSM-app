@@ -21,13 +21,15 @@ export default function LoadingBall() {
           <div className="dsm-ball" />
           <div className="dsm-ball-shine" />
         </div>
-        <div className="dsm-center">
-          <img src="/dsm-logo.png" alt="DSM" className="dsm-mark" />
-          {firstName && <div className="dsm-name">{firstName}</div>}
-        </div>
       </div>
 
       <div className="dsm-shadow" />
+
+      {firstName ? (
+        <div className="dsm-name-line">{firstName}</div>
+      ) : (
+        <div className="dsm-wordmark">DiLorenzo Soccer Mindset</div>
+      )}
       <div className="dsm-tag">{firstName ? 'Lacing up' : 'Loading'}</div>
     </div>
   )
@@ -80,7 +82,7 @@ const css = `
   content: '';
   position: absolute; inset: 0;
   border-radius: 50%;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><pattern id='hex' x='0' y='0' width='40' height='34.64' patternUnits='userSpaceOnUse'><polygon points='20,2 38,11.5 38,28.5 20,38 2,28.5 2,11.5' fill='none' stroke='%23111' stroke-width='1.4'/><polygon points='0,28.5 0,45.5 -20,55 -20,55 0,28.5' fill='none' stroke='%23111' stroke-width='1.4'/></pattern><radialGradient id='fade' cx='0.5' cy='0.5' r='0.5'><stop offset='65%' stop-color='white' stop-opacity='1'/><stop offset='100%' stop-color='white' stop-opacity='0'/></radialGradient><mask id='m'><circle cx='100' cy='100' r='100' fill='url(%23fade)'/></mask></defs><rect width='200' height='200' fill='url(%23hex)' mask='url(%23m)'/><polygon points='100,55 122,68 114,92 86,92 78,68' fill='%23111'/><polygon points='55,108 70,98 84,108 80,124 60,124' fill='%23111'/><polygon points='145,108 130,98 116,108 120,124 140,124' fill='%23111'/><polygon points='100,150 78,140 86,118 114,118 122,140' fill='%23111' opacity='0.55'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><pattern id='hex' x='0' y='0' width='40' height='34.64' patternUnits='userSpaceOnUse'><polygon points='20,2 38,11.5 38,28.5 20,38 2,28.5 2,11.5' fill='none' stroke='%23111' stroke-width='1.4'/><polygon points='0,28.5 0,45.5 -20,55 -20,55 0,28.5' fill='none' stroke='%23111' stroke-width='1.4'/></pattern><radialGradient id='fade' cx='0.5' cy='0.5' r='0.5'><stop offset='65%25' stop-color='white' stop-opacity='1'/><stop offset='100%25' stop-color='white' stop-opacity='0'/></radialGradient><mask id='m'><circle cx='100' cy='100' r='100' fill='url(%23fade)'/></mask></defs><rect width='200' height='200' fill='url(%23hex)' mask='url(%23m)'/><polygon points='100,55 122,68 114,92 86,92 78,68' fill='%23111'/><text x='100' y='83' font-family='Bebas Neue, Oswald, Arial Narrow, sans-serif' font-size='14' font-weight='400' fill='white' text-anchor='middle' letter-spacing='1.6'>DSM</text><polygon points='55,108 70,98 84,108 80,124 60,124' fill='%23111'/><polygon points='145,108 130,98 116,108 120,124 140,124' fill='%23111'/><polygon points='100,150 78,140 86,118 114,118 122,140' fill='%23111' opacity='0.55'/></svg>");
   background-size: cover;
   opacity: 0.85;
   mix-blend-mode: multiply;
@@ -94,25 +96,25 @@ const css = `
   pointer-events: none;
 }
 
-.dsm-center {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  pointer-events: none;
+.dsm-name-line {
+  font-family: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: #fafafa;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.15);
+  margin-top: -8px;
+  animation: dsm-fade 0.7s ease both;
 }
-.dsm-mark {
-  width: 72px; height: 72px; object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7));
-  animation: dsm-fade 0.5s ease both;
-}
-.dsm-name {
-  margin-top: 4px;
+.dsm-wordmark {
   font-family: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
   font-size: 18px;
-  letter-spacing: 3px;
-  color: #0a0a0a;
+  letter-spacing: 6px;
+  color: #fafafa;
   text-transform: uppercase;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+  text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3);
+  margin-top: -8px;
   animation: dsm-fade 0.7s ease both;
 }
 
