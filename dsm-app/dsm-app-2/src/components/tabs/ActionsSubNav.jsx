@@ -1,12 +1,12 @@
 import { tokens as t } from '../../styles.js'
 
-export default function ActionsSubNav({ active, setTab }) {
+export default function ActionsSubNav({ active, setTab, hideWorkouts = false }) {
   const items = [
     { id: 'steps',    label: 'Steps',    target: 'actions' },
     { id: 'ball',     label: 'Ball',     target: 'ball' },
     { id: 'workouts', label: 'Workouts', target: 'workouts' },
     { id: 'match',    label: 'Match',    target: 'match' },
-  ]
+  ].filter(it => !(hideWorkouts && it.id === 'workouts'))
   return (
     <div style={{ padding: '8px 22px 0' }}>
       <div style={{

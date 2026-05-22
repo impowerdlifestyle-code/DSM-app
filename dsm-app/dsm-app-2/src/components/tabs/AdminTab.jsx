@@ -7,6 +7,7 @@ import {
   promoteUserToCoach,
   demoteCoach,
   setCoachTier,
+  setProgramTrack,
   createCoachTask,
   getAthleteTasks,
   deleteCoachTask,
@@ -86,6 +87,11 @@ export default function AdminTab({ user }) {
             if (!confirm(`Promote ${label} to coach?\n\nThey'll gain coach permissions and appear in the Coaches tab.`)) return
             const { error } = await promoteUserToCoach(a.email)
             if (error) { alert(error.message || 'Failed to promote'); return }
+            await load()
+          }}
+          onChangeTrack={async (a, track) => {
+            const { error } = await setProgramTrack(a.id, track)
+            if (error) { alert(error.message || 'Failed to set track'); return }
             await load()
           }}
         />
@@ -201,8 +207,12 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote }) {
+function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack }) {
+  const [trackFilter, setTrackFilter] = useState('all')
   let visible = athletes
+  if (trackFilter !== 'all') {
+    visible = visible.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === trackFilter)
+  }
   if (filter) {
     const q = filter.toLowerCase()
     visible = visible.filter(a =>
@@ -222,31 +232,36 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
 
   const totals = {
     athletes: athletes.length,
-    paid:     athletes.filter(a => a.access_level === 'paid' || a.access_level === 'mentoring_elite').length,
+    youth:    athletes.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === 'youth').length,
+    teen:     athletes.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === 'teen').length,
     active7d: athletes.filter(a => {
       if (!a.lastChatAt) return false
       const days = (Date.now() - new Date(a.lastChatAt).getTime()) / 86400000
       return days <= 7
     }).length,
-    unassigned: athletes.filter(a => !a.assigned_coach).length,
   }
 
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 18 }}>
         <Stat label="Athletes" value={totals.athletes} />
-        <Stat label="Paid"     value={totals.paid} />
+        <Stat label="Youth"    value={totals.youth} />
+        <Stat label="Teen"     value={totals.teen} />
         <Stat label="Active 7d" value={totals.active7d} />
-        <Stat label="Unassigned" value={totals.unassigned} />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         <input
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Search name, email, or coach…"
           style={inputStyle()}
         />
+        <select value={trackFilter} onChange={e => setTrackFilter(e.target.value)} style={{ ...inputStyle(), width: 130, flex: 'none' }}>
+          <option value="all">All tracks</option>
+          <option value="youth">Youth (7-12)</option>
+          <option value="teen">Teen (13-17)</option>
+        </select>
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ ...inputStyle(), width: 150, flex: 'none' }}>
           <option value="recent">Newest</option>
           <option value="xp">Top XP</option>
@@ -277,12 +292,30 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 10, fontSize: 10, color: t.color.textDim, letterSpacing: 0.6 }}>
+            <div style={{ display: 'flex', gap: 10, fontSize: 10, color: t.color.textDim, letterSpacing: 0.6, alignItems: 'center', flexWrap: 'wrap' }}>
               <span>{a.actionCount} actions</span>
               <span>·</span>
               <span>{a.voiceCount} voice</span>
               <span>·</span>
               <span>{a.access_level || 'pending'}</span>
+              <span>·</span>
+              <span>age {a.age ?? '—'}</span>
+              <span>·</span>
+              <select
+                value={a.program_track || (a.age >= 13 ? 'teen' : 'youth')}
+                onChange={e => onChangeTrack(a, e.target.value)}
+                onClick={e => e.stopPropagation()}
+                title="Program track — Youth gates workouts/body/nutrition/voice/future-self"
+                style={{
+                  background: t.color.bg, border: `1px solid ${t.color.line2}`,
+                  borderRadius: 6, color: t.color.text, fontSize: 10, padding: '3px 6px',
+                  fontFamily: t.font.sans, letterSpacing: 0.6, textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="youth">Youth</option>
+                <option value="teen">Teen</option>
+              </select>
               <span>·</span>
               <span>{a.lastChatAt ? `Last chat ${daysAgo(a.lastChatAt)}` : 'No chat yet'}</span>
             </div>

@@ -82,7 +82,7 @@ import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHa
   rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
   getOrSeedDailyQuests, bumpQuest, evaluateBadges,
   getActiveNudge, createNudge, dismissNudge, markNudgeActedOn, nudgeCreatedToday,
-  evaluateAccess } from '../lib/supabase.js'
+  evaluateAccess, getProgramTrack, isSurfaceAllowed } from '../lib/supabase.js'
 import {
   QUOTES, HABITS_LIST, DAYS, WEEKDAYS, BALL_MASTERY_SKILLS, PARENT_GUIDE, RESOURCES,
   AI_SYSTEM, emptyCheckin,
@@ -370,6 +370,16 @@ export default function Main({ user }) {
   const todayActionLogged = submissions.some(s => s.date === today)
   const isCoach = profile?.role === 'coach'
   const isAdmin = user?.email?.toLowerCase() === 'valentino@dilorenzosoccermindset.com' || profile?.is_admin === true
+  // Coaches/admins always see everything. Athletes are split by age — under 13 = 'youth' track.
+  const track = (isCoach || isAdmin) ? 'teen' : getProgramTrack(profile)
+  const isYouth = track === 'youth'
+  const surfaceAllowed = (id) => isCoach || isAdmin || isSurfaceAllowed(id, profile)
+
+  // Bounce youth out of gated surfaces if they deep-link or have a stale tab cached.
+  useEffect(() => {
+    if (!isYouth) return
+    if (!surfaceAllowed(tab)) setTab('home')
+  }, [isYouth, tab])
   const myName = profile?.full_name || user?.email
   const isEliteLocked = profile?.access_level !== 'paid' && profile?.access_level !== 'mentoring_elite'
 
@@ -863,7 +873,7 @@ export default function Main({ user }) {
 
       {/* ── ACTION STEPS ── */}
       {tab === 'actions' && (
-        <ActionsTab user={user} profile={profile} submissions={submissions} setSubmissions={setSubmissions} setTab={setTab}
+        <ActionsTab user={user} profile={profile} submissions={submissions} setSubmissions={setSubmissions} setTab={setTab} hideWorkouts={isYouth}
           onActionSaved={async () => {
             await bumpQuestAndRefresh('quest-action-2', 1)
             const newBadges = await evaluateBadges(user.id)
@@ -874,7 +884,7 @@ export default function Main({ user }) {
       {/* ── BALL MASTERY ── */}
       {tab === 'ball' && (
         <div className="fade">
-        <ActionsSubNav active="ball" setTab={setTab} />
+        <ActionsSubNav active="ball" setTab={setTab} hideWorkouts={isYouth} />
         <div style={C.scroll}>
           <div style={C.title}>Ball Mastery</div>
           <div style={C.sub}>DAILY SKILLS LOG</div>
@@ -2129,7 +2139,7 @@ export default function Main({ user }) {
       {/* ── MATCH DAY ── */}
       {tab === 'match' && (
         <div className="fade">
-          <ActionsSubNav active="match" setTab={setTab} />
+          <ActionsSubNav active="match" setTab={setTab} hideWorkouts={isYouth} />
           <MatchDayTab user={user} profile={profile} />
         </div>
       )}
@@ -2167,7 +2177,7 @@ export default function Main({ user }) {
             { id: 'weekly',    label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
             { id: 'course',    label: 'Course',        sub: 'Modules + resources' },
             { id: 'parents',   label: 'Parent Guide',  sub: 'For the people in your corner' },
-          ].map(item => (
+          ].filter(item => surfaceAllowed(item.id)).map(item => (
             <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
               width: '100%', textAlign: 'left',
               padding: 16, marginBottom: 10,

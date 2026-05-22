@@ -10,6 +10,7 @@
 //     transcript: '...' }
 
 import Anthropic from '@anthropic-ai/sdk'
+import { authGuard } from './_auth.js'
 
 const MODEL = 'claude-sonnet-4-6'
 const MAX_TOKENS = 1400
@@ -129,7 +130,18 @@ function buildSystemPrompt({ athleteContext, memorySummary, memoryThemes }) {
   }
 
   if (ctx.profile) {
-    prompt += `─── ATHLETE PROFILE ───\nName: ${ctx.profile.full_name || 'Athlete'}\nProgram week: ${ctx.profile.program_week || 1}\nStreak: ${ctx.profile.streak || 0} day(s)\nAccess: ${ctx.profile.access_level || 'trial'}\n\n`
+    const track = ctx.profile.program_track || (typeof ctx.profile.age === 'number' && ctx.profile.age < 13 ? 'youth' : 'teen')
+    prompt += `─── ATHLETE PROFILE ───\nName: ${ctx.profile.full_name || 'Athlete'}\nAge: ${ctx.profile.age || '—'}\nProgram week: ${ctx.profile.program_week || 1}\nStreak: ${ctx.profile.streak || 0} day(s)\nAccess: ${ctx.profile.access_level || 'trial'}\nTrack: ${track}\n\n`
+    if (track === 'youth') {
+      prompt += `─── YOUTH TRACK GUARDRAILS (athlete is under 13) ───
+Keep messages SHORT (2-4 sentences) and bright. Use simple words a 9-year-old understands. Lead with what they did well before any correction.
+DO NOT bring up: body weight, body composition, calories, dieting, eating habits, weightlifting, gym workouts, supplements, growth/puberty, romantic/dating topics, future-self ritual, identity-locking abstract language.
+If they ask about those topics, gently redirect: "That's something to chat about with a parent or your coach in person — let's keep our work on the field and in your head."
+Mental tools you CAN use: box breath (4-4-4-4), big-bubble visualization, the shark vs goldfish frame, the 5-4-3-2-1 grounding, the "next play, not last play" reset, simple self-talk swaps. Avoid jargon like "stoic dichotomy" or "self-compassion practice" — say what you mean in plain words.
+Tone: encouraging older brother. No therapy talk. End with a tiny action they can do today (one thing, fun).
+
+`
+    }
   }
 
   if (ctx.recentActionSteps?.length) {
@@ -248,15 +260,8 @@ function parseJsonOrEmpty(raw, fallback) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  const auth = await authGuard(req, res, { requirePaidAccess: true })
+  if (!auth.ok) return
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {

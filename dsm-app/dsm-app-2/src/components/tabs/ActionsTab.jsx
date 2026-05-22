@@ -3,10 +3,10 @@ import ActionsSubNav from './ActionsSubNav.jsx'
 import { submitActionSteps, getActionSteps, awardXp } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 
-export default function ActionsTab({ user, profile, submissions, setSubmissions, setTab, onActionSaved }) {
+export default function ActionsTab({ user, profile, submissions, setSubmissions, setTab, onActionSaved, hideWorkouts }) {
   return (
     <div className="fade">
-      <ActionsSubNav active="steps" setTab={setTab} />
+      <ActionsSubNav active="steps" setTab={setTab} hideWorkouts={hideWorkouts} />
       <ActionForm
         playerName={profile?.full_name || user?.email}
         initialSubmissions={submissions}

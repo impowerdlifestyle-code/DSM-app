@@ -39,6 +39,40 @@ export function evaluateAccess(profile) {
   return { ok: false, reason: 'unknown' }
 }
 
+// ─── PROGRAM TRACK (age-based feature gates) ────────────────
+// 'youth' = under 13 — workouts/body/nutrition/voice-journal/future-self HIDDEN.
+// 'teen'  = 13+ — full program. Default 'teen' for unknown to avoid hiding things from real teens.
+export function getProgramTrack(profile) {
+  if (!profile) return 'teen'
+  if (profile.program_track === 'youth' || profile.program_track === 'teen') return profile.program_track
+  if (typeof profile.age === 'number') return profile.age >= 13 ? 'teen' : 'youth'
+  return 'teen'
+}
+
+const YOUTH_GATED_SURFACES = new Set([
+  'workouts', 'body', 'nutrition', 'voice', 'future',
+])
+
+export function isSurfaceAllowed(surface, profile) {
+  if (getProgramTrack(profile) === 'youth' && YOUTH_GATED_SURFACES.has(surface)) return false
+  return true
+}
+
+export async function setProgramTrack(userId, track) {
+  if (track !== 'youth' && track !== 'teen') {
+    return { data: null, error: { message: 'track must be youth or teen' } }
+  }
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ program_track: track })
+    .eq('id', userId)
+    .select('id, program_track')
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
+}
+
 export async function updateProfileAssignedCoach(userId, coachLabel) {
   const clean = (coachLabel || '').trim().slice(0, 80)
   if (!clean) return { data: null, error: { message: 'Coach label required' } }
@@ -540,7 +574,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
 export async function getAdminAthleteList() {
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier')
+    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier, program_track, age')
     .order('created_at', { ascending: false })
   if (!profiles) return { data: [], error: null }
 
