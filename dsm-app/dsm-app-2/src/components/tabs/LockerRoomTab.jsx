@@ -123,7 +123,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
             <button onClick={handleExportPdf} style={{
               background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
               border: `1px solid ${t.color.pitchEdge}`,
-              color: '#ffffff', padding: '7px 14px',
+              color: t.color.text, padding: '7px 14px',
               fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
               borderRadius: 999, cursor: 'pointer', fontFamily: t.font.sans,
               boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 12px -4px rgba(74,222,128,0.6)',
@@ -254,7 +254,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           <button onClick={saveThemes} disabled={themesSaving} style={{
             padding: '10px 16px',
             background: themesSaving ? t.color.surface2 : `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
-            color: themesSaving ? t.color.textDim : '#ffffff',
+            color: themesSaving ? t.color.textDim : t.color.text,
             border: themesSaving ? 'none' : `1px solid ${t.color.pitchEdge}`,
             borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
@@ -668,7 +668,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           <button onClick={handleAddNote} disabled={savingNote || !newNote.trim()} style={{
             padding: '10px 16px',
             background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
-            color: '#ffffff',
+            color: t.color.text,
             border: `1px solid ${t.color.pitchEdge}`, borderRadius: 10,
             fontSize: 11, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase',
             cursor: 'pointer', fontFamily: t.font.sans,

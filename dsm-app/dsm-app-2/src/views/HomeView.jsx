@@ -1,5 +1,5 @@
 import React from 'react'
-import { C } from '../styles.js'
+import { C, tokens as t } from '../styles.js'
 import TiltCard from '../components/widgets/TiltCard.jsx'
 import QuestCard from '../components/widgets/QuestCard.jsx'
 import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
@@ -34,27 +34,27 @@ export default function HomeView({
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
-            background: '#000', border: '1px solid #36363c',
+            background: t.color.bg, border: '1px solid #36363c',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Cormorant Garamond', serif", fontSize: 17,
-            fontStyle: 'italic', color: '#fafafa', fontWeight: 500, flexShrink: 0,
+            fontStyle: 'italic', color: t.color.text, fontWeight: 500, flexShrink: 0,
           }}>V</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, letterSpacing: 1.6, color: '#4a4a4a', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.textMute, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>
               Coach V · {activeNudge.kind}
             </div>
-            <div style={{ fontSize: 13, color: '#fafafa', lineHeight: 1.45, marginBottom: 10 }}>
+            <div style={{ fontSize: 13, color: t.color.text, lineHeight: 1.45, marginBottom: 10 }}>
               {activeNudge.message}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={onActOnNudge} style={{
-                padding: '6px 12px', background: '#fafafa', color: '#000',
+                padding: '6px 12px', background: t.color.text, color: t.color.bg,
                 border: 'none', borderRadius: 8,
                 fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>Reply</button>
               <button onClick={onDismissNudge} style={{
-                padding: '6px 12px', background: 'transparent', color: '#8e8e8e',
+                padding: '6px 12px', background: 'transparent', color: t.color.textDim,
                 border: '1px solid #36363c', borderRadius: 8,
                 fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: 'inherit',
@@ -67,16 +67,16 @@ export default function HomeView({
       <div style={C.scroll} className="fade">
         {/* Greeting + name */}
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 11, letterSpacing: 2.4, color: '#8e8e8e', fontWeight: 600, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 11, letterSpacing: 2.4, color: t.color.textDim, fontWeight: 600, textTransform: 'uppercase' }}>
             {greeting}
           </div>
           <div style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 56, fontWeight: 400, letterSpacing: 1.5,
-            color: '#fafafa', lineHeight: 0.95, marginTop: 6,
+            color: t.color.text, lineHeight: 0.95, marginTop: 6,
             textTransform: 'uppercase',
           }}>
-            {profile?.full_name?.split(' ')[0] || 'Athlete'}<span style={{ color: '#4a4a4a' }}>.</span>
+            {profile?.full_name?.split(' ')[0] || 'Athlete'}<span style={{ color: t.color.textMute }}>.</span>
           </div>
         </div>
 
@@ -92,18 +92,18 @@ export default function HomeView({
           <div style={{
             position: 'absolute', top: 16, right: 18,
             fontFamily: "'Bebas Neue', sans-serif", fontSize: 76, lineHeight: 0.75,
-            color: '#1c1c1c', letterSpacing: 0,
+            color: t.color.surface, letterSpacing: 0,
           }}>&ldquo;</div>
           <span style={C.olbl}>Today&rsquo;s fuel</span>
           <div style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 28, fontWeight: 400, lineHeight: 1.05,
-            letterSpacing: 0.5, color: '#fafafa',
+            letterSpacing: 0.5, color: t.color.text,
             marginTop: 6, marginBottom: 14, paddingRight: 50,
             textTransform: 'uppercase',
           }}>{quote}</div>
           <div style={{
-            fontSize: 10, color: '#8e8e8e', fontWeight: 600,
+            fontSize: 10, color: t.color.textDim, fontWeight: 600,
             letterSpacing: 2.4, textTransform: 'uppercase',
           }}>— Coach Valentino</div>
         </div>
@@ -113,7 +113,7 @@ export default function HomeView({
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
             <span style={C.lbl}>Daily quests</span>
-            <span style={{ fontSize: 10, letterSpacing: 1.4, color: '#fafafa', fontWeight: 600, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 10, letterSpacing: 1.4, color: t.color.text, fontWeight: 600, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
               {quests.filter(q => q.progress >= q.target).length}/{quests.length} done
             </span>
           </div>
@@ -127,7 +127,7 @@ export default function HomeView({
         <div style={{ ...C.card, padding: 18, marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <span style={C.lbl}>Today</span>
-            <span style={{ fontSize: 10, fontWeight: 600, color: '#fafafa', letterSpacing: 1.4, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: t.color.text, letterSpacing: 1.4, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
               {doneCount}/{todayTasks.length} complete
             </span>
           </div>
@@ -178,20 +178,20 @@ export default function HomeView({
               </svg>
               <div style={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-                fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, fontWeight: 400, color: '#fafafa',
+                fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, fontWeight: 400, color: t.color.text,
                 fontVariantNumeric: 'tabular-nums', letterSpacing: 1,
-              }}>{pct}<span style={{ fontSize: 11, color: '#8e8e8e', marginLeft: 2 }}>%</span></div>
+              }}>{pct}<span style={{ fontSize: 11, color: t.color.textDim, marginLeft: 2 }}>%</span></div>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, letterSpacing: 2.4, color: '#4a4a4a', fontWeight: 600, textTransform: 'uppercase' }}>Week habits</div>
+              <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>Week habits</div>
               <div style={{
                 fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 40, fontWeight: 400, color: '#fafafa',
+                fontSize: 40, fontWeight: 400, color: t.color.text,
                 marginTop: 4, lineHeight: 0.9, fontVariantNumeric: 'tabular-nums', letterSpacing: 1,
               }}>
-                {completedHabits}<span style={{ fontSize: 22, color: '#4a4a4a' }}> / {totalHabits}</span>
+                {completedHabits}<span style={{ fontSize: 22, color: t.color.textMute }}> / {totalHabits}</span>
               </div>
-              <div style={{ fontSize: 11, color: '#fafafa', fontWeight: 600, marginTop: 6, letterSpacing: 1.4, textTransform: 'uppercase' }}>{streakLabel}</div>
+              <div style={{ fontSize: 11, color: t.color.text, fontWeight: 600, marginTop: 6, letterSpacing: 1.4, textTransform: 'uppercase' }}>{streakLabel}</div>
             </div>
           </div>
         </div>
@@ -217,8 +217,8 @@ export default function HomeView({
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
                 fontFamily: 'inherit', color: 'inherit',
               }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#fafafa', letterSpacing: -0.1 }}>{label}</div>
-                <div style={{ fontSize: 11, color: '#8e8e8e', marginTop: 3 }}>{sub}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.color.text, letterSpacing: -0.1 }}>{label}</div>
+                <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3 }}>{sub}</div>
                 <div style={{
                   position: 'absolute', bottom: 12, right: 12,
                   fontSize: 12, color: '#54565c',
@@ -239,10 +239,10 @@ export default function HomeView({
             letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 600,
           }}>
             {profile.full_name || user.email}
-            {isCoach && <span style={{ color: '#fafafa', marginLeft: 8 }}>· Coach</span>}
+            {isCoach && <span style={{ color: t.color.text, marginLeft: 8 }}>· Coach</span>}
             {profile.assigned_coach && !isCoach && (
               <div style={{ marginTop: 6, color: '#8a8b8f' }}>
-                Mentor — <span style={{ color: '#fafafa' }}>{profile.assigned_coach}</span>
+                Mentor — <span style={{ color: t.color.text }}>{profile.assigned_coach}</span>
               </div>
             )}
           </div>

@@ -100,7 +100,7 @@ export default function BugReporter({ user, profile }) {
         logging: false,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#000',
+        backgroundColor: t.color.bg,
       })
       return canvas.toDataURL('image/jpeg', 0.55)
     } catch (err) {

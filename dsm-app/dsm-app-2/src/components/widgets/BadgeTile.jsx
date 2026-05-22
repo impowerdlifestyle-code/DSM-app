@@ -5,7 +5,7 @@ const TIER_META = {
   Bronze: { color: '#b08964', accent: 'rgba(176,137,100,0.18)' },
   Silver: { color: '#d1d5db', accent: 'rgba(209,213,219,0.16)' },
   Gold:   { color: '#facc15', accent: 'rgba(250,204,21,0.16)' },
-  Elite:  { color: '#fafafa', accent: 'rgba(255,255,255,0.20)' },
+  Elite:  { color: t.color.text, accent: 'rgba(255,255,255,0.20)' },
 }
 
 export default function BadgeTile({ badge }) {

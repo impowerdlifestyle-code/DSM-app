@@ -5,7 +5,7 @@ import { getMyOpenTasks, markCoachTaskDone } from '../../lib/supabase.js'
 const PRIORITY_COLOR = {
   high:   '#f87171',
   medium: '#fbbf24',
-  low:    '#8e8e8e',
+  low:    t.color.textDim,
 }
 
 export default function CoachTasksCard({ user }) {

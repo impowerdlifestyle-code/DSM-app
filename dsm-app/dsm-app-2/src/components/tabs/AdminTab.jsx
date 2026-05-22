@@ -1094,7 +1094,7 @@ function ManualAddAthleteModal({ coaches, onClose }) {
         <button onClick={mintAndCopy} disabled={busy} style={{
           ...sendBtn,
           background: copied ? '#4ade80' : t.color.text,
-          color: copied ? '#000' : t.color.bg,
+          color: copied ? t.color.bg : t.color.bg,
           opacity: busy ? 0.5 : 1,
         }}>
           {busy ? 'Signing…' : copied ? '✓ Copied — share it' : '📋 Generate & copy link'}

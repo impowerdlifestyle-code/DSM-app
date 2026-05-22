@@ -172,7 +172,7 @@ export default function SquadTab({ user }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     fontFamily: t.font.athletic, fontSize: 18,
-                    color: idx === 0 ? '#fafafa' : t.color.textDim,
+                    color: idx === 0 ? t.color.text : t.color.textDim,
                     width: 26, textAlign: 'center',
                   }}>{idx + 1}</div>
                   <div>

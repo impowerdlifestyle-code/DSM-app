@@ -2306,7 +2306,7 @@ export default function Main({ user }) {
                   {item.sub}
                 </div>
               </div>
-              <div style={{ fontSize: 18, color: '#4a4a4a' }}>→</div>
+              <div style={{ fontSize: 18, color: t.color.textMute }}>→</div>
             </button>
           ))}
         </div>

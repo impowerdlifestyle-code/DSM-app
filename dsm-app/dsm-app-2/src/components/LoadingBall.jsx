@@ -8,6 +8,7 @@
  *
  * No JS animation, no payload — works before React even mounts content.
  */
+import { tokens as t } from '../styles.js'
 export default function LoadingBall() {
   const name = (typeof localStorage !== 'undefined' && localStorage.getItem('dsm_player_name')) || ''
   const firstName = name.split(' ')[0] || ''
@@ -37,7 +38,7 @@ export default function LoadingBall() {
 
 const shell = {
   position: 'fixed', inset: 0,
-  background: '#000',
+  background: t.color.bg,
   display: 'flex', flexDirection: 'column',
   alignItems: 'center', justifyContent: 'center',
   gap: 28,

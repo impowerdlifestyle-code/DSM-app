@@ -209,7 +209,7 @@ export default function VoiceJournal({ user }) {
           </h3>
         </div>
         <div style={{ fontSize: 10, letterSpacing: 2, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>
-          {state === 'recording' && <span style={{ color: '#fafafa' }}>● REC {formatTime(elapsed)}</span>}
+          {state === 'recording' && <span style={{ color: t.color.text }}>● REC {formatTime(elapsed)}</span>}
           {state !== 'recording' && '+60 XP'}
         </div>
       </div>
@@ -320,7 +320,7 @@ export default function VoiceJournal({ user }) {
                     type="checkbox"
                     checked={!!acceptedActions[i]}
                     onChange={() => toggleAction(i)}
-                    style={{ marginTop: 3, accentColor: '#fafafa', cursor: 'pointer' }}
+                    style={{ marginTop: 3, accentColor: t.color.text, cursor: 'pointer' }}
                   />
                   <span style={{
                     fontSize: 13, color: t.color.text, lineHeight: 1.45,

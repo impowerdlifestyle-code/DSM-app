@@ -183,7 +183,7 @@ function VideoModal({ lesson, onClose }) {
         <div style={{
           position: 'relative', width: '100%',
           paddingTop: '56.25%',  // 16:9
-          background: '#000', borderRadius: t.radius.lg, overflow: 'hidden',
+          background: t.color.bg, borderRadius: t.radius.lg, overflow: 'hidden',
           border: `1px solid ${t.color.line2}`,
         }}>
           <iframe
