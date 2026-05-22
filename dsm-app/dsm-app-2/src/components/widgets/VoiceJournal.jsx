@@ -274,9 +274,9 @@ export default function VoiceJournal({ user }) {
             ))}
             <span style={{
               padding: '5px 10px', background: 'transparent',
-              border: `1px solid ${result.sentiment === 'locked-in' ? '#4ade80' : t.color.line2}`,
+              border: `1px solid ${result.sentiment === 'locked-in' ? t.color.pitch : t.color.line2}`,
               borderRadius: 999, fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
-              color: result.sentiment === 'locked-in' ? '#4ade80' : t.color.textDim,
+              color: result.sentiment === 'locked-in' ? t.color.pitch : t.color.textDim,
               textTransform: 'uppercase',
             }}>{result.sentiment}</span>
           </div>
@@ -330,7 +330,7 @@ export default function VoiceJournal({ user }) {
                 </label>
               ))}
               {actionsSaved && (
-                <div style={{ marginTop: 8, fontSize: 11, color: '#4ade80', letterSpacing: 1.2, fontWeight: 600, textTransform: 'uppercase' }}>
+                <div style={{ marginTop: 8, fontSize: 11, color: t.color.pitch, letterSpacing: 1.2, fontWeight: 600, textTransform: 'uppercase' }}>
                   ✓ Saved to action steps
                 </div>
               )}
@@ -343,7 +343,7 @@ export default function VoiceJournal({ user }) {
               background: 'rgba(248,113,113,0.08)',
               border: `1px solid rgba(248,113,113,0.3)`,
               borderRadius: 10,
-              fontSize: 12, color: '#f87171',
+              fontSize: 12, color: t.color.err,
             }}>{error}</div>
           )}
 
@@ -371,7 +371,7 @@ export default function VoiceJournal({ user }) {
               border: saved ? `1px solid rgba(74,222,128,0.4)` : 'none',
               borderRadius: 10,
               fontSize: 11, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
-              color: saved ? '#4ade80' : t.color.bg,
+              color: saved ? t.color.pitch : t.color.bg,
               cursor: (saved || !user?.id) ? 'not-allowed' : 'pointer',
               opacity: !user?.id ? 0.5 : 1,
               fontFamily: t.font.sans,

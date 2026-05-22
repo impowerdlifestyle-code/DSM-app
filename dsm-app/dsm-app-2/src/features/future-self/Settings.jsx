@@ -138,7 +138,7 @@ const auditRow = {
 }
 const dangerBtnSmall = {
   padding: '6px 10px', background: 'transparent',
-  border: '1px solid rgba(248,113,113,0.4)', color: '#f87171',
+  border: '1px solid rgba(248,113,113,0.4)', color: t.color.err,
   borderRadius: 8, fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
   cursor: 'pointer', flexShrink: 0,
 }
@@ -153,5 +153,5 @@ const errStyle = {
   marginTop: 10, padding: '8px 10px',
   background: 'rgba(248,113,113,0.08)',
   border: '1px solid rgba(248,113,113,0.3)',
-  borderRadius: 8, fontSize: 12, color: '#f87171',
+  borderRadius: 8, fontSize: 12, color: t.color.err,
 }

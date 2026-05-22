@@ -125,7 +125,7 @@ export default function BodyStatsTab({ user }) {
               </div>
               <div style={{
                 fontSize: 16, fontWeight: 700, marginTop: 6,
-                color: positive ? (metric === 'weight' ? '#4ade80' : t.color.coral) : (metric === 'bodyFat' ? '#4ade80' : t.color.ember),
+                color: positive ? (metric === 'weight' ? t.color.pitch : t.color.coral) : (metric === 'bodyFat' ? t.color.pitch : t.color.ember),
                 fontVariantNumeric: 'tabular-nums',
               }}>
                 {positive ? '+' : ''}{delta} {metric === 'weight' ? 'lb' : '%'}

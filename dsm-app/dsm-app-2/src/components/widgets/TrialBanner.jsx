@@ -23,7 +23,7 @@ export default function TrialBanner({ access }) {
     }}>
       <div style={{
         width: 36, height: 36, borderRadius: '50%',
-        background: urgent ? '#f87171' : t.color.text,
+        background: urgent ? t.color.err : t.color.text,
         color: urgent ? t.color.text : t.color.bg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: t.font.athletic, fontSize: 14, fontWeight: 700,
@@ -43,7 +43,7 @@ export default function TrialBanner({ access }) {
       </div>
       <a href={UPGRADE_URL} target="_blank" rel="noreferrer" style={{
         padding: '8px 14px',
-        background: urgent ? '#f87171' : t.color.text,
+        background: urgent ? t.color.err : t.color.text,
         color: urgent ? t.color.text : t.color.bg,
         borderRadius: 10, textDecoration: 'none',
         fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase',

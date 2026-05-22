@@ -28,13 +28,13 @@ export default function HomeView({
         <div style={{
           margin: '14px 22px 0', padding: 14,
           background: 'rgba(255,255,255,0.04)',
-          border: '1px solid #36363c',
+          border: '`1px solid `',
           borderRadius: 14,
           display: 'flex', alignItems: 'flex-start', gap: 12,
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
-            background: t.color.bg, border: '1px solid #36363c',
+            background: t.color.bg, border: '`1px solid `',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Cormorant Garamond', serif", fontSize: 17,
             fontStyle: 'italic', color: t.color.text, fontWeight: 500, flexShrink: 0,
@@ -55,7 +55,7 @@ export default function HomeView({
               }}>Reply</button>
               <button onClick={onDismissNudge} style={{
                 padding: '6px 12px', background: 'transparent', color: t.color.textDim,
-                border: '1px solid #36363c', borderRadius: 8,
+                border: '`1px solid `', borderRadius: 8,
                 fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>Dismiss</button>
@@ -139,26 +139,26 @@ export default function HomeView({
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '12px 4px',
                   background: 'transparent', border: 'none',
-                  borderBottom: i < todayTasks.length - 1 ? '1px solid #1f2128' : 'none',
+                  borderBottom: i < todayTasks.length - 1 ? '`1px solid `' : 'none',
                   cursor: 'pointer', width: '100%', textAlign: 'left',
                 }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 7,
-                  border: task.done ? '1px solid rgba(74,222,128,0.4)' : '1px solid #2a2d36',
+                  border: task.done ? '1px solid rgba(74,222,128,0.4)' : '`1px solid `',
                   background: task.done ? 'rgba(74,222,128,0.10)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: 14, fontStyle: 'italic', fontWeight: 600,
-                  color: task.done ? '#4ade80' : '#8a8b8f',
+                  color: task.done ? t.color.pitch : t.color.textDim,
                   flexShrink: 0,
                 }}>
                   {task.done ? '✓' : task.glyph}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#f4f3ef', letterSpacing: -0.1 }}>{task.label}</div>
-                  <div style={{ fontSize: 11, color: '#8a8b8f', marginTop: 2 }}>{task.sub}</div>
+                  <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2 }}>{task.sub}</div>
                 </div>
-                <div style={{ fontSize: 16, color: task.done ? '#4ade80' : '#54565c' }}>{task.done ? '' : '→'}</div>
+                <div style={{ fontSize: 16, color: task.done ? t.color.pitch : t.color.line2 }}>{task.done ? '' : '→'}</div>
               </button>
             ))}
           </div>
@@ -212,7 +212,7 @@ export default function HomeView({
               <TiltCard key={target} tiltLimit={14} scale={1.04} style={{ borderRadius: 14 }}>
               <button onClick={() => setTab(target)} style={{
                 width: '100%',
-                background: '#0a0a0a', border: '1px solid #1c1c1c',
+                background: t.color.surface, border: '`1px solid `',
                 borderRadius: 14, padding: '14px 14px', textAlign: 'left',
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
                 fontFamily: 'inherit', color: 'inherit',
@@ -221,7 +221,7 @@ export default function HomeView({
                 <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3 }}>{sub}</div>
                 <div style={{
                   position: 'absolute', bottom: 12, right: 12,
-                  fontSize: 12, color: '#54565c',
+                  fontSize: 12, color: t.color.line2,
                 }}>→</div>
               </button>
               </TiltCard>
@@ -235,13 +235,13 @@ export default function HomeView({
           <div style={{
             textAlign: 'center', marginTop: 18,
             padding: '14px 0',
-            fontSize: 11, color: '#54565c',
+            fontSize: 11, color: t.color.line2,
             letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 600,
           }}>
             {profile.full_name || user.email}
             {isCoach && <span style={{ color: t.color.text, marginLeft: 8 }}>· Coach</span>}
             {profile.assigned_coach && !isCoach && (
-              <div style={{ marginTop: 6, color: '#8a8b8f' }}>
+              <div style={{ marginTop: 6, color: t.color.textDim }}>
                 Mentor — <span style={{ color: t.color.text }}>{profile.assigned_coach}</span>
               </div>
             )}

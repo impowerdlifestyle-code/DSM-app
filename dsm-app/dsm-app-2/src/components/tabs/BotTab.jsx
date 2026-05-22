@@ -64,7 +64,7 @@ export default function BotTab({
                         borderRadius: 999,
                         padding: '4px 10px',
                         fontSize: 11,
-                        color: msg.rating==='positive' ? '#4ade80' : t.color.textMute,
+                        color: msg.rating==='positive' ? t.color.pitch : t.color.textMute,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                       }}>👍</button>
@@ -78,7 +78,7 @@ export default function BotTab({
                         borderRadius: 999,
                         padding: '4px 10px',
                         fontSize: 11,
-                        color: msg.rating==='negative' ? '#f87171' : t.color.textMute,
+                        color: msg.rating==='negative' ? t.color.err : t.color.textMute,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                       }}>👎</button>

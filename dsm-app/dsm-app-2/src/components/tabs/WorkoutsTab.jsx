@@ -260,7 +260,7 @@ function TodayView({ user }) {
                       width: 32, height: 32, borderRadius: 8,
                       border: `1px solid ${set.done ? 'rgba(74,222,128,0.5)' : t.color.line2}`,
                       background: set.done ? 'rgba(74,222,128,0.18)' : 'transparent',
-                      color: set.done ? '#4ade80' : t.color.textDim,
+                      color: set.done ? t.color.pitch : t.color.textDim,
                       cursor: 'pointer', fontSize: 14, fontWeight: 700,
                     }}>{set.done ? '✓' : '·'}</button>
                   </div>
@@ -312,7 +312,7 @@ function TodayView({ user }) {
         <div style={{
           marginTop: 10, padding: '10px 14px',
           background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.35)',
-          borderRadius: 10, color: '#4ade80',
+          borderRadius: 10, color: t.color.pitch,
           fontSize: 12, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', textAlign: 'center',
         }}>{savedMsg}</div>
       )}
@@ -495,7 +495,7 @@ function HistoryView({ user }) {
               }}>{pr.value}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#4ade80' }}>{pr.delta}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: t.color.pitch }}>{pr.delta}</div>
               <div style={{ fontSize: 10, color: t.color.textMute, marginTop: 3 }}>{pr.date.slice(5)}</div>
             </div>
           </div>

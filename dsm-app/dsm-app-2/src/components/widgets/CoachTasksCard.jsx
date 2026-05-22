@@ -3,7 +3,7 @@ import { tokens as t } from '../../styles.js'
 import { getMyOpenTasks, markCoachTaskDone } from '../../lib/supabase.js'
 
 const PRIORITY_COLOR = {
-  high:   '#f87171',
+  high:   t.color.err,
   medium: '#fbbf24',
   low:    t.color.textDim,
 }

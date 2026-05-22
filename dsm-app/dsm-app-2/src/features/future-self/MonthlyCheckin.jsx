@@ -236,5 +236,5 @@ const errStyle = {
   marginTop: 10, padding: '8px 10px',
   background: 'rgba(248,113,113,0.08)',
   border: '1px solid rgba(248,113,113,0.3)',
-  borderRadius: 8, fontSize: 12, color: '#f87171',
+  borderRadius: 8, fontSize: 12, color: t.color.err,
 }

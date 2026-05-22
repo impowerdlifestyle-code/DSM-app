@@ -315,7 +315,7 @@ export default function Auth() {
             borderRadius: 12, textAlign: 'center',
             fontSize: 12, color: t.color.text, lineHeight: 1.4,
           }}>
-            <span style={{ fontSize: 10, letterSpacing: 1.6, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 10, letterSpacing: 1.6, color: t.color.pitch, fontWeight: 700, textTransform: 'uppercase' }}>
               Invited by {decodeURIComponent(invitedBy)}
             </span>
             <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2 }}>

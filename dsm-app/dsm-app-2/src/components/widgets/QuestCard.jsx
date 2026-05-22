@@ -30,7 +30,7 @@ export default function QuestCard({ quest, onClick }) {
           border: `1px solid ${done ? 'rgba(74,222,128,0.4)' : t.color.line2}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: t.font.athletic, fontSize: 18, fontWeight: 400,
-          color: done ? '#4ade80' : t.color.text, flexShrink: 0, letterSpacing: 0,
+          color: done ? t.color.pitch : t.color.text, flexShrink: 0, letterSpacing: 0,
         }}>{done ? '✓' : quest.icon}</div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -44,7 +44,7 @@ export default function QuestCard({ quest, onClick }) {
             <ProgressBar
               pct={pct}
               height={4}
-              color={done ? '#4ade80' : t.color.text}
+              color={done ? t.color.pitch : t.color.text}
               style={{ flex: 1 }}
               duration={500}
             />
@@ -57,7 +57,7 @@ export default function QuestCard({ quest, onClick }) {
 
         <div style={{
           fontFamily: t.font.athletic, fontSize: 18, fontWeight: 400, letterSpacing: 1,
-          color: done ? '#4ade80' : t.color.text,
+          color: done ? t.color.pitch : t.color.text,
           flexShrink: 0,
         }}>
           +{quest.xp}

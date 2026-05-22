@@ -708,7 +708,7 @@ export default function Main({ user }) {
             {[['🤖','Coach Valentino AI'],['⚽','Daily Ball Mastery Log'],['📋','Weekly Check-In'],['✅','Action Steps Tracker'],['📊','Habit Tracker'],['🦈','Full DSM Program']].map(([icon,label])=>(
               <div key={label} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
                 <div style={{ fontSize:18 }}>{icon}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:'#ccc' }}>{label}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:t.color.textDim }}>{label}</div>
                 <div style={{ marginLeft:'auto', fontSize:11, color:t.color.text, fontWeight:800 }}>✓</div>
               </div>
             ))}
@@ -717,7 +717,7 @@ export default function Main({ user }) {
             style={{ display:'block', width:'100%', maxWidth:340, background:t.color.text, border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:t.color.bg, cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
             JOIN NOW -- FANBASIS 🔥
           </a>
-          <div style={{ fontSize:11, color:'#444', lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
+          <div style={{ fontSize:11, color:t.color.line2, lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
             After payment, your coach will activate your account within 24 hours.
           </div>
           <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
@@ -911,7 +911,7 @@ export default function Main({ user }) {
               onClick={() => navHist.back()}
               aria-label="Back"
               style={{
-                background: 'transparent', border: '1px solid #1c1c1c',
+                background: 'transparent', border: '`1px solid `',
                 borderRadius: 8, padding: '6px 9px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
                 lineHeight: 1, minWidth: 30,
@@ -922,7 +922,7 @@ export default function Main({ user }) {
               onClick={() => navHist.forward()}
               aria-label="Forward"
               style={{
-                background: 'transparent', border: '1px solid #1c1c1c',
+                background: 'transparent', border: '`1px solid `',
                 borderRadius: 8, padding: '6px 9px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
                 lineHeight: 1, minWidth: 30,
@@ -939,13 +939,13 @@ export default function Main({ user }) {
           </div>
           <button onClick={() => { setTab('locker'); setSelectedAthlete(null); }} style={{
             background: tab === 'locker' ? t.color.text : 'transparent',
-            border: '1px solid #1c1c1c',
+            border: '`1px solid `',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
             color: tab === 'locker' ? t.color.bg : t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Locker</button>
           <button onClick={() => signOut()} style={{
-            background: 'transparent', border: '1px solid #1c1c1c',
+            background: 'transparent', border: '`1px solid `',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
             color: t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
@@ -1215,7 +1215,7 @@ export default function Main({ user }) {
 
             {/* WEEK 4+: Goal Setting */}
             {(profile?.program_week||1) >= 4 ? (
-              <div style={{ ...C.card,borderColor:'#e5e5e5' }}>
+              <div style={{ ...C.card,borderColor:t.color.emberDeep }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:10 }}>
                   <div style={{ background:t.color.text,borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:t.color.bg }}>WEEK 4+</div>
                   <span style={C.lbl}>🎯 GOAL SETTING</span>
@@ -1516,7 +1516,7 @@ export default function Main({ user }) {
                           <div key={i} style={{ ...C.card, textAlign:'center', padding:14, opacity:0.3 }}>
                             <div style={{ fontSize:28, marginBottom:5 }}>🔒</div>
                             <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:t.color.textMute, marginBottom:3 }}>{b.label}</div>
-                            <div style={{ fontSize:8, color:'#444' }}>{b.desc}</div>
+                            <div style={{ fontSize:8, color:t.color.line2 }}>{b.desc}</div>
                           </div>
                         ))}
                       </div>
@@ -1629,13 +1629,13 @@ export default function Main({ user }) {
                             ))}
                           </div>
                         </div>
-                        {c.biggest_win && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>🏆 <strong style={{ color:'#ccc' }}>Win:</strong> {c.biggest_win}</div>}
-                        {c.biggest_challenge && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>💥 <strong style={{ color:'#ccc' }}>Challenge:</strong> {c.biggest_challenge}</div>}
+                        {c.biggest_win && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>🏆 <strong style={{ color:t.color.textDim }}>Win:</strong> {c.biggest_win}</div>}
+                        {c.biggest_challenge && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>💥 <strong style={{ color:t.color.textDim }}>Challenge:</strong> {c.biggest_challenge}</div>}
                         {c.shark_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>🦈 {c.shark_moment}</div>}
                         {c.goldfish_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>🐠 {c.goldfish_moment}</div>}
                         {c.self_talk_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>💬 {c.self_talk_moment}</div>}
                         {c.goal_next_week && <div style={{ fontSize:12, color:t.color.text, marginTop:6 }}>🎯 Next week: {c.goal_next_week}</div>}
-                        {c.message_to_coach && <div style={{ fontSize:11, color:t.color.textDim, fontStyle:'italic', marginTop:6, borderTop:'1px solid #1e1e1e', paddingTop:6 }}>"{c.message_to_coach}"</div>}
+                        {c.message_to_coach && <div style={{ fontSize:11, color:t.color.textDim, fontStyle:'italic', marginTop:6, borderTop:'`1px solid `', paddingTop:6 }}>"{c.message_to_coach}"</div>}
                       </div>
                     ))}
                   </>}
@@ -1750,7 +1750,7 @@ export default function Main({ user }) {
                       </button>
                     </div>
                     {gameDayChecked[drill.id] && (
-                      <div style={{ background:t.color.surface, borderRadius:8, padding:'12px', fontSize:13, color:'#ccc', lineHeight:1.6 }}>
+                      <div style={{ background:t.color.surface, borderRadius:8, padding:'12px', fontSize:13, color:t.color.textDim, lineHeight:1.6 }}>
                         {drill.instruction}
                       </div>
                     )}
@@ -1865,7 +1865,7 @@ export default function Main({ user }) {
                       </span>}
                     </div>
                     <div style={{ fontSize:12, color:t.color.textDim, marginBottom:4 }}>💥 {m.situation}</div>
-                    <div style={{ fontSize:12, color:'#4aff4a' }}>✓ {m.reset_description}</div>
+                    <div style={{ fontSize:12, color:t.color.pitch }}>✓ {m.reset_description}</div>
                   </div>
                 ))}
               </>}
@@ -2053,10 +2053,10 @@ export default function Main({ user }) {
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                       <div style={{ flex:1 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                          <div style={{ fontSize:9, background: ch.type==='weekly'?t.color.text:ch.type==='team'?'#36363c':ch.type==='h2h'?'#252528':t.color.surface2, borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?t.color.bg:t.color.text, letterSpacing:1 }}>
+                          <div style={{ fontSize:9, background: ch.type==='weekly'?t.color.text:ch.type==='team'?t.color.line2:ch.type==='h2h'?'#252528':t.color.surface2, borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?t.color.bg:t.color.text, letterSpacing:1 }}>
                             {ch.type==='weekly'?'⚡ WEEKLY':ch.type==='team'?'👥 TEAM':ch.type==='h2h'?'⚔️ H2H':'🤖 AUTO'}
                           </div>
-                          {completed && <div style={{ fontSize:9, background:'#1a4a1a', borderRadius:20, padding:'2px 8px', fontWeight:800, color:'#4aff4a', letterSpacing:1 }}>✅ DONE</div>}
+                          {completed && <div style={{ fontSize:9, background:'#1a4a1a', borderRadius:20, padding:'2px 8px', fontWeight:800, color:t.color.pitch, letterSpacing:1 }}>✅ DONE</div>}
                         </div>
                         <div style={{ fontSize:15, fontWeight:900, marginBottom:4 }}>{ch.title}</div>
                         <div style={{ fontSize:12, color:t.color.textDim, lineHeight:1.5 }}>{ch.description}</div>
@@ -2189,7 +2189,7 @@ export default function Main({ user }) {
                     <div style={{ fontSize:13, fontWeight:800 }}>{post.profiles?.full_name||post.profiles?.email}</div>
                     <div style={{ fontSize:9, color:t.color.textMute, marginTop:1 }}>{new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div style={{ background: post.type==='win'?'#1a3a0a':post.type==='milestone'?'#0a1a3a':'#2a1a0a', borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?'#4aff4a':post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
+                  <div style={{ background: post.type==='win'?'#1a3a0a':post.type==='milestone'?'#0a1a3a':'#2a1a0a', borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?t.color.pitch:post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
                     {post.type==='win'?'🏆 WIN':post.type==='milestone'?'📈 MILESTONE':'❓ QUESTION'}
                   </div>
                 </div>
@@ -2197,7 +2197,7 @@ export default function Main({ user }) {
 
                 {/* Comments */}
                 {post.community_comments?.length > 0 && (
-                  <div style={{ borderTop:'1px solid #1e1e1e', paddingTop:8, marginBottom:8 }}>
+                  <div style={{ borderTop:'`1px solid `', paddingTop:8, marginBottom:8 }}>
                     {post.community_comments.map((c,ci)=>(
                       <div key={ci} style={{ display:'flex', gap:8, marginBottom:6 }}>
                         <div style={{ width:24, height:24, borderRadius:'50%', background:t.color.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, flexShrink:0 }}>
@@ -2509,7 +2509,7 @@ export default function Main({ user }) {
                         <div style={{ flex:1,background:t.color.text,borderRadius:'3px 3px 0 0',height:`${(c.energy_level/10)*70}px`,minHeight:3 }} />
                         <div style={{ flex:1,background:'#ff8c00',borderRadius:'3px 3px 0 0',height:`${(c.confidence_level/10)*70}px`,minHeight:3 }} />
                       </div>
-                      <div style={{ fontSize:7,color:'#444',fontWeight:700 }}>W{c.week?.split('-W')[1]||i+1}</div>
+                      <div style={{ fontSize:7,color:t.color.line2,fontWeight:700 }}>W{c.week?.split('-W')[1]||i+1}</div>
                     </div>
                   ))}
                 </div>
@@ -2541,7 +2541,7 @@ export default function Main({ user }) {
                         <span style={{ fontSize:11,color:t.color.textDim,textTransform:'capitalize',fontWeight:700 }}>{metric}</span>
                         <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                           <span style={{ fontSize:9,color:t.color.textMute }}>avg {avg}/10</span>
-                          <span style={{ fontSize:11,fontWeight:800,color:trend>0?'#4aff4a':trend<0?'#ff4444':t.color.textMute }}>
+                          <span style={{ fontSize:11,fontWeight:800,color:trend>0?t.color.pitch:trend<0?t.color.err:t.color.textMute }}>
                             {trend>0?'↑':trend<0?'↓':'→'} {Math.abs(trend)}
                           </span>
                         </div>
@@ -2629,17 +2629,17 @@ export default function Main({ user }) {
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {[
                   { week:1, label:'Week 1-3', items:['Confidence 1-10','Action Steps','Ball Mastery'], color:t.color.text, unlocked: true },
-                  { week:4, label:'Week 4', items:['+ Goal Setting'], color:'#e5e5e5', unlocked: (selectedAthlete.program_week||1) >= 4 },
+                  { week:4, label:'Week 4', items:['+ Goal Setting'], color:t.color.emberDeep, unlocked: (selectedAthlete.program_week||1) >= 4 },
                   { week:5, label:'Week 5', items:['+ Visualization','+ Morning Routine'], color:'#ffaa00', unlocked: (selectedAthlete.program_week||1) >= 5 },
                 ].map((phase,i)=>(
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?'#111':'#0a0a0a', borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:t.color.surface2}` }}>
-                    <div style={{ width:6, height:6, borderRadius:'50%', background:phase.unlocked?phase.color:'#333', flexShrink:0 }} />
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?'#111':t.color.surface, borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:t.color.surface2}` }}>
+                    <div style={{ width:6, height:6, borderRadius:'50%', background:phase.unlocked?phase.color:t.color.line2, flexShrink:0 }} />
                     <div>
-                      <div style={{ fontSize:11, fontWeight:800, color:phase.unlocked?t.color.text:'#444' }}>{phase.label}</div>
-                      <div style={{ fontSize:10, color:phase.unlocked?t.color.textDim:'#333' }}>{phase.items.join(' · ')}</div>
+                      <div style={{ fontSize:11, fontWeight:800, color:phase.unlocked?t.color.text:t.color.line2 }}>{phase.label}</div>
+                      <div style={{ fontSize:10, color:phase.unlocked?t.color.textDim:t.color.line2 }}>{phase.items.join(' · ')}</div>
                     </div>
                     {phase.unlocked && <div style={{ marginLeft:'auto', fontSize:10, color:phase.color, fontWeight:800 }}>✓ ACTIVE</div>}
-                    {!phase.unlocked && <div style={{ marginLeft:'auto', fontSize:10, color:'#333', fontWeight:800 }}>🔒</div>}
+                    {!phase.unlocked && <div style={{ marginLeft:'auto', fontSize:10, color:t.color.line2, fontWeight:800 }}>🔒</div>}
                   </div>
                 ))}
               </div>
@@ -2657,14 +2657,14 @@ export default function Main({ user }) {
                       <div key={i} style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2 }}>
                         <div style={{ fontSize:8,color:t.color.text,fontWeight:900 }}>{c.confidence_level}</div>
                         <div style={{ width:'100%',background:t.color.text,borderRadius:'3px 3px 0 0',height:`${(c.confidence_level/10)*60}px`,minHeight:3 }} />
-                        <div style={{ fontSize:7,color:'#444',fontWeight:700 }}>W{c.week?.split('-W')[1]||i+1}</div>
+                        <div style={{ fontSize:7,color:t.color.line2,fontWeight:700 }}>W{c.week?.split('-W')[1]||i+1}</div>
                       </div>
                     ))}
                   </div>
                   <div style={{ display:'flex',justifyContent:'space-between' }}>
                     <div style={{ fontSize:11,color:t.color.textMute }}>Start: <span style={{ color:t.color.text,fontWeight:800 }}>{[...athleteCheckins].reverse()[0]?.confidence_level}/10</span></div>
                     <div style={{ fontSize:11,color:t.color.textMute }}>Latest: <span style={{ color:t.color.text,fontWeight:800 }}>{athleteCheckins[0]?.confidence_level}/10</span></div>
-                    <div style={{ fontSize:11,color:t.color.textMute }}>Change: <span style={{ fontWeight:800, color: athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? '#4aff4a' : '#ff4444' }}>
+                    <div style={{ fontSize:11,color:t.color.textMute }}>Change: <span style={{ fontWeight:800, color: athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? t.color.pitch : t.color.err }}>
                       {athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? '+' : ''}{athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level}
                     </span></div>
                   </div>
@@ -2682,7 +2682,7 @@ export default function Main({ user }) {
                   <div key={i} style={{ borderLeft:'2px solid #fafafa', paddingLeft:10, marginBottom:10 }}>
                     <div style={{ fontSize:9,color:t.color.text,fontWeight:700,marginBottom:2 }}>{c.week}</div>
                     <div style={{ fontSize:12,color:t.color.text,fontWeight:700 }}>🎯 {c.goal_next_week}</div>
-                    {c.biggest_win && <div style={{ fontSize:11,color:'#4aff4a',marginTop:3 }}>✓ Win: {c.biggest_win}</div>}
+                    {c.biggest_win && <div style={{ fontSize:11,color:t.color.pitch,marginTop:3 }}>✓ Win: {c.biggest_win}</div>}
                   </div>
                 ))}
               </div>
@@ -2738,7 +2738,7 @@ export default function Main({ user }) {
               </div>
               {selectedAthlete.assigned_coach && (
                 <div style={{ background:'#1a3a0a', borderRadius:10, padding:'10px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:'#4aff4a' }}>✓ Assigned to {selectedAthlete.assigned_coach}</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:t.color.pitch }}>✓ Assigned to {selectedAthlete.assigned_coach}</div>
                   <button onClick={async()=>{
                     await supabase.from('profiles').update({ assigned_coach: null }).eq('id', selectedAthlete.id)
                     setSelectedAthlete(p=>({...p, assigned_coach: null}))

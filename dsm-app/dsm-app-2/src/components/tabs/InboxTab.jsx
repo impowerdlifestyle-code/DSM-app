@@ -56,7 +56,7 @@ export default function InboxTab() {
             fontSize: 11, color: t.color.textMute, marginTop: 2,
           }}>
             <span style={{
-              width: 6, height: 6, borderRadius: '50%', background: '#4ade80',
+              width: 6, height: 6, borderRadius: '50%', background: t.color.pitch,
             }} />
             Online · usually replies within an hour
           </div>

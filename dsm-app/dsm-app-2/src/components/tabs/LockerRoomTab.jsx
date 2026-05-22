@@ -278,7 +278,7 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
               <div key={j.id} style={entry()}>
                 <div style={entryHeader}>
                   <span>{new Date(j.recorded_at).toLocaleDateString()}</span>
-                  <span style={{ color: j.sentiment === 'locked-in' ? '#4ade80' : t.color.textDim }}>{j.sentiment}</span>
+                  <span style={{ color: j.sentiment === 'locked-in' ? t.color.pitch : t.color.textDim }}>{j.sentiment}</span>
                 </div>
                 <div style={{ fontSize: 12, color: t.color.text, marginTop: 4, lineHeight: 1.5, fontStyle: 'italic' }}>
                   "{(j.transcript || '').slice(0, 200)}{j.transcript?.length > 200 ? '…' : ''}"

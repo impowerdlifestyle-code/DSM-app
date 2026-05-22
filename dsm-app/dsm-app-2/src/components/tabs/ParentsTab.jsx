@@ -1,4 +1,4 @@
-import { C } from '../../styles.js'
+import { C, tokens as t } from '../../styles.js'
 import { PARENT_GUIDE } from '../../lib/constants.js'
 
 export default function ParentsTab() {
@@ -16,7 +16,7 @@ export default function ParentsTab() {
             <div style={{ fontSize:22 }}>{item.icon}</div>
             <div style={{ fontSize:15, fontWeight:800 }}>{item.title}</div>
           </div>
-          <div style={{ fontSize:13, color:'#bbb', lineHeight:1.6 }}>{item.content}</div>
+          <div style={{ fontSize:13, color:t.color.textDim, lineHeight:1.6 }}>{item.content}</div>
         </div>
       ))}
     </div>

@@ -117,7 +117,7 @@ export default function SquadTab({ user }) {
           padding: '10px 12px', marginBottom: 14,
           background: 'rgba(248,113,113,0.08)',
           border: '1px solid rgba(248,113,113,0.3)',
-          borderRadius: 10, fontSize: 12, color: '#f87171',
+          borderRadius: 10, fontSize: 12, color: t.color.err,
         }}>{error}</div>
       )}
 

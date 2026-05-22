@@ -1093,7 +1093,7 @@ function ManualAddAthleteModal({ coaches, onClose }) {
 
         <button onClick={mintAndCopy} disabled={busy} style={{
           ...sendBtn,
-          background: copied ? '#4ade80' : t.color.text,
+          background: copied ? t.color.pitch : t.color.text,
           color: copied ? t.color.bg : t.color.bg,
           opacity: busy ? 0.5 : 1,
         }}>
@@ -1237,9 +1237,9 @@ const manualGrantBtn = {
 
 const consentBadge = (status) => {
   const map = {
-    granted:  { bg: 'rgba(74,222,128,0.10)',  bd: 'rgba(74,222,128,0.35)',  fg: '#4ade80' },
+    granted:  { bg: 'rgba(74,222,128,0.10)',  bd: 'rgba(74,222,128,0.35)',  fg: t.color.pitch },
     pending:  { bg: 'rgba(251,191,36,0.10)',  bd: 'rgba(251,191,36,0.35)',  fg: '#fbbf24' },
-    declined: { bg: 'rgba(248,113,113,0.10)', bd: 'rgba(248,113,113,0.35)', fg: '#f87171' },
+    declined: { bg: 'rgba(248,113,113,0.10)', bd: 'rgba(248,113,113,0.35)', fg: t.color.err },
   }
   const c = map[status] || map.pending
   return {
@@ -1270,7 +1270,7 @@ const kindBadge = (kind) => {
     checkin:     '#60a5fa',
     voice:       '#f472b6',
     chat:        '#fbbf24',
-    task_done:   '#4ade80',
+    task_done:   t.color.pitch,
   }[kind] || t.color.textDim
   return {
     display: 'inline-block',
@@ -1286,7 +1286,7 @@ const statusBadge = (status) => ({
   display: 'inline-block',
   fontSize: 9, letterSpacing: 1.2, fontWeight: 700,
   textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
-  color: status === 'done' ? '#4ade80' : status === 'skipped' ? t.color.textMute : t.color.text,
+  color: status === 'done' ? t.color.pitch : status === 'skipped' ? t.color.textMute : t.color.text,
   background: 'rgba(255,255,255,0.06)',
 })
 
