@@ -81,9 +81,116 @@ const daylight = {
   '--color-meta-theme': '#fafafa',
 }
 
+// ──────────────────────────────────────────────────────────────
+// PITCH — deep grass-green dominant. Soccer-stadium-at-night vibe.
+// Pitch + ember stay near-white for max signal contrast.
+// ──────────────────────────────────────────────────────────────
+const pitch = {
+  '--color-bg':         '#04130c',
+  '--color-surface':    '#0a2419',
+  '--color-surface2':   '#103328',
+  '--color-line':       '#1d4636',
+  '--color-line2':      '#2c624d',
+
+  '--color-text':       '#f0fdf6',
+  '--color-text-dim':   '#8fb5a4',
+  '--color-text-mute':  '#4f6e62',
+
+  '--color-ember':      '#ffffff',
+  '--color-ember-deep': '#e5e5e5',
+  '--color-ember-soft': 'rgba(255,255,255,0.07)',
+  '--color-bone':       '#f4f4f4',
+
+  '--color-pitch':      '#86efac',
+  '--color-pitch-deep': '#4ade80',
+  '--color-pitch-soft': 'rgba(134,239,172,0.18)',
+  '--color-pitch-edge': 'rgba(134,239,172,0.65)',
+
+  '--color-ok':         '#86efac',
+  '--color-ok-bg':      'rgba(134,239,172,0.10)',
+  '--color-err':        '#fca5a5',
+  '--color-err-bg':     'rgba(252,165,165,0.08)',
+  '--color-coral':      '#fca5a5',
+
+  '--color-scheme-os':  'dark',
+  '--color-meta-theme': '#04130c',
+}
+
+// ──────────────────────────────────────────────────────────────
+// CRIMSON — deep wine base + gold accents. Cinematic.
+// CTAs stay green-friendly but lean toward gold via emberDeep.
+// ──────────────────────────────────────────────────────────────
+const crimson = {
+  '--color-bg':         '#150506',
+  '--color-surface':    '#26090c',
+  '--color-surface2':   '#3a0e14',
+  '--color-line':       '#4a1820',
+  '--color-line2':      '#6b2530',
+
+  '--color-text':       '#fdf2f4',
+  '--color-text-dim':   '#c9a5ab',
+  '--color-text-mute':  '#7a4a52',
+
+  '--color-ember':      '#fbbf24',
+  '--color-ember-deep': '#f59e0b',
+  '--color-ember-soft': 'rgba(251,191,36,0.10)',
+  '--color-bone':       '#fef3c7',
+
+  '--color-pitch':      '#fbbf24',
+  '--color-pitch-deep': '#d97706',
+  '--color-pitch-soft': 'rgba(251,191,36,0.16)',
+  '--color-pitch-edge': 'rgba(251,191,36,0.6)',
+
+  '--color-ok':         '#86efac',
+  '--color-ok-bg':      'rgba(134,239,172,0.08)',
+  '--color-err':        '#fca5a5',
+  '--color-err-bg':     'rgba(252,165,165,0.10)',
+  '--color-coral':      '#fca5a5',
+
+  '--color-scheme-os':  'dark',
+  '--color-meta-theme': '#150506',
+}
+
+// ──────────────────────────────────────────────────────────────
+// MIST — cool blue-tinted dark. Calm, focus-first.
+// ──────────────────────────────────────────────────────────────
+const mist = {
+  '--color-bg':         '#070a14',
+  '--color-surface':    '#0e1422',
+  '--color-surface2':   '#161e32',
+  '--color-line':       '#222c44',
+  '--color-line2':      '#37436a',
+
+  '--color-text':       '#eef2ff',
+  '--color-text-dim':   '#94a3c8',
+  '--color-text-mute':  '#535d80',
+
+  '--color-ember':      '#bae6fd',
+  '--color-ember-deep': '#7dd3fc',
+  '--color-ember-soft': 'rgba(186,230,253,0.08)',
+  '--color-bone':       '#e0f2fe',
+
+  '--color-pitch':      '#60a5fa',
+  '--color-pitch-deep': '#3b82f6',
+  '--color-pitch-soft': 'rgba(96,165,250,0.16)',
+  '--color-pitch-edge': 'rgba(96,165,250,0.6)',
+
+  '--color-ok':         '#4ade80',
+  '--color-ok-bg':      'rgba(74,222,128,0.10)',
+  '--color-err':        '#f87171',
+  '--color-err-bg':     'rgba(248,113,113,0.10)',
+  '--color-coral':      '#f87171',
+
+  '--color-scheme-os':  'dark',
+  '--color-meta-theme': '#070a14',
+}
+
 export const THEMES = {
   onyx:     { id: 'onyx',     label: 'Onyx',     mode: 'dark',  swatches: ['#000000', '#fafafa', '#4ade80'], vars: onyx },
   daylight: { id: 'daylight', label: 'Daylight', mode: 'light', swatches: ['#fafafa', '#0a0a0a', '#16a34a'], vars: daylight },
+  pitch:    { id: 'pitch',    label: 'Pitch',    mode: 'dark',  swatches: ['#04130c', '#f0fdf6', '#86efac'], vars: pitch },
+  crimson:  { id: 'crimson',  label: 'Crimson',  mode: 'dark',  swatches: ['#150506', '#fdf2f4', '#fbbf24'], vars: crimson },
+  mist:     { id: 'mist',     label: 'Mist',     mode: 'dark',  swatches: ['#070a14', '#eef2ff', '#60a5fa'], vars: mist },
 }
 
 export const DEFAULT_THEME = 'onyx'

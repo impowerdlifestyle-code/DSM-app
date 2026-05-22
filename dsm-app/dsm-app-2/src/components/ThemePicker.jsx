@@ -48,7 +48,7 @@ export default function ThemePicker({ onClose }) {
         </div>
 
         <div style={{ fontSize: 10, color: t.color.textMute, letterSpacing: 0.6, lineHeight: 1.5, marginTop: 14, textAlign: 'center' }}>
-          More themes (Pitch · Crimson · Mist) coming soon. Your pick syncs across this device.
+          Your pick syncs across this device. Switches happen instantly — no reload.
         </div>
       </div>
     </div>
