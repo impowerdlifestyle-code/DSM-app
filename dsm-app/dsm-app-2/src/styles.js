@@ -49,8 +49,13 @@ export const tokens = {
     card:  '0 1px 0 rgba(255,255,255,0.025) inset, 0 8px 24px -12px rgba(0,0,0,0.6)',
     raised:'0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 50px -20px rgba(0,0,0,0.7)',
     ember: '0 10px 30px -10px rgba(255,255,255,0.18)',  // soft white halo
-    // Pitch-green button halo — paired with linear gradient fill for depth.
-    pitch: '0 1px 0 rgba(255,255,255,0.3) inset, 0 -1px 0 rgba(0,0,0,0.25) inset, 0 6px 16px -6px rgba(74,222,128,0.6), 0 14px 36px -14px rgba(74,222,128,0.45)',
+    // Pitch-green primary button — multi-layer 3D: top inset highlight,
+    // bottom inset shadow, dual outer halo for material depth.
+    pitch: '0 1px 0 rgba(255,255,255,0.45) inset, 0 -1.5px 0 rgba(0,0,0,0.35) inset, 0 1px 0 rgba(255,255,255,0.10), 0 6px 16px -6px rgba(74,222,128,0.65), 0 18px 38px -16px rgba(74,222,128,0.5), 0 2px 0 rgba(0,0,0,0.4)',
+    // Floating glass toolbar at the bottom — heavier float feel.
+    toolbar: '0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 1px 0 rgba(255,255,255,0.04), 0 18px 44px -16px rgba(0,0,0,0.85), 0 32px 80px -32px rgba(0,0,0,0.65)',
+    // Active tab pill inside the toolbar — pressed-in glassy look.
+    pill: '0 1.5px 0 rgba(255,255,255,0.22) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 6px 18px -8px rgba(255,255,255,0.18), 0 1px 0 rgba(0,0,0,0.4)',
   },
   motion: {
     fast: '120ms cubic-bezier(.2,.7,.2,1)',
@@ -156,8 +161,11 @@ export const C = {
   },
 
   // CTA — pitch-green pill on black, with subtle top-edge highlight + green halo.
+  // Primary CTA — premium 3D pitch-green button. Multi-layer inset highlight
+  // + bottom shadow + dual halo. Hover/press handled via :hover/:active CSS
+  // injected at module scope, so this remains a plain style object.
   btn: {
-    background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+    background: `linear-gradient(180deg, #5eea8f 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
     border: `1px solid ${t.color.pitchEdge}`,
     borderRadius: t.radius.md,
     padding: '15px 20px',
@@ -165,16 +173,18 @@ export const C = {
     fontWeight: 700,
     letterSpacing: 1.4,
     color: '#ffffff',
+    textShadow: '0 1px 0 rgba(0,0,0,0.25)',
     cursor: 'pointer',
     width: '100%',
     fontFamily: t.font.sans,
     marginBottom: 8,
     textTransform: 'uppercase',
     boxShadow: t.shadow.pitch,
-    transition: `transform ${t.motion.fast}, filter ${t.motion.fast}`,
+    transition: `transform ${t.motion.fast}, filter ${t.motion.fast}, box-shadow ${t.motion.fast}`,
+    position: 'relative',
   },
   bsm: {
-    background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitchDeep} 100%)`,
+    background: `linear-gradient(180deg, #5eea8f 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
     border: `1px solid ${t.color.pitchEdge}`,
     borderRadius: t.radius.sm,
     padding: '7px 13px',
@@ -182,10 +192,12 @@ export const C = {
     fontWeight: 700,
     letterSpacing: 1,
     color: '#ffffff',
+    textShadow: '0 1px 0 rgba(0,0,0,0.2)',
     cursor: 'pointer',
     fontFamily: t.font.sans,
     textTransform: 'uppercase',
-    boxShadow: '0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 10px -4px rgba(58,165,68,0.5)',
+    transition: `transform ${t.motion.fast}, filter ${t.motion.fast}, box-shadow ${t.motion.fast}`,
+    boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px -4px rgba(74,222,128,0.55), 0 8px 20px -8px rgba(74,222,128,0.4)',
   },
 
   inp: {
@@ -215,6 +227,10 @@ export const C = {
     boxSizing: 'border-box',
   },
 
+  // Floating glass toolbar — premium 3D float over the page.
+  // Top inset highlight + bottom inset shadow give a true bevel; outer
+  // dual drop-shadow lifts it off the canvas. Backdrop-saturate boosts
+  // any color underneath for that "real glass" feel.
   nav: {
     position: 'fixed',
     bottom: 'max(14px, env(safe-area-inset-bottom))',
@@ -222,16 +238,22 @@ export const C = {
     transform: 'translateX(-50%)',
     width: 'calc(100% - 28px)',
     maxWidth: 412,
-    background: 'rgba(10,10,10,0.88)',
-    backdropFilter: 'blur(20px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-    border: `1px solid ${t.color.line2}`,
+    background: 'linear-gradient(180deg, rgba(22,22,24,0.85) 0%, rgba(8,8,10,0.92) 100%)',
+    backdropFilter: 'blur(28px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderTop: '1px solid rgba(255,255,255,0.16)',
+    borderBottom: '1px solid rgba(0,0,0,0.5)',
     borderRadius: t.radius.full,
     display: 'flex',
-    padding: 6,
+    padding: 5,
+    gap: 2,
     zIndex: 200,
-    boxShadow: t.shadow.raised,
+    boxShadow: t.shadow.toolbar,
   },
+  // Inactive tab — minimal, no chrome.
+  // Active state is composed via inline style at the callsite (see Main.jsx
+  // navTabs.map) to layer the pressed-pill background + pill shadow.
   nb: {
     flex: 1,
     display: 'flex',
@@ -240,11 +262,18 @@ export const C = {
     justifyContent: 'center',
     gap: 3,
     background: 'none',
-    border: 'none',
+    border: '1px solid transparent',
     cursor: 'pointer',
     padding: '12px 0',  // bump from 8 → 12 for ≥44px touch target
     minHeight: 44,
     borderRadius: t.radius.full,
-    transition: `background ${t.motion.fast}`,
+    transition: `background ${t.motion.fast}, box-shadow ${t.motion.fast}, border-color ${t.motion.fast}, transform ${t.motion.fast}`,
+    fontFamily: t.font.sans,
+  },
+  // Active state for the nav button — applied via spread at callsite.
+  nbActive: {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.06) 100%)',
+    border: '1px solid rgba(255,255,255,0.18)',
+    boxShadow: t.shadow.pill,
   },
 }

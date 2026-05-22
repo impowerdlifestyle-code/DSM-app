@@ -92,7 +92,7 @@ import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsol
 import { speakText as elevenSpeak } from '../lib/elevenlabs.js'
 import { downloadReport } from '../lib/reports.js'
 import ActionForm from './ActionForm.jsx'
-import { C } from '../styles.js'
+import { C, tokens as t } from '../styles.js'
 import ParentsTab from './tabs/ParentsTab.jsx'
 import ActionsTab from './tabs/ActionsTab.jsx'
 import ActionsSubNav from './tabs/ActionsSubNav.jsx'
@@ -122,6 +122,9 @@ import WelcomeTour, { shouldShowTourAutomatically } from './WelcomeTour.jsx'
 import Spotlight from './Spotlight.jsx'
 import useTabHistory from '../lib/tabHistory.js'
 import HomeView from '../views/HomeView.jsx'
+import InteractiveMenu from './InteractiveMenu.jsx'
+import { Home as IconHome, Activity as IconActivity, MessageCircle as IconCoach, Users as IconUsers, Menu as IconMenu, LayoutDashboard as IconDashboard, Shield as IconShield } from 'lucide-react'
+const NavIcon = { Home: IconHome, Activity: IconActivity, MessageCircle: IconCoach, Users: IconUsers, Menu: IconMenu, LayoutDashboard: IconDashboard, Shield: IconShield }
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
 
@@ -700,14 +703,18 @@ export default function Main({ user }) {
   }
 
   const navTabs = [
-    { id: 'home',      label: 'Home',   matches: ['home'] },
-    { id: 'actions',   label: 'Train',  matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
-    { id: 'bot',       label: 'Coach',  matches: ['bot', 'inbox'] },
-    { id: 'squad',     label: 'Squad' },
-    { id: 'more',      label: 'More',   matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course', 'voice', 'future'] },
-    ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode' }] : []),
-    ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
+    { id: 'home',      label: 'Home',   icon: NavIcon.Home,            matches: ['home'] },
+    { id: 'actions',   label: 'Train',  icon: NavIcon.Activity,        matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
+    { id: 'bot',       label: 'Coach',  icon: NavIcon.MessageCircle,   matches: ['bot', 'inbox'] },
+    { id: 'squad',     label: 'Squad',  icon: NavIcon.Users },
+    { id: 'more',      label: 'More',   icon: NavIcon.Menu,            matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course', 'voice', 'future'] },
+    ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode',  icon: NavIcon.LayoutDashboard }] : []),
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: NavIcon.Shield }] : []),
   ]
+  const activeNavIdx = (() => {
+    const i = navTabs.findIndex(nt => (nt.matches ? nt.matches.includes(tab) : tab === nt.id))
+    return i < 0 ? 0 : i
+  })()
 
   const needsOnboarding = profile
     && !profile.onboarded_at
@@ -2870,31 +2877,13 @@ export default function Main({ user }) {
         </div>
       )}
 
-      {/* NAV */}
-      <div style={C.nav}>
-        {navTabs.map(nt => {
-          const active = nt.matches ? nt.matches.includes(tab) : tab === nt.id
-          return (
-            <button key={nt.id} style={{
-              ...C.nb,
-              background: active ? 'rgba(255,255,255,0.14)' : 'transparent',
-            }} onClick={() => { setTab(nt.id); setSelectedAthlete(null); }}>
-              <div style={{
-                fontSize: 11,
-                fontWeight: active ? 700 : 500,
-                letterSpacing: 0.4,
-                color: active ? '#fafafa' : '#8a8b8f',
-                transition: 'color 120ms',
-              }}>{nt.label}</div>
-              <div style={{
-                width: active ? 14 : 0, height: 2, borderRadius: 1,
-                background: '#fafafa', marginTop: 2,
-                transition: 'width 180ms cubic-bezier(.2,.7,.2,1)',
-              }} />
-            </button>
-          )
-        })}
-      </div>
+      {/* NAV — premium animated glass toolbar */}
+      <InteractiveMenu
+        items={navTabs}
+        activeIndex={activeNavIdx}
+        accentColor={t.color.pitch}
+        onChange={(i, item) => { setTab(item.id); setSelectedAthlete(null); }}
+      />
     </div>
   )
 }
