@@ -123,6 +123,7 @@ import Spotlight from './Spotlight.jsx'
 import useTabHistory from '../lib/tabHistory.js'
 import HomeView from '../views/HomeView.jsx'
 import InteractiveMenu from './InteractiveMenu.jsx'
+import ThemePicker from './ThemePicker.jsx'
 import { Home as IconHome, Activity as IconActivity, MessageCircle as IconCoach, Users as IconUsers, Menu as IconMenu, LayoutDashboard as IconDashboard, Shield as IconShield } from 'lucide-react'
 const NavIcon = { Home: IconHome, Activity: IconActivity, MessageCircle: IconCoach, Users: IconUsers, Menu: IconMenu, LayoutDashboard: IconDashboard, Shield: IconShield }
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
@@ -754,6 +755,7 @@ export default function Main({ user }) {
   }, [navHist])
 
   const [showBadgeHints, setShowBadgeHints] = useState(false)
+  const [showThemePicker, setShowThemePicker] = useState(false)
   const [showTour, setShowTour] = useState(false)
   useEffect(() => {
     if (profile?.onboarded_at && shouldShowTourAutomatically()) {
@@ -777,6 +779,7 @@ export default function Main({ user }) {
         onClose={closeBadgeHints}
         onJumpTo={(targetTab) => setTab(targetTab)}
       />
+      {showThemePicker && <ThemePicker onClose={() => setShowThemePicker(false)} />}
       <WelcomeTour
         open={showTour}
         onClose={() => setShowTour(false)}
@@ -2251,6 +2254,7 @@ export default function Main({ user }) {
           <div style={C.sub}>Body · habits · check-ins · resources</div>
           {[
             { id: 'tips',      label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
+            { id: 'theme',     label: 'Theme',           sub: 'Onyx · Daylight · more soon', _action: () => setShowThemePicker(true) },
             { id: 'voice',     label: 'Voice Journal', sub: '30-sec mindset reflection · +60 XP' },
             { id: 'future',    label: 'Future Self',   sub: 'Monthly identity ritual' },
             { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },

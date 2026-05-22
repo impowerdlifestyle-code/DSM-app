@@ -6,36 +6,35 @@
  */
 
 export const tokens = {
+  // Color tokens are CSS variable references — their actual values are
+  // defined per-theme in src/themes/index.js and injected at runtime by
+  // src/lib/theme.js. This lets `document.documentElement.dataset.theme`
+  // swap the whole palette without re-rendering React components.
   color: {
-    bg:        '#000000',   // page (true black for max athletic punch)
-    surface:   '#0a0a0a',   // cards
-    surface2:  '#141414',   // raised
-    line:      '#252528',   // hairline (silver-tinted)
-    line2:     '#36363c',   // emphasized hairline (brighter silver)
-    text:      '#fafafa',   // primary (near-white, slightly warm)
-    textDim:   '#8e8e8e',   // secondary
-    textMute:  '#4a4a4a',   // tertiary / micro labels
+    bg:        'var(--color-bg)',
+    surface:   'var(--color-surface)',
+    surface2:  'var(--color-surface2)',
+    line:      'var(--color-line)',
+    line2:     'var(--color-line2)',
+    text:      'var(--color-text)',
+    textDim:   'var(--color-text-dim)',
+    textMute: 'var(--color-text-mute)',
 
-    // ACCENT — pure white (no color). Aliased through the old `ember*` names
-    // so every file already wired to tokens.color.ember inherits without edits.
-    ember:     '#ffffff',
-    emberDeep: '#e5e5e5',
-    emberSoft: 'rgba(255,255,255,0.06)',
-    bone:      '#f4f4f4',
+    ember:     'var(--color-ember)',
+    emberDeep: 'var(--color-ember-deep)',
+    emberSoft: 'var(--color-ember-soft)',
+    bone:      'var(--color-bone)',
 
-    // CTA — soccer-pitch grass green for primary action buttons.
-    // Bright FIFA-marketing green; high-contrast on black, energetic.
-    pitch:     '#4ade80',
-    pitchDeep: '#22c55e',
-    pitchSoft: 'rgba(74,222,128,0.14)',
-    pitchEdge: 'rgba(74,222,128,0.55)',
+    pitch:     'var(--color-pitch)',
+    pitchDeep: 'var(--color-pitch-deep)',
+    pitchSoft: 'var(--color-pitch-soft)',
+    pitchEdge: 'var(--color-pitch-edge)',
 
-    // Semantic only — kept for state signaling (workout set done, errors)
-    ok:        '#4ade80',
-    okBg:      'rgba(74,222,128,0.08)',
-    err:       '#f87171',
-    errBg:     'rgba(248,113,113,0.08)',
-    coral:     '#f87171',  // alias for warning-state (body-fat increase)
+    ok:        'var(--color-ok)',
+    okBg:      'var(--color-ok-bg)',
+    err:       'var(--color-err)',
+    errBg:     'var(--color-err-bg)',
+    coral:     'var(--color-coral)',
   },
   font: {
     athletic: "'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif",
