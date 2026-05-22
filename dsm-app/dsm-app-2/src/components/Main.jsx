@@ -76,7 +76,7 @@
  * ══════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
   rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
@@ -130,6 +130,13 @@ export default function Main({ user }) {
   const tab = navHist.tab
   const setTab = navHist.push
   const [showSpotlight, setShowSpotlight] = useState(false)
+  // Stable identities so Spotlight's Cmd+K listener doesn't rebind every render
+  // (Main re-renders many times per Coach V chat token — H5).
+  const onSpotlightClose = useCallback(() => setShowSpotlight(false), [])
+  const onSpotlightJump = useCallback((id) => {
+    if (id === '__openSpotlight__') return setShowSpotlight(true)
+    setTab(id); setSelectedAthlete(null)
+  }, [setTab])
   const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)])
   const [streak, setStreak] = useState(0)
   const [profile, setProfile] = useState(null)
@@ -192,7 +199,9 @@ export default function Main({ user }) {
   const today = new Date().toISOString().split('T')[0]
   const currentWeek = getWeekKey()
 
-  useEffect(() => { loadUserData() }, [user])
+  // Bootstrap on real identity change, NOT on every Supabase token refresh
+  // (onAuthStateChange creates a fresh `user` object reference hourly).
+  useEffect(() => { loadUserData() }, [user?.id])
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function loadAthleteProfile(athlete) {
@@ -576,6 +585,75 @@ export default function Main({ user }) {
   const showPaywall = profile && !access.ok && profile.role !== 'coach'
   const isTrialExpired = access.reason === 'trial-expired'
 
+  // COPPA gate — under-13 athletes can't use the app until a parent approves.
+  const needsParentConsent =
+    profile?.parent_consent_required === true &&
+    profile?.parent_consent_status !== 'granted' &&
+    profile.role !== 'coach' && !profile?.is_admin
+
+  if (needsParentConsent) {
+    const status = profile.parent_consent_status || 'pending'
+    const parentEmail = profile.parent_consent_email || ''
+    const consentUrl = profile.parent_consent_token
+      ? `${window.location.origin}/?consent=${profile.parent_consent_token}`
+      : ''
+
+    async function copyLink() {
+      try { await navigator.clipboard.writeText(consentUrl); alert('Link copied — text it to your parent.') }
+      catch { prompt('Copy this link and send it to your parent:', consentUrl) }
+    }
+
+    async function resendEmail() {
+      try {
+        const res = await fetch('/api/send-consent-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: profile.parent_consent_token }),
+        })
+        const json = await res.json().catch(() => ({}))
+        if (res.ok) alert('Approval email sent to ' + parentEmail)
+        else        alert(json.error || 'Could not send email — use Copy link instead.')
+      } catch (e) {
+        alert('Could not send email — use Copy link instead.')
+      }
+    }
+
+    return (
+      <div style={C.app}>
+        <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'30px 24px', textAlign:'center' }}>
+          <img src="/dsm-logo.png" alt="DSM" style={{ width: 120, height: 120, objectFit: 'contain', marginBottom: 24, opacity: 0.85 }} />
+          <div style={{ fontSize:54, marginBottom:14 }}>{status === 'declined' ? '🚫' : '⏳'}</div>
+          <div style={{ fontSize:22, fontWeight:900, letterSpacing:2, marginBottom:10 }}>
+            {status === 'declined' ? 'PARENT DECLINED' : 'WAITING FOR YOUR PARENT'}
+          </div>
+          <div style={{ fontSize:13, color:'#888', lineHeight:1.6, marginBottom:24, maxWidth:340 }}>
+            {status === 'declined'
+              ? `Your parent declined access. If that was a mistake, ask them to email Coach Valentino directly.`
+              : `Before you can start, your parent has to OK your account. We sent the approval link to ${parentEmail || 'their email'}. They click it, you're in.`}
+          </div>
+
+          {status === 'pending' && (
+            <>
+              <div style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:12, padding:'14px 16px', marginBottom:14, width:'100%', maxWidth:360, textAlign:'left' }}>
+                <div style={{ fontSize:9, letterSpacing:2.4, color:'#555', fontWeight:700, marginBottom:6 }}>PARENT EMAIL</div>
+                <div style={{ fontSize:13, color:'#fafafa', fontWeight:600, wordBreak:'break-all' }}>{parentEmail || '(not set)'}</div>
+              </div>
+              <button onClick={resendEmail} style={{ width:'100%', maxWidth:360, background:'#fafafa', color:'#000', border:'none', borderRadius:10, padding:'12px 16px', fontSize:13, fontWeight:800, letterSpacing:1.5, textTransform:'uppercase', cursor:'pointer', marginBottom:8, fontFamily:'inherit' }}>
+                Resend approval email
+              </button>
+              <button onClick={copyLink} style={{ width:'100%', maxWidth:360, background:'transparent', color:'#fafafa', border:'1px solid #333', borderRadius:10, padding:'12px 16px', fontSize:12, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', cursor:'pointer', marginBottom:18, fontFamily:'inherit' }}>
+                Copy approval link
+              </button>
+            </>
+          )}
+
+          <button onClick={() => signOut()} style={{ background:'none', border:'1px solid #333', borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (showPaywall) {
     return (
       <div style={C.app}>
@@ -698,11 +776,8 @@ export default function Main({ user }) {
       />
       <Spotlight
         open={showSpotlight}
-        onClose={() => setShowSpotlight(false)}
-        onJump={(id) => {
-          if (id === '__openSpotlight__') return setShowSpotlight(true)
-          setTab(id); setSelectedAthlete(null)
-        }}
+        onClose={onSpotlightClose}
+        onJump={onSpotlightJump}
         isAdmin={isAdmin}
         isCoach={isCoach}
       />

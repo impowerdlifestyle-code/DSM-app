@@ -162,8 +162,15 @@ export default function Onboarding({ user, profile, onDone }) {
     const { error } = await saveOnboarding(user.id, { ...data, starterFocus: plan || {} })
     if (error) { setSaving(false); setErr(error.message || 'Failed to save'); return }
     if (needsConsent && data.parentEmail) {
-      const { error: consentErr } = await savePendingConsent(user.id, data.parentEmail)
+      const { data: consentData, error: consentErr } = await savePendingConsent(user.id, data.parentEmail)
       if (consentErr) { setSaving(false); setErr(consentErr.message || 'Saved profile but consent state failed.'); return }
+      // Best-effort email send — Main.jsx WaitingForParent screen lets them resend if this fails silently.
+      if (consentData?.parent_consent_token) {
+        fetch('/api/send-consent-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: consentData.parent_consent_token }),
+        }).catch(() => {})
+      }
     }
     setSaving(false)
     onDone?.()

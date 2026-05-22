@@ -8,6 +8,8 @@ import {
   demoteCoach,
   setCoachTier,
   setProgramTrack,
+  adminManualGrantConsent,
+  buildConsentUrl,
   createCoachTask,
   getAthleteTasks,
   deleteCoachTask,
@@ -93,6 +95,18 @@ export default function AdminTab({ user }) {
             const { error } = await setProgramTrack(a.id, track)
             if (error) { alert(error.message || 'Failed to set track'); return }
             await load()
+          }}
+          onManualGrantConsent={async (a) => {
+            const label = a.full_name || a.email
+            if (!confirm(`Manually grant parental consent for ${label}?\n\nUse only if you've verified consent through another channel (in person, signed form, phone call). This is an audit-loggable admin action.`)) return
+            const { error } = await adminManualGrantConsent(a.id)
+            if (error) { alert(error.message || 'Failed to grant'); return }
+            await load()
+          }}
+          onCopyConsentLink={async (a) => {
+            const url = buildConsentUrl(a.parent_consent_token)
+            try { await navigator.clipboard.writeText(url); alert('Consent link copied — text it to the parent.') }
+            catch { prompt('Copy this link and send it to the parent:', url) }
           }}
         />
       )}
@@ -207,7 +221,7 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack }) {
+function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onManualGrantConsent, onCopyConsentLink }) {
   const [trackFilter, setTrackFilter] = useState('all')
   let visible = athletes
   if (trackFilter !== 'all') {
@@ -327,6 +341,23 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
               <button onClick={() => onPromote(a)} style={promoteBtn} title="Make this athlete a coach">⇧ Coach</button>
             </div>
           </div>
+
+          {a.parent_consent_required && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.color.line}`, flexWrap: 'wrap' }}>
+              <span style={consentBadge(a.parent_consent_status)}>
+                COPPA · {(a.parent_consent_status || 'pending').toUpperCase()}
+              </span>
+              {a.parent_consent_email && (
+                <span style={{ fontSize: 10, color: t.color.textDim, letterSpacing: 0.6 }}>{a.parent_consent_email}</span>
+              )}
+              {a.parent_consent_status !== 'granted' && (
+                <>
+                  <button onClick={() => onCopyConsentLink(a)} style={copyBtn}>Copy link</button>
+                  <button onClick={() => onManualGrantConsent(a)} style={manualGrantBtn}>Manual grant</button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       ))}
 
@@ -1161,6 +1192,28 @@ const copyBtn = {
   borderRadius: 8, padding: '6px 10px',
   fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
   cursor: 'pointer', fontFamily: t.font.sans, flexShrink: 0,
+}
+
+const manualGrantBtn = {
+  background: 'transparent', color: '#fbbf24',
+  border: '1px solid rgba(251,191,36,0.4)',
+  borderRadius: 8, padding: '6px 10px',
+  fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+  cursor: 'pointer', fontFamily: t.font.sans, flexShrink: 0,
+}
+
+const consentBadge = (status) => {
+  const map = {
+    granted:  { bg: 'rgba(74,222,128,0.10)',  bd: 'rgba(74,222,128,0.35)',  fg: '#4ade80' },
+    pending:  { bg: 'rgba(251,191,36,0.10)',  bd: 'rgba(251,191,36,0.35)',  fg: '#fbbf24' },
+    declined: { bg: 'rgba(248,113,113,0.10)', bd: 'rgba(248,113,113,0.35)', fg: '#f87171' },
+  }
+  const c = map[status] || map.pending
+  return {
+    fontSize: 9, letterSpacing: 1.2, fontWeight: 700, textTransform: 'uppercase',
+    padding: '4px 8px', borderRadius: 6,
+    background: c.bg, border: `1px solid ${c.bd}`, color: c.fg,
+  }
 }
 
 const tinyRemoveBtn = {

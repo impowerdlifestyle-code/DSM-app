@@ -5,6 +5,7 @@ import Main from './components/Main.jsx'
 import ParentShell from './components/ParentShell.jsx'
 import LoadingBall from './components/LoadingBall.jsx'
 import BugReporter from './components/BugReporter.jsx'
+import ParentConsentPage from './components/ParentConsentPage.jsx'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -12,6 +13,12 @@ export default function App() {
   const [role, setRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
   const [minHoldDone, setMinHoldDone] = useState(false)
+
+  // Parent-consent landing — short-circuits auth so parents (who have no account)
+  // can approve their child's signup via a tokenized URL.
+  const consentToken = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('consent')
+    : null
 
   // Loading screen minimum hold — 4s on first login (no cached name),
   // 1.2s on returning sessions so it doesn't feel slow.
@@ -55,6 +62,8 @@ export default function App() {
       setRoleLoading(false)
     })()
   }, [user?.id])
+
+  if (consentToken) return <ParentConsentPage token={consentToken} />
 
   if (loading || (user && roleLoading) || !minHoldDone) return <LoadingBall />
 
