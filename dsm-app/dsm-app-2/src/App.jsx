@@ -13,7 +13,6 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
-  const [minHoldDone, setMinHoldDone] = useState(false)
 
   // Parent-consent landing — short-circuits auth so parents (who have no account)
   // can approve their child's signup via a tokenized URL.
@@ -21,14 +20,11 @@ export default function App() {
     ? new URLSearchParams(window.location.search).get('consent')
     : null
 
-  // Loading screen minimum hold — 4s on first login (no cached name),
-  // 1.2s on returning sessions so it doesn't feel slow.
-  useEffect(() => {
-    const firstLogin = !localStorage.getItem('dsm_player_name')
-    const ms = firstLogin ? 4000 : 1200
-    const t = setTimeout(() => setMinHoldDone(true), ms)
-    return () => clearTimeout(t)
-  }, [])
+  // H8: removed the 4s/1.2s artificial splash hold. Auth resolves in ~200ms
+  // on cached sessions, so the timer was making returning users stare at
+  // the loading ball for ~3.8s of nothing. The localStorage 'dsm_player_name'
+  // "first login" heuristic was also wrong on incognito / cleared-data
+  // returning users — flagged them as new every session.
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -71,7 +67,7 @@ export default function App() {
 
   if (consentToken) return <ParentConsentPage token={consentToken} />
 
-  if (loading || (user && roleLoading) || !minHoldDone) return <LoadingBall />
+  if (loading || (user && roleLoading)) return <LoadingBall />
 
   const content = !user
     ? <Auth />

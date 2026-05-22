@@ -57,14 +57,35 @@ export default function MonthlyCheckin({ user }) {
       setTranscript(full.trim())
     }
     rec.onerror = (e) => {
-      if (e.error === 'not-allowed') setError('Microphone permission denied.')
+      // H12: surface SR errors instead of only handling 'not-allowed'.
+      console.warn('[MonthlyCheckin SR error]', e.error)
+      if (e.error === 'not-allowed')        setError('Microphone permission denied.')
+      else if (e.error === 'no-speech')     setError("Didn't catch any speech — try again.")
+      else if (e.error === 'audio-capture') setError("Couldn't access your mic — check the OS settings.")
+      else if (e.error === 'network')       setError('Speech recognition needs network — check your connection.')
+      else if (e.error === 'aborted')       { /* user cancelled — silent */ }
+      else                                   setError(`Recorder error: ${e.error || 'unknown'}`)
     }
     rec.onend = () => {
       if (recognizerRef.current === rec) {
-        try { rec.start() } catch { /* ignore */ }
+        try { rec.start() }
+        catch (err) {
+          // iOS Safari throws InvalidStateError if start() runs while
+          // recognizer is still draining. Surface so the user knows.
+          console.warn('[MonthlyCheckin restart failed]', err?.name, err?.message)
+          setError('Recorder stopped — tap record to try again.')
+          setPhase('available')
+        }
       }
     }
-    try { rec.start() } catch (err) { console.warn(err) }
+    try {
+      rec.start()
+    } catch (err) {
+      console.warn('[MonthlyCheckin start failed]', err?.name, err?.message)
+      setError('Could not start the recorder — close any other mic-using app and retry.')
+      setPhase('available')
+      return
+    }
     recognizerRef.current = rec
     setPhase('recording')
   }

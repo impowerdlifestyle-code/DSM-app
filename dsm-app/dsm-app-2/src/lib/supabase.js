@@ -313,21 +313,12 @@ export async function getCoachMemory(userId) {
 }
 
 export async function bumpMessagesSinceConsolidation(userId) {
-  // Increments counter by 1 — wrapped in upsert so first row creation is safe
-  const { data: existing } = await supabase
-    .from('coach_memory')
-    .select('messages_since_consolidation')
-    .eq('user_id', userId)
-    .maybeSingle()
-  const current = existing?.messages_since_consolidation ?? 0
+  // Atomic via Postgres RPC (migrations/022_bump_consolidation_rpc.sql).
+  // Was a read-then-upsert that lost increments under concurrent Coach V
+  // message saves (H1 fix from 2026-05-21 audit).
   const { data, error } = await supabase
-    .from('coach_memory')
-    .upsert({
-      user_id: userId,
-      messages_since_consolidation: current + 1,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-  return { data, error, newCount: current + 1 }
+    .rpc('bump_messages_since_consolidation', { p_user_id: userId })
+  return { data, error, newCount: typeof data === 'number' ? data : null }
 }
 
 export async function consolidateCoachMemory(userId, newSummary, themes = null) {

@@ -28,7 +28,10 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
   const [newNote, setNewNote] = useState('')
   const [savingNote, setSavingNote] = useState(false)
 
-  useEffect(() => { load() }, [targetId])
+  // H6: include adminView so toggling admin/non-admin re-fetches.
+  // Without it, admin-only data (private notes, parent_links) lingers in
+  // state after the toggle until targetId changes.
+  useEffect(() => { load() }, [targetId, adminView])
 
   async function load() {
     if (!targetId) return

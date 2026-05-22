@@ -198,11 +198,14 @@ export default function MatchDayTab({ user, profile }) {
     setErr(''); setOk('')
     const { data, error } = await updateMatchPost(active.id, post)
     if (error) return setErr(error.message)
+    // H4: pre-fetch fresh history BEFORE clearing local state. The old order
+    // (clear, then refetch) would empty "recent matches" forever if the
+    // refetch failed — because the active match was already wiped from
+    // both UI state and the post_logged_at IS NULL filter.
+    const histRes = await getMatches(user.id, 10)
+    if (histRes?.data) setHistory(histRes.data)
     setOk('Match logged. Coach V sees this now.')
     setActive(null); setMode('home')
-    // refresh history
-    const histRes = await getMatches(user.id, 10)
-    setHistory(histRes.data || [])
   }
 
   // ── HOME ──────────────────────────────────────────────────────

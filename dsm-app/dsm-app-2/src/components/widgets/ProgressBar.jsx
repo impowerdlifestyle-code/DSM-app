@@ -1,20 +1,10 @@
 import { tokens as t } from '../../styles.js'
 
-let injected = false
-function ensureKeyframes() {
-  if (typeof document === 'undefined' || injected) return
-  injected = true
-  const el = document.createElement('style')
-  el.setAttribute('data-dsm', 'progressbar')
-  el.textContent = `
-    @keyframes dsmBarShimmer {
-      0%   { transform: translateX(-160%); }
-      60%  { transform: translateX(260%); }
-      100% { transform: translateX(260%); }
-    }
-  `
-  document.head.appendChild(el)
-}
+// Keyframes rendered as inline JSX inside the component (H11 fix — was
+// document.head.appendChild during render, which violated React's render
+// contract and broke under SSR/concurrent rendering). Browsers dedupe
+// identical <style> nodes by content so multiple instances are cheap.
+const KEYFRAMES_CSS = `@keyframes dsmBarShimmer{0%{transform:translateX(-160%)}60%{transform:translateX(260%)}100%{transform:translateX(260%)}}`
 
 const withAlpha = (hex, alphaHex) => {
   if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex
@@ -54,7 +44,6 @@ export default function ProgressBar({
   duration = 600,
   style,
 }) {
-  ensureKeyframes()
   const clamped = Math.max(0, Math.min(100, pct))
   const r = radius ?? Math.max(2, Math.round(height / 2) + 1)
   const filled = clamped > 0
@@ -76,6 +65,7 @@ export default function ProgressBar({
         ...style,
       }}
     >
+      <style>{KEYFRAMES_CSS}</style>
       <div
         style={{
           position: 'absolute',

@@ -187,6 +187,9 @@ export default function Main({ user }) {
   const [athleteActionSteps, setAthleteActionSteps] = useState([])
   const [athleteCheckins, setAthleteCheckins] = useState([])
   const [athleteBallMastery, setAthleteBallMastery] = useState([])
+  // H9: track which sections failed to load so we can show a partial-failure
+  // banner instead of silently rendering empty (RLS denial vs "no data").
+  const [athleteLoadErrors, setAthleteLoadErrors] = useState([])
   const [communityPosts, setCommunityPosts] = useState([])
   const [newPost, setNewPost] = useState({ type: 'win', content: '' })
   const [postingComment, setPostingComment] = useState(null)
@@ -218,6 +221,21 @@ export default function Main({ user }) {
       supabase.from('session_notes').select('*').eq('athlete_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('coach_messages').select('*, profiles!coach_messages_sender_id_fkey(full_name, role)').eq('athlete_id', athlete.id).order('created_at', {ascending:true}).limit(50),
     ])
+    // H9: collect per-query errors so the UI can distinguish "no data"
+    // from "query failed" (e.g. RLS denial). Each failed section logs and
+    // is named in athleteLoadErrors for an optional banner.
+    const failed = []
+    const labeled = [
+      ['action_steps', as], ['weekly_checkins', ci], ['ball_mastery', bm],
+      ['session_notes', sn], ['coach_messages', msgs],
+    ]
+    for (const [name, r] of labeled) {
+      if (r?.error) {
+        console.error(`loadAthleteProfile ${name} failed:`, r.error.message || r.error)
+        failed.push(name)
+      }
+    }
+    setAthleteLoadErrors(failed)
     setAthleteActionSteps(as.data || [])
     setAthleteCheckins(ci.data || [])
     setAthleteBallMastery(bm.data || [])
@@ -515,8 +533,15 @@ export default function Main({ user }) {
         memoryThemes: memRes?.data?.themes || null,
       })
 
-      // 6) Persist assistant reply
-      const { data: assistantRow } = await saveChatMessage(user.id, 'assistant', reply)
+      // 6) Persist assistant reply. H2: surface failures instead of silently
+      // pushing a message with id:undefined that the rating buttons (BotTab
+      // canRate = !isUser && msg.id) would never offer feedback for.
+      const { data: assistantRow, error: assistantErr } = await saveChatMessage(user.id, 'assistant', reply)
+      if (assistantErr) {
+        console.error('saveChatMessage failed:', assistantErr)
+        // Don't drop the reply — still show it, but mark it as unrated/unpersisted
+        // so the UI can later show a retry affordance via msg.savedFailed.
+      }
       const assistantId = assistantRow?.id
 
       // Daily quest: asked Coach V
@@ -532,7 +557,7 @@ export default function Main({ user }) {
         setTypingMsg(words.slice(0, i).join(' '))
         if (i >= words.length) {
           clearInterval(interval)
-          setMessages(p => [...p, { id: assistantId, role: 'assistant', content: reply }])
+          setMessages(p => [...p, { id: assistantId, role: 'assistant', content: reply, savedFailed: !!assistantErr }])
           setTypingMsg('')
           if (voiceMode) elevenSpeak(reply)
         }
