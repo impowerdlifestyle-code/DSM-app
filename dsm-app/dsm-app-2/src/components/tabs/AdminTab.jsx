@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
+import { authFetch } from '../../lib/authFetch.js'
 import {
   getAdminAthleteList,
   assignCoachToAthlete,
@@ -368,8 +369,37 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
   )
 }
 
+// Mint a signed coach-invite link via /api/invite/sign. Returns { url, error }.
+// Server enforces coach/admin role + 30d expiry by default.
+async function mintInviteUrl(coachLabel, extras = {}) {
+  try {
+    const res = await authFetch('/api/invite/sign', {
+      method: 'POST',
+      body: JSON.stringify({ coachLabel, ttlDays: 30 }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) return { url: null, error: json.error || `HTTP ${res.status}` }
+    let url = json.url
+    if (extras.email || extras.name) {
+      const u = new URL(url)
+      if (extras.email) u.searchParams.set('email', extras.email)
+      if (extras.name)  u.searchParams.set('name',  extras.name)
+      url = u.toString()
+    }
+    return { url, error: null }
+  } catch (e) {
+    return { url: null, error: e.message || 'Network error' }
+  }
+}
+
+async function copyToClipboard(text) {
+  try { await navigator.clipboard.writeText(text); return true }
+  catch { prompt('Copy this invite link:', text); return false }
+}
+
 function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onDemote, onManualAdd }) {
   const [copied, setCopied] = useState(null)
+  const [pending, setPending] = useState(null)
   const counts = useMemo(() => {
     const m = {}
     for (const c of coaches) m[coachKey(c)] = 0
@@ -381,19 +411,16 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
     return m
   }, [coaches, athletes])
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dsm-app-2.vercel.app'
-
-  async function copy(text, id) {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(id)
-      setTimeout(() => setCopied(null), 1800)
-    } catch {
-      prompt('Copy this invite link:', text)
-    }
+  async function mintAndCopy(coachLabel, id) {
+    if (pending) return
+    setPending(id)
+    const { url, error } = await mintInviteUrl(coachLabel)
+    setPending(null)
+    if (error) { alert('Could not generate invite: ' + error); return }
+    await copyToClipboard(url)
+    setCopied(id)
+    setTimeout(() => setCopied(null), 1800)
   }
-
-  const genericInvite = `${baseUrl}/?coach=${encodeURIComponent('Coach Valentino')}`
 
   return (
     <>
@@ -402,8 +429,8 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
           {coaches.length} coach{coaches.length === 1 ? '' : 'es'}
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button onClick={() => copy(genericInvite, 'generic')} style={addBtn}>
-            {copied === 'generic' ? '✓ Copied' : '🔗 Copy invite link'}
+          <button onClick={() => mintAndCopy('Coach Valentino', 'generic')} style={addBtn} disabled={pending === 'generic'}>
+            {copied === 'generic' ? '✓ Copied' : pending === 'generic' ? 'Generating…' : '🔗 Copy invite link'}
           </button>
           <button onClick={onManualAdd} style={addBtn}>+ Manually add</button>
           <button onClick={onAddCoach} style={addBtn}>+ Add coach</button>
@@ -411,14 +438,14 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
       </div>
 
       <div style={{ fontSize: 10, color: t.color.textMute, marginBottom: 14, lineHeight: 1.4 }}>
-        Share the invite link by text or DM — new athletes land on signup with a 14-day trial + Coach Valentino pre-assigned. Use "Manually add" to generate a personalized link with the athlete's name and email already filled in.
+        Share the invite link by text or DM — new athletes land on signup with a 14-day trial + the right coach pre-assigned. Each link is signed and expires in 30 days. Use "Manually add" for a fully pre-filled signup URL with the athlete's name and email.
       </div>
 
       {loading && <div style={{ color: t.color.textDim, fontSize: 13 }}>Loading coaches…</div>}
 
       {!loading && coaches.map(c => {
         const label = c.full_name || c.email
-        const inviteUrl = `${baseUrl}/?coach=${encodeURIComponent(label)}`
+        const id = `coach-${c.id}`
         return (
           <div key={c.id} style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
@@ -446,11 +473,11 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
               <button onClick={() => onDemote(c)} style={{ ...demoteBtn, marginLeft: 'auto' }}>Remove</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${t.color.line}` }}>
-              <div style={{ flex: 1, minWidth: 0, fontSize: 11, color: t.color.textDim, fontFamily: t.font.mono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {inviteUrl}
+              <div style={{ flex: 1, minWidth: 0, fontSize: 10, color: t.color.textMute, letterSpacing: 0.6 }}>
+                Signed invite URL · 30-day expiry
               </div>
-              <button onClick={() => copy(inviteUrl, c.id)} style={copyBtn}>
-                {copied === c.id ? '✓ Copied' : 'Copy'}
+              <button onClick={() => mintAndCopy(label, id)} style={copyBtn} disabled={pending === id}>
+                {copied === id ? '✓ Copied' : pending === id ? '…' : 'Copy link'}
               </button>
             </div>
           </div>
@@ -1004,23 +1031,20 @@ function ManualAddAthleteModal({ coaches, onClose }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [coach, setCoach] = useState(coaches[0]?.full_name || coaches[0]?.email || 'Coach Valentino')
+  const [busy, setBusy] = useState(false)
+  const [mintedUrl, setMintedUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [err, setErr] = useState('')
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dsm-app-2.vercel.app'
-  const params = new URLSearchParams()
-  if (coach) params.set('coach', coach)
-  if (email) params.set('email', email)
-  if (name)  params.set('name', name)
-  const url = `${baseUrl}/?${params.toString()}`
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      prompt('Copy this invite link:', url)
-    }
+  async function mintAndCopy() {
+    setErr(''); setBusy(true)
+    const { url, error } = await mintInviteUrl(coach, { email: email.trim(), name: name.trim() })
+    setBusy(false)
+    if (error) { setErr(error); return }
+    setMintedUrl(url)
+    await copyToClipboard(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2400)
   }
 
   return (
@@ -1053,22 +1077,31 @@ function ManualAddAthleteModal({ coaches, onClose }) {
           })}
         </select>
 
-        <div style={{ ...subLabel, marginTop: 14 }}>Generated link</div>
-        <div style={{
-          padding: '10px 12px', background: t.color.bg,
-          border: `1px solid ${t.color.line2}`, borderRadius: 10,
-          fontSize: 11, color: t.color.textDim, fontFamily: t.font.mono,
-          wordBreak: 'break-all', lineHeight: 1.4,
-        }}>
-          {url}
-        </div>
+        {mintedUrl && (
+          <>
+            <div style={{ ...subLabel, marginTop: 14 }}>Signed link · 30-day expiry</div>
+            <div style={{
+              padding: '10px 12px', background: t.color.bg,
+              border: `1px solid ${t.color.line2}`, borderRadius: 10,
+              fontSize: 11, color: t.color.textDim, fontFamily: t.font.mono,
+              wordBreak: 'break-all', lineHeight: 1.4,
+            }}>{mintedUrl}</div>
+          </>
+        )}
 
-        <button onClick={copy} style={{ ...sendBtn, background: copied ? '#4ade80' : t.color.text, color: copied ? '#000' : t.color.bg }}>
-          {copied ? '✓ Copied — share it' : '📋 Copy link'}
+        {err && <div style={errBox}>Couldn't generate: {err}</div>}
+
+        <button onClick={mintAndCopy} disabled={busy} style={{
+          ...sendBtn,
+          background: copied ? '#4ade80' : t.color.text,
+          color: copied ? '#000' : t.color.bg,
+          opacity: busy ? 0.5 : 1,
+        }}>
+          {busy ? 'Signing…' : copied ? '✓ Copied — share it' : '📋 Generate & copy link'}
         </button>
 
         <div style={{ fontSize: 10, color: t.color.textMute, marginTop: 8, lineHeight: 1.4, textAlign: 'center' }}>
-          Stays valid forever · no expiry · safe to share by SMS, WhatsApp, or DM.
+          Server-signed via HMAC · 30-day expiry · safe to share by SMS, WhatsApp, or DM.
         </div>
       </div>
     </div>

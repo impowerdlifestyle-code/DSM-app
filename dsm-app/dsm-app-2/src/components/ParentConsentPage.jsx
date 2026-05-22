@@ -29,6 +29,10 @@ export default function ParentConsentPage({ token }) {
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || 'Could not load athlete info.')
         setState({ loading: false, profile: json.profile, error: null })
+        // If the parent already approved (e.g. they're refreshing the page or
+        // re-opening the email link), skip the form and show the success state.
+        if (json.profile?.status === 'granted')  setResult({ decision: 'granted',  ok: true })
+        if (json.profile?.status === 'declined') setResult({ decision: 'declined', ok: true })
       } catch (e) {
         setState({ loading: false, profile: null, error: e.message })
       }
@@ -205,8 +209,8 @@ const lineItem = {
 }
 const lineLabel = { fontSize: 13, fontWeight: 700, color: t.color.text }
 const lineSub   = { fontSize: 11, color: t.color.textDim, marginTop: 2 }
-const check     = { color: '#4ade80', fontWeight: 800, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }
-const x         = { color: '#f87171', fontWeight: 800, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }
+const check     = { color: t.color.ok,  fontWeight: 800, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }
+const x         = { color: t.color.err, fontWeight: 800, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }
 const link      = { color: t.color.text, textDecoration: 'underline' }
 const btnRow    = { display: 'flex', gap: 8, marginTop: 22 }
 const btnPrimary = {

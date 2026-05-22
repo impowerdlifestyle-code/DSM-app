@@ -654,7 +654,7 @@ export default function Main({ user }) {
           <div style={{ fontSize:22, fontWeight:900, letterSpacing:2, marginBottom:10 }}>
             {status === 'declined' ? 'PARENT DECLINED' : 'WAITING FOR YOUR PARENT'}
           </div>
-          <div style={{ fontSize:13, color:'#888', lineHeight:1.6, marginBottom:24, maxWidth:340 }}>
+          <div style={{ fontSize:13, color:t.color.textDim, lineHeight:1.6, marginBottom:24, maxWidth:340 }}>
             {status === 'declined'
               ? `Your parent declined access. If that was a mistake, ask them to email Coach Valentino directly.`
               : `Before you can start, your parent has to OK your account. We sent the approval link to ${parentEmail || 'their email'}. They click it, you're in.`}
@@ -663,10 +663,10 @@ export default function Main({ user }) {
           {status === 'pending' && (
             <>
               <div style={{ background:t.color.surface, border:`1px solid ${t.color.surface2}`, borderRadius:12, padding:'14px 16px', marginBottom:14, width:'100%', maxWidth:360, textAlign:'left' }}>
-                <div style={{ fontSize:9, letterSpacing:2.4, color:'#555', fontWeight:700, marginBottom:6 }}>PARENT EMAIL</div>
+                <div style={{ fontSize:9, letterSpacing:2.4, color:t.color.textMute, fontWeight:700, marginBottom:6 }}>PARENT EMAIL</div>
                 <div style={{ fontSize:13, color:t.color.text, fontWeight:600, wordBreak:'break-all' }}>{parentEmail || '(not set)'}</div>
               </div>
-              <button onClick={resendEmail} style={{ width:'100%', maxWidth:360, background:t.color.text, color:'#000', border:'none', borderRadius:10, padding:'12px 16px', fontSize:13, fontWeight:800, letterSpacing:1.5, textTransform:'uppercase', cursor:'pointer', marginBottom:8, fontFamily:'inherit' }}>
+              <button onClick={resendEmail} style={{ width:'100%', maxWidth:360, background:t.color.text, color:t.color.bg, border:'none', borderRadius:10, padding:'12px 16px', fontSize:13, fontWeight:800, letterSpacing:1.5, textTransform:'uppercase', cursor:'pointer', marginBottom:8, fontFamily:'inherit' }}>
                 Resend approval email
               </button>
               <button onClick={copyLink} style={{ width:'100%', maxWidth:360, background:'transparent', color:t.color.text, border:`1px solid ${t.color.line2}`, borderRadius:10, padding:'12px 16px', fontSize:12, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', cursor:'pointer', marginBottom:18, fontFamily:'inherit' }}>
@@ -675,7 +675,7 @@ export default function Main({ user }) {
             </>
           )}
 
-          <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+          <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
             Sign out
           </button>
         </div>
@@ -698,13 +698,13 @@ export default function Main({ user }) {
           <div style={{ fontSize:24, fontWeight:900, letterSpacing:2, marginBottom:12 }}>
             {isTrialExpired ? 'YOUR TRIAL ENDED' : 'UNLOCK YOUR ACCESS'}
           </div>
-          <div style={{ fontSize:14, color:'#888', lineHeight:1.6, marginBottom:32, maxWidth:320 }}>
+          <div style={{ fontSize:14, color:t.color.textDim, lineHeight:1.6, marginBottom:32, maxWidth:320 }}>
             {isTrialExpired
               ? "Your 14-day trial wrapped. Continue the work with Coach Valentino — Ball Mastery, weekly check-ins, voice journal and the full DSM program."
               : "You're one step away from the full DSM program. Join now to unlock Coach Valentino, Ball Mastery tracking, Weekly Check-ins and more."}
           </div>
           <div style={{ background:t.color.surface, border:`1px solid ${t.color.surface2}`, borderRadius:14, padding:'20px 18px', marginBottom:24, width:'100%', maxWidth:340 }}>
-            <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:12 }}>WHAT YOU GET</div>
+            <div style={{ fontSize:9, letterSpacing:3, color:t.color.textMute, fontWeight:700, marginBottom:12 }}>WHAT YOU GET</div>
             {[['🤖','Coach Valentino AI'],['⚽','Daily Ball Mastery Log'],['📋','Weekly Check-In'],['✅','Action Steps Tracker'],['📊','Habit Tracker'],['🦈','Full DSM Program']].map(([icon,label])=>(
               <div key={label} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
                 <div style={{ fontSize:18 }}>{icon}</div>
@@ -714,13 +714,13 @@ export default function Main({ user }) {
             ))}
           </div>
           <a href="https://www.fanbasis.com" target="_blank" rel="noreferrer"
-            style={{ display:'block', width:'100%', maxWidth:340, background:t.color.text, border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:'#000', cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
+            style={{ display:'block', width:'100%', maxWidth:340, background:t.color.text, border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:t.color.bg, cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
             JOIN NOW -- FANBASIS 🔥
           </a>
           <div style={{ fontSize:11, color:'#444', lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
             After payment, your coach will activate your account within 24 hours.
           </div>
-          <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+          <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
             SIGN OUT
           </button>
         </div>
@@ -894,7 +894,7 @@ export default function Main({ user }) {
             <div style={{
               position: 'absolute', bottom: -3, right: -5,
               minWidth: 18, height: 18, borderRadius: '50%',
-              background: t.color.text, color: '#000',
+              background: t.color.text, color: t.color.bg,
               border: '2px solid #000', padding: '0 4px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 0.5, fontWeight: 400,
@@ -902,7 +902,7 @@ export default function Main({ user }) {
           </div>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, fontWeight: 400, letterSpacing: 2.5, color: t.color.text, lineHeight: 0.9, textTransform: 'uppercase' }}>Di Lorenzo</div>
-            <div style={{ fontSize: 9, letterSpacing: 2, color: '#8e8e8e', fontWeight: 600, marginTop: 3, textTransform: 'uppercase' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: t.color.textDim, fontWeight: 600, marginTop: 3, textTransform: 'uppercase' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
           </div>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -933,21 +933,21 @@ export default function Main({ user }) {
             padding: '6px 12px', background: t.color.text,
             border: `1px solid ${t.color.text}`, borderRadius: 999,
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#000', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, fontWeight: 400, color: '#000', fontVariantNumeric: 'tabular-nums', letterSpacing: 0.5 }}>{streak}</span>
-            <span style={{ fontSize: 9, letterSpacing: 1.6, color: '#000', fontWeight: 700, textTransform: 'uppercase' }}>day</span>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.color.bg, animation: 'pulse 2s infinite' }} />
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, fontWeight: 400, color: t.color.bg, fontVariantNumeric: 'tabular-nums', letterSpacing: 0.5 }}>{streak}</span>
+            <span style={{ fontSize: 9, letterSpacing: 1.6, color: t.color.bg, fontWeight: 700, textTransform: 'uppercase' }}>day</span>
           </div>
           <button onClick={() => { setTab('locker'); setSelectedAthlete(null); }} style={{
-            background: tab === 'locker' ? '#fafafa' : 'transparent',
+            background: tab === 'locker' ? t.color.text : 'transparent',
             border: '1px solid #1c1c1c',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
-            color: tab === 'locker' ? '#000' : '#8e8e8e', cursor: 'pointer', fontWeight: 600,
+            color: tab === 'locker' ? t.color.bg : t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Locker</button>
           <button onClick={() => signOut()} style={{
             background: 'transparent', border: '1px solid #1c1c1c',
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
-            color: '#8e8e8e', cursor: 'pointer', fontWeight: 600,
+            color: t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Out</button>
         </div>
@@ -1004,7 +1004,7 @@ export default function Main({ user }) {
             <div style={{ ...C.card, borderColor:'#1a4a1a', textAlign:'center', padding:36 }}>
               <div style={{ fontSize:44,marginBottom:10 }}>✅</div>
               <div style={{ fontSize:18,fontWeight:800,marginBottom:6 }}>TODAY LOGGED!</div>
-              <div style={{ fontSize:13,color:'#555' }}>Ball mastery done. Come back tomorrow! 🔥</div>
+              <div style={{ fontSize:13,color:t.color.textMute }}>Ball mastery done. Come back tomorrow! 🔥</div>
             </div>
           ) : <>
             <div style={C.orange}>
@@ -1017,7 +1017,7 @@ export default function Main({ user }) {
                 {BALL_MASTERY_SKILLS.map(skill => (
                   <div key={skill.id} style={{ display:'flex',alignItems:'center',gap:12 }}>
                     <button onClick={() => setBallMastery(p => ({ ...p, [skill.id]: (p[skill.id]?.reps||0)>0 ? {reps:0} : {reps:50} }))}
-                      style={{ width:34,height:34,borderRadius:'50%',background:(ballMastery[skill.id]?.reps||0)>0?'#fafafa':'#1e1e1e',border:'none',fontSize:15,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',color:(ballMastery[skill.id]?.reps||0)>0?'#000':'#fff' }}>
+                      style={{ width:34,height:34,borderRadius:'50%',background:(ballMastery[skill.id]?.reps||0)>0?t.color.text:t.color.surface2,border:'none',fontSize:15,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',color:(ballMastery[skill.id]?.reps||0)>0?t.color.bg:t.color.text }}>
                       {(ballMastery[skill.id]?.reps||0)>0?'✓':skill.icon}
                     </button>
                     <div style={{ flex:1 }}>
@@ -1032,7 +1032,7 @@ export default function Main({ user }) {
                       </div>
                       {(ballMastery[skill.id]?.reps||0)>0 && (
                         <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4 }}>
-                          <span style={{ fontSize:10,color:'#555' }}>Reps:</span>
+                          <span style={{ fontSize:10,color:t.color.textMute }}>Reps:</span>
                           <input type="number" min="1" max="9999"
                             style={{ ...C.inp,width:80,padding:'4px 8px',fontSize:13 }}
                             value={ballMastery[skill.id]?.reps||50}
@@ -1051,11 +1051,11 @@ export default function Main({ user }) {
             </div>
             <div style={{ ...C.card,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
               <div>
-                <div style={{ fontSize:9,color:'#555',letterSpacing:3,fontWeight:700,marginBottom:4 }}>SKILLS</div>
+                <div style={{ fontSize:9,color:t.color.textMute,letterSpacing:3,fontWeight:700,marginBottom:4 }}>SKILLS</div>
                 <div style={{ fontSize:26,fontWeight:900,color:t.color.text }}>{Object.keys(ballMastery).filter(k=>k!=='notes'&&(ballMastery[k]?.reps||0)>0).length}</div>
               </div>
               <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:9,color:'#555',letterSpacing:3,fontWeight:700,marginBottom:4 }}>TOTAL REPS</div>
+                <div style={{ fontSize:9,color:t.color.textMute,letterSpacing:3,fontWeight:700,marginBottom:4 }}>TOTAL REPS</div>
                 <div style={{ fontSize:26,fontWeight:900,color:t.color.text }}>{Object.entries(ballMastery).filter(([k])=>k!=='notes').reduce((a,[,v])=>a+(v?.reps||0),0)}</div>
               </div>
             </div>
@@ -1069,9 +1069,9 @@ export default function Main({ user }) {
               <div key={i} style={C.card}>
                 <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                   <div style={{ fontSize:10,color:t.color.text,fontWeight:700,letterSpacing:2 }}>{b.date}</div>
-                  <div style={{ fontSize:10,color:'#555' }}>{b.total_skills} skills · {b.total_reps} reps</div>
+                  <div style={{ fontSize:10,color:t.color.textMute }}>{b.total_skills} skills · {b.total_reps} reps</div>
                 </div>
-                {b.notes && <div style={{ fontSize:11,color:'#555',marginTop:5 }}>{b.notes}</div>}
+                {b.notes && <div style={{ fontSize:11,color:t.color.textMute,marginTop:5 }}>{b.notes}</div>}
               </div>
             ))}
           </>}
@@ -1130,9 +1130,9 @@ export default function Main({ user }) {
               <div style={{ ...C.card,borderColor:'#1a4a1a',textAlign:'center',padding:36,marginBottom:16 }}>
                 <div style={{ fontSize:44,marginBottom:10 }}>✅</div>
                 <div style={{ fontSize:18,fontWeight:800,marginBottom:6 }}>THIS WEEK SUBMITTED!</div>
-                <div style={{ fontSize:13,color:'#555',marginBottom:16 }}>Coach Valentino has your check-in. See you next week. 🔥</div>
+                <div style={{ fontSize:13,color:t.color.textMute,marginBottom:16 }}>Coach Valentino has your check-in. See you next week. 🔥</div>
                 <button onClick={()=>setCheckinDone(false)}
-                  style={{ background:t.color.surface2,border:`1px solid ${t.color.line2}`,borderRadius:10,padding:'10px 18px',fontSize:11,fontWeight:800,color:'#aaa',cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                  style={{ background:t.color.surface2,border:`1px solid ${t.color.line2}`,borderRadius:10,padding:'10px 18px',fontSize:11,fontWeight:800,color:t.color.textDim,cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
                   ✏️ EDIT / RE-SUBMIT THIS WEEK
                 </button>
               </div>
@@ -1145,12 +1145,12 @@ export default function Main({ user }) {
                       {[['energy_level','⚡ ENERGY'],['confidence_level','💪 CONFIDENCE'],['sessions_completed','🏃 SESSIONS']].map(([k,l])=>(
                         <div key={k} style={{ textAlign:'center' }}>
                           <div style={{ fontSize:18,fontWeight:900,color:t.color.text }}>{c[k]}</div>
-                          <div style={{ fontSize:8,color:'#555',letterSpacing:1,fontWeight:700 }}>{l}</div>
+                          <div style={{ fontSize:8,color:t.color.textMute,letterSpacing:1,fontWeight:700 }}>{l}</div>
                         </div>
                       ))}
                     </div>
-                    <div style={{ fontSize:12,color:'#aaa' }}>🏆 {c.biggest_win}</div>
-                    {c.goal_next_week && <div style={{ fontSize:12,color:'#666',marginTop:4 }}>🎯 {c.goal_next_week}</div>}
+                    <div style={{ fontSize:12,color:t.color.textDim }}>🏆 {c.biggest_win}</div>
+                    {c.goal_next_week && <div style={{ fontSize:12,color:t.color.textDim,marginTop:4 }}>🎯 {c.goal_next_week}</div>}
                   </div>
                 ))}
               </>}
@@ -1167,10 +1167,10 @@ export default function Main({ user }) {
               {[['energyLevel','⚡ Energy Level',1,10],['confidenceLevel','💪 Confidence 1-10',1,10],['sessionsCompleted','🏃 Sessions Completed',0,14]].map(([k,l,min,max])=>(
                 <div key={k} style={{ marginBottom:12 }}>
                   <div style={{ display:'flex',justifyContent:'space-between',marginBottom:4 }}>
-                    <span style={{ fontSize:12,color:'#aaa' }}>{l}</span>
+                    <span style={{ fontSize:12,color:t.color.textDim }}>{l}</span>
                     <span style={{ fontSize:14,fontWeight:900,color:t.color.text }}>{checkin[k]}{k==='sessionsCompleted'?'':'/10'}</span>
                   </div>
-                  <input type="range" min={min} max={max} value={checkin[k]} onChange={e=>setCI(k,parseInt(e.target.value))} style={{ accentColor:'#fafafa',width:'100%' }} />
+                  <input type="range" min={min} max={max} value={checkin[k]} onChange={e=>setCI(k,parseInt(e.target.value))} style={{ accentColor:t.color.text,width:'100%' }} />
                 </div>
               ))}
             </div>
@@ -1186,7 +1186,7 @@ export default function Main({ user }) {
             {/* ALWAYS VISIBLE: Action Steps */}
             <div style={C.card}>
               <span style={C.lbl}>✅ ACTION STEPS THIS WEEK</span>
-              <div style={{ fontSize:12,color:'#555',marginBottom:10 }}>How many times did you use the DSM tools?</div>
+              <div style={{ fontSize:12,color:t.color.textMute,marginBottom:10 }}>How many times did you use the DSM tools?</div>
               {[['sharkMoment','🦈 SHARK MOMENT','When did you take a fearless risk?'],['goldfishMoment','🐠 GOLDFISH MOMENT','When did you forget a mistake fast?'],['selfTalkMoment','💬 SELF TALK MOMENT','When did you control your inner voice?']].map(([k,l,p])=>(
                 <div key={k} style={{ marginBottom:10 }}>
                   <div style={{ fontSize:9,color:t.color.text,letterSpacing:2,fontWeight:700,marginBottom:5 }}>{l}</div>
@@ -1199,14 +1199,14 @@ export default function Main({ user }) {
             <div style={C.card}>
               <span style={C.lbl}>⚽ BALL MASTERY THIS WEEK</span>
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4 }}>
-                <span style={{ fontSize:12,color:'#aaa' }}>Sessions completed</span>
+                <span style={{ fontSize:12,color:t.color.textDim }}>Sessions completed</span>
                 <span style={{ fontSize:14,fontWeight:900,color:t.color.text }}>{checkin.sessionsCompleted}</span>
               </div>
-              <div style={{ fontSize:11,color:'#555',marginBottom:8 }}>Log your sessions in the Ball Mastery tab after each training.</div>
+              <div style={{ fontSize:11,color:t.color.textMute,marginBottom:8 }}>Log your sessions in the Ball Mastery tab after each training.</div>
               <div style={{ display:'flex',gap:6 }}>
                 {[0,1,2,3,4,5,6,7].map(n=>(
                   <button key={n} onClick={()=>setCI('sessionsCompleted',n)}
-                    style={{ flex:1,background:checkin.sessionsCompleted===n?'#fafafa':'#1e1e1e',border:'none',borderRadius:6,padding:'8px 4px',fontSize:11,fontWeight:800,color:checkin.sessionsCompleted===n?'#000':'#fff',cursor:'pointer',fontFamily:'inherit' }}>
+                    style={{ flex:1,background:checkin.sessionsCompleted===n?t.color.text:t.color.surface2,border:'none',borderRadius:6,padding:'8px 4px',fontSize:11,fontWeight:800,color:checkin.sessionsCompleted===n?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
                     {n}
                   </button>
                 ))}
@@ -1217,7 +1217,7 @@ export default function Main({ user }) {
             {(profile?.program_week||1) >= 4 ? (
               <div style={{ ...C.card,borderColor:'#e5e5e5' }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:10 }}>
-                  <div style={{ background:t.color.text,borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:'#000' }}>WEEK 4+</div>
+                  <div style={{ background:t.color.text,borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:t.color.bg }}>WEEK 4+</div>
                   <span style={C.lbl}>🎯 GOAL SETTING</span>
                 </div>
                 <span style={C.lbl}>MY SMART GOAL THIS WEEK</span>
@@ -1231,7 +1231,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card,opacity:0.4 }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                   <div style={{ background:t.color.line2,borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color: t.color.text }}>WEEK 4</div>
-                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>🎯 Goal Setting -- Unlocks at Week 4</span>
+                  <span style={{ fontSize:12,fontWeight:800,color:t.color.textMute }}>🎯 Goal Setting -- Unlocks at Week 4</span>
                   <div style={{ marginLeft:'auto',fontSize:12 }}>🔒</div>
                 </div>
               </div>
@@ -1241,7 +1241,7 @@ export default function Main({ user }) {
             {(profile?.program_week||1) >= 5 ? (
               <div style={{ ...C.card,borderColor:'#ffaa00' }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:12 }}>
-                  <div style={{ background:'#ffaa00',borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:'#000' }}>WEEK 5+</div>
+                  <div style={{ background:'#ffaa00',borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color:t.color.bg }}>WEEK 5+</div>
                   <span style={C.lbl}>👁️ VISUALIZATION & MORNING ROUTINE</span>
                 </div>
 
@@ -1252,7 +1252,7 @@ export default function Main({ user }) {
                     <div style={{ display:'flex',gap:6 }}>
                       {[['Yes',true],['No',false]].map(([l,v])=>(
                         <button key={l} onClick={()=>setCI('didVisualization',v)}
-                          style={{ background:checkin.didVisualization===v?'#fafafa':'#1e1e1e',border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,color:checkin.didVisualization===v?'#000':'#fff',cursor:'pointer',fontFamily:'inherit' }}>
+                          style={{ background:checkin.didVisualization===v?t.color.text:t.color.surface2,border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,color:checkin.didVisualization===v?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
                           {l}
                         </button>
                       ))}
@@ -1271,7 +1271,7 @@ export default function Main({ user }) {
                     <div style={{ display:'flex',gap:6 }}>
                       {[['Yes',true],['No',false]].map(([l,v])=>(
                         <button key={l} onClick={()=>setCI('didMorningRoutine',v)}
-                          style={{ background:checkin.didMorningRoutine===v?'#fafafa':'#1e1e1e',border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,color:checkin.didMorningRoutine===v?'#000':'#fff',cursor:'pointer',fontFamily:'inherit' }}>
+                          style={{ background:checkin.didMorningRoutine===v?t.color.text:t.color.surface2,border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,color:checkin.didMorningRoutine===v?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
                           {l}
                         </button>
                       ))}
@@ -1287,7 +1287,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card,opacity:0.4 }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                   <div style={{ background:t.color.line2,borderRadius:6,padding:'2px 8px',fontSize:9,fontWeight:800,color: t.color.text }}>WEEK 5</div>
-                  <span style={{ fontSize:12,fontWeight:800,color:'#555' }}>👁️ Visualization & Morning Routine -- Unlocks at Week 5</span>
+                  <span style={{ fontSize:12,fontWeight:800,color:t.color.textMute }}>👁️ Visualization & Morning Routine -- Unlocks at Week 5</span>
                   <div style={{ marginLeft:'auto',fontSize:12 }}>🔒</div>
                 </div>
               </div>
@@ -1316,7 +1316,7 @@ export default function Main({ user }) {
               <div style={{ fontSize:48,fontWeight:900,color:t.color.text,lineHeight:1 }}>{streak}</div>
               <div>
                 <div style={{ fontSize:14,fontWeight:800 }}>DAY STREAK</div>
-                <div style={{ fontSize:11,color:'#555',marginTop:2 }}>Keep showing up every day.</div>
+                <div style={{ fontSize:11,color:t.color.textMute,marginTop:2 }}>Keep showing up every day.</div>
                 <button style={{ ...C.bsm,marginTop:8 }} onClick={handleLogDay}>+ LOG DAY</button>
               </div>
             </div>
@@ -1324,14 +1324,14 @@ export default function Main({ user }) {
           <div style={{ ...C.card,overflowX:'auto' }}>
             <div style={{ display:'flex',minWidth:290,marginBottom:8 }}>
               <div style={{ width:110,flexShrink:0 }}/>
-              {DAYS.map((d,i)=><div key={i} style={{ flex:1,textAlign:'center',fontSize:10,fontWeight:700,color:'#555' }}>{d}</div>)}
+              {DAYS.map((d,i)=><div key={i} style={{ flex:1,textAlign:'center',fontSize:10,fontWeight:700,color:t.color.textMute }}>{d}</div>)}
             </div>
             {habits.map((habit,hi)=>(
               <div key={hi} style={{ display:'flex',alignItems:'center',marginBottom:6,minWidth:290 }}>
-                <div style={{ width:110,fontSize:10,color:'#aaa',fontWeight:600,paddingRight:6,flexShrink:0 }}>{habit.label}</div>
+                <div style={{ width:110,fontSize:10,color:t.color.textDim,fontWeight:600,paddingRight:6,flexShrink:0 }}>{habit.label}</div>
                 {habit.days.map((done,di)=>(
                   <div key={di} onClick={()=>toggleHabit(hi,di)}
-                    style={{ flex:1,height:26,borderRadius:5,background:done?'#fafafa':'#1e1e1e',margin:'0 2px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:done?'#000':'#fff',fontWeight:800 }}>
+                    style={{ flex:1,height:26,borderRadius:5,background:done?t.color.text:t.color.surface2,margin:'0 2px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:done?t.color.bg:t.color.text,fontWeight:800 }}>
                     {done?'✓':''}
                   </div>
                 ))}
@@ -1342,9 +1342,9 @@ export default function Main({ user }) {
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
               <div>
                 <span style={C.lbl}>THIS WEEK</span>
-                <div style={{ fontSize:28,fontWeight:900 }}>{completedHabits}<span style={{ fontSize:12,color:'#555' }}>/{totalHabits}</span></div>
+                <div style={{ fontSize:28,fontWeight:900 }}>{completedHabits}<span style={{ fontSize:12,color:t.color.textMute }}>/{totalHabits}</span></div>
               </div>
-              <div style={{ background:pct>=70?'#fafafa':'#1e1e1e',padding:'8px 14px',borderRadius:8,fontSize:12,fontWeight:800,color:pct>=70?'#000':'#fafafa' }}>
+              <div style={{ background:pct>=70?t.color.text:t.color.surface2,padding:'8px 14px',borderRadius:8,fontSize:12,fontWeight:800,color:pct>=70?t.color.bg:t.color.text }}>
                 {pct>=70?'🔥 ELITE':pct>=40?'⚡ GOOD':'📈 GROW'}
               </div>
             </div>
@@ -1374,7 +1374,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card, textAlign:'center', padding:40 }}>
                 <div style={{ fontSize:44, marginBottom:12 }}>📈</div>
                 <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO DATA YET</div>
-                <div style={{ fontSize:13, color:'#555', lineHeight:1.6 }}>Start logging action steps, weekly check-ins, and ball mastery to see your full progress here. 🦈</div>
+                <div style={{ fontSize:13, color:t.color.textMute, lineHeight:1.6 }}>Start logging action steps, weekly check-ins, and ball mastery to see your full progress here. 🦈</div>
               </div>
             )
 
@@ -1391,7 +1391,7 @@ export default function Main({ user }) {
                 <div style={{ display:'flex', gap:6, marginBottom:14, overflowX:'auto' }}>
                   {progTabs.map(t=>(
                     <button key={t.id} onClick={()=>setProgressTab(t.id)}
-                      style={{ flexShrink:0, background:progressTab===t.id?'#fafafa':'#1e1e1e', border:'none', borderRadius:10, padding:'8px 12px', fontSize:10, fontWeight:800, color:progressTab===t.id?'#000':'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                      style={{ flexShrink:0, background:progressTab===t.id?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'8px 12px', fontSize:10, fontWeight:800, color:progressTab===t.id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                       {t.label}
                     </button>
                   ))}
@@ -1409,7 +1409,7 @@ export default function Main({ user }) {
                       <div key={lbl} style={{ ...C.card, textAlign:'center', padding:12 }}>
                         <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
                         <div style={{ fontSize:26, fontWeight:900, color:t.color.text }}>{val}</div>
-                        <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{lbl}</div>
+                        <div style={{ fontSize:7, color:t.color.textMute, letterSpacing:1, fontWeight:700 }}>{lbl}</div>
                       </div>
                     ))}
                   </div>
@@ -1424,7 +1424,7 @@ export default function Main({ user }) {
                           <div key={k} style={{ ...C.card, textAlign:'center', padding:10 }}>
                             <div style={{ fontSize:16 }}>{icon}</div>
                             <div style={{ fontSize:22, fontWeight:900, color:t.color.text }}>{avg(k)}</div>
-                            <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl}</div>
+                            <div style={{ fontSize:7, color:t.color.textMute, fontWeight:700, letterSpacing:1 }}>{lbl}</div>
                           </div>
                         ))}
                       </div>
@@ -1436,8 +1436,8 @@ export default function Main({ user }) {
                     <span style={C.lbl}>ENERGY & CONFIDENCE OVER TIME</span>
                     <div style={{ ...C.card, padding:16, marginBottom:14 }}>
                       <div style={{ display:'flex', gap:14, marginBottom:10 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:t.color.text }}/><span style={{ fontSize:9,color:'#aaa',fontWeight:700 }}>ENERGY</span></div>
-                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:'#ff8c00' }}/><span style={{ fontSize:9,color:'#aaa',fontWeight:700 }}>CONFIDENCE</span></div>
+                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:t.color.text }}/><span style={{ fontSize:9,color:t.color.textDim,fontWeight:700 }}>ENERGY</span></div>
+                        <div style={{ display:'flex', alignItems:'center', gap:5 }}><div style={{ width:8,height:8,borderRadius:'50%',background:'#ff8c00' }}/><span style={{ fontSize:9,color:t.color.textDim,fontWeight:700 }}>CONFIDENCE</span></div>
                       </div>
                       <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:100 }}>
                         {[...checkinHistory].reverse().map((c,i)=>(
@@ -1446,7 +1446,7 @@ export default function Main({ user }) {
                               <div style={{ flex:1, background:t.color.text, borderRadius:'2px 2px 0 0', height:`${(c.energy_level/10)*100}%`, minHeight:3 }}/>
                               <div style={{ flex:1, background:'#ff8c00', borderRadius:'2px 2px 0 0', height:`${(c.confidence_level/10)*100}%`, minHeight:3 }}/>
                             </div>
-                            <div style={{ fontSize:6,color:'#555',fontWeight:700 }}>W{c.week?.split('-W')[1]||''}</div>
+                            <div style={{ fontSize:6,color:t.color.textMute,fontWeight:700 }}>W{c.week?.split('-W')[1]||''}</div>
                           </div>
                         ))}
                       </div>
@@ -1458,11 +1458,11 @@ export default function Main({ user }) {
                       const eUp = latest.energy_level >= prev.energy_level
                       const cUp = latest.confidence_level >= prev.confidence_level
                       return (
-                        <div style={{ ...C.card, borderColor: eUp&&cUp?'#1a4a1a':'#1e1e1e', marginBottom:14 }}>
+                        <div style={{ ...C.card, borderColor: eUp&&cUp?'#1a4a1a':t.color.surface2, marginBottom:14 }}>
                           <span style={C.lbl}>WEEK OVER WEEK TREND</span>
                           <div style={{ display:'flex', gap:16 }}>
-                            <div><div style={{ fontSize:13,fontWeight:800 }}>{eUp?'⬆️':'⬇️'} Energy {eUp?'+':''}{latest.energy_level-prev.energy_level}</div><div style={{ fontSize:10,color:'#555' }}>vs last week</div></div>
-                            <div><div style={{ fontSize:13,fontWeight:800 }}>{cUp?'⬆️':'⬇️'} Confidence {cUp?'+':''}{latest.confidence_level-prev.confidence_level}</div><div style={{ fontSize:10,color:'#555' }}>vs last week</div></div>
+                            <div><div style={{ fontSize:13,fontWeight:800 }}>{eUp?'⬆️':'⬇️'} Energy {eUp?'+':''}{latest.energy_level-prev.energy_level}</div><div style={{ fontSize:10,color:t.color.textMute }}>vs last week</div></div>
+                            <div><div style={{ fontSize:13,fontWeight:800 }}>{cUp?'⬆️':'⬇️'} Confidence {cUp?'+':''}{latest.confidence_level-prev.confidence_level}</div><div style={{ fontSize:10,color:t.color.textMute }}>vs last week</div></div>
                           </div>
                         </div>
                       )
@@ -1480,7 +1480,7 @@ export default function Main({ user }) {
                           <div key={k} style={{ marginBottom:10 }}>
                             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                               <span style={{ fontSize:12, fontWeight:700 }}>{icon} {lbl}</span>
-                              <span style={{ fontSize:12, fontWeight:900, color:t.color.text }}>{pct}% <span style={{ fontSize:9,color:'#555' }}>({cnt}/{submissions.length})</span></span>
+                              <span style={{ fontSize:12, fontWeight:900, color:t.color.text }}>{pct}% <span style={{ fontSize:9,color:t.color.textMute }}>({cnt}/{submissions.length})</span></span>
                             </div>
                             <ProgressBar pct={pct} height={5} background="#1e1e1e" />
                           </div>
@@ -1506,16 +1506,16 @@ export default function Main({ user }) {
                       <span style={C.lbl}>🏅 BADGES ({earned.length}/{badges.length})</span>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
                         {earned.map((b,i)=>(
-                          <div key={i} style={{ ...C.card, borderColor:'#fafafa', textAlign:'center', padding:14 }}>
+                          <div key={i} style={{ ...C.card, borderColor:t.color.text, textAlign:'center', padding:14 }}>
                             <div style={{ fontSize:28, marginBottom:5 }}>{b.icon}</div>
                             <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:t.color.text, marginBottom:3 }}>{b.label}</div>
-                            <div style={{ fontSize:8, color:'#555' }}>{b.desc}</div>
+                            <div style={{ fontSize:8, color:t.color.textMute }}>{b.desc}</div>
                           </div>
                         ))}
                         {locked.map((b,i)=>(
                           <div key={i} style={{ ...C.card, textAlign:'center', padding:14, opacity:0.3 }}>
                             <div style={{ fontSize:28, marginBottom:5 }}>🔒</div>
-                            <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:'#555', marginBottom:3 }}>{b.label}</div>
+                            <div style={{ fontSize:9, fontWeight:900, letterSpacing:1, color:t.color.textMute, marginBottom:3 }}>{b.label}</div>
                             <div style={{ fontSize:8, color:'#444' }}>{b.desc}</div>
                           </div>
                         ))}
@@ -1528,7 +1528,7 @@ export default function Main({ user }) {
                 {progressTab==='actions' && <>
                   {submissions.length === 0 ? (
                     <div style={{ ...C.card, textAlign:'center', padding:30 }}>
-                      <div style={{ fontSize:13, color:'#555' }}>No action steps logged yet. Hit the Actions tab to log your first session! ✅</div>
+                      <div style={{ fontSize:13, color:t.color.textMute }}>No action steps logged yet. Hit the Actions tab to log your first session! ✅</div>
                     </div>
                   ) : <>
                     {/* Summary stats */}
@@ -1544,7 +1544,7 @@ export default function Main({ user }) {
                             <div key={k} style={{ background:t.color.surface, borderRadius:8, padding:'8px 4px', textAlign:'center' }}>
                               <div style={{ fontSize:14 }}>{icon}</div>
                               <div style={{ fontSize:18, fontWeight:900, color:t.color.text }}>{avg}</div>
-                              <div style={{ fontSize:7, color:'#555', fontWeight:700, letterSpacing:1 }}>{lbl} AVG</div>
+                              <div style={{ fontSize:7, color:t.color.textMute, fontWeight:700, letterSpacing:1 }}>{lbl} AVG</div>
                             </div>
                           )
                         })}
@@ -1558,7 +1558,7 @@ export default function Main({ user }) {
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                           <div>
                             <div style={{ fontSize:11, color:t.color.text, fontWeight:800, letterSpacing:1 }}>{s.date}</div>
-                            <div style={{ fontSize:9, color:'#555', fontWeight:700 }}>{s.day_of_week} · {s.session_type}</div>
+                            <div style={{ fontSize:9, color:t.color.textMute, fontWeight:700 }}>{s.day_of_week} · {s.session_type}</div>
                           </div>
                           <div style={{ fontSize:13, fontWeight:800 }}>{s.did_action_steps==='Yes'?'✅':'❌'}</div>
                         </div>
@@ -1566,12 +1566,12 @@ export default function Main({ user }) {
                           {['conditioning','strength','technical','mental'].map(k=>(
                             <div key={k} style={{ textAlign:'center' }}>
                               <div style={{ fontSize:18, fontWeight:900, color:t.color.text }}>{s[k]}</div>
-                              <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
+                              <div style={{ fontSize:7, color:t.color.textMute, letterSpacing:1, fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
                             </div>
                           ))}
                           <div style={{ textAlign:'center', marginLeft:'auto' }}>
                             <div style={{ fontSize:18, fontWeight:900, color:'#ff8c00' }}>{((( s.conditioning||0)+(s.strength||0)+(s.technical||0)+(s.mental||0))/4).toFixed(1)}</div>
-                            <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>AVG</div>
+                            <div style={{ fontSize:7, color:t.color.textMute, letterSpacing:1, fontWeight:700 }}>AVG</div>
                           </div>
                         </div>
                         <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
@@ -1580,7 +1580,7 @@ export default function Main({ user }) {
                           ))}
                         </div>
                         {(s.shark_comments||s.goldfish_comments||s.selftalk_comments||s.tuneout_comments) && (
-                          <div style={{ marginTop:8, fontSize:11, color:'#666', lineHeight:1.5 }}>
+                          <div style={{ marginTop:8, fontSize:11, color:t.color.textDim, lineHeight:1.5 }}>
                             {s.shark_comments && <div>🦈 {s.shark_comments}</div>}
                             {s.goldfish_comments && <div>🐠 {s.goldfish_comments}</div>}
                             {s.selftalk_comments && <div>💬 {s.selftalk_comments}</div>}
@@ -1596,7 +1596,7 @@ export default function Main({ user }) {
                 {progressTab==='checkins' && <>
                   {checkinHistory.length === 0 ? (
                     <div style={{ ...C.card, textAlign:'center', padding:30 }}>
-                      <div style={{ fontSize:13, color:'#555' }}>No weekly check-ins yet. Complete your first one from the Weekly tab! 📋</div>
+                      <div style={{ fontSize:13, color:t.color.textMute }}>No weekly check-ins yet. Complete your first one from the Weekly tab! 📋</div>
                     </div>
                   ) : <>
                     {/* Summary averages */}
@@ -1609,7 +1609,7 @@ export default function Main({ user }) {
                         <div key={lbl} style={{ ...C.card, textAlign:'center', padding:12 }}>
                           <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
                           <div style={{ fontSize:22, fontWeight:900, color:t.color.text }}>{val}</div>
-                          <div style={{ fontSize:7, color:'#555', letterSpacing:1, fontWeight:700 }}>{lbl}</div>
+                          <div style={{ fontSize:7, color:t.color.textMute, letterSpacing:1, fontWeight:700 }}>{lbl}</div>
                         </div>
                       ))}
                     </div>
@@ -1629,13 +1629,13 @@ export default function Main({ user }) {
                             ))}
                           </div>
                         </div>
-                        {c.biggest_win && <div style={{ fontSize:12, color:'#aaa', marginBottom:5 }}>🏆 <strong style={{ color:'#ccc' }}>Win:</strong> {c.biggest_win}</div>}
-                        {c.biggest_challenge && <div style={{ fontSize:12, color:'#aaa', marginBottom:5 }}>💥 <strong style={{ color:'#ccc' }}>Challenge:</strong> {c.biggest_challenge}</div>}
-                        {c.shark_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>🦈 {c.shark_moment}</div>}
-                        {c.goldfish_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>🐠 {c.goldfish_moment}</div>}
-                        {c.self_talk_moment && <div style={{ fontSize:11, color:'#666', marginBottom:3 }}>💬 {c.self_talk_moment}</div>}
+                        {c.biggest_win && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>🏆 <strong style={{ color:'#ccc' }}>Win:</strong> {c.biggest_win}</div>}
+                        {c.biggest_challenge && <div style={{ fontSize:12, color:t.color.textDim, marginBottom:5 }}>💥 <strong style={{ color:'#ccc' }}>Challenge:</strong> {c.biggest_challenge}</div>}
+                        {c.shark_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>🦈 {c.shark_moment}</div>}
+                        {c.goldfish_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>🐠 {c.goldfish_moment}</div>}
+                        {c.self_talk_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>💬 {c.self_talk_moment}</div>}
                         {c.goal_next_week && <div style={{ fontSize:12, color:t.color.text, marginTop:6 }}>🎯 Next week: {c.goal_next_week}</div>}
-                        {c.message_to_coach && <div style={{ fontSize:11, color:'#888', fontStyle:'italic', marginTop:6, borderTop:'1px solid #1e1e1e', paddingTop:6 }}>"{c.message_to_coach}"</div>}
+                        {c.message_to_coach && <div style={{ fontSize:11, color:t.color.textDim, fontStyle:'italic', marginTop:6, borderTop:'1px solid #1e1e1e', paddingTop:6 }}>"{c.message_to_coach}"</div>}
                       </div>
                     ))}
                   </>}
@@ -1645,7 +1645,7 @@ export default function Main({ user }) {
                 {progressTab==='ball' && <>
                   {ballHistory.length === 0 ? (
                     <div style={{ ...C.card, textAlign:'center', padding:30 }}>
-                      <div style={{ fontSize:13, color:'#555' }}>No ball mastery sessions yet. Log your first one from the Ball tab! ⚽</div>
+                      <div style={{ fontSize:13, color:t.color.textMute }}>No ball mastery sessions yet. Log your first one from the Ball tab! ⚽</div>
                     </div>
                   ) : <>
                     <div style={{ ...C.card, marginBottom:14 }}>
@@ -1666,15 +1666,15 @@ export default function Main({ user }) {
                           <div style={{ display:'flex', gap:12 }}>
                             <div style={{ textAlign:'center' }}>
                               <div style={{ fontSize:16, fontWeight:900, color:t.color.text }}>{b.total_skills}</div>
-                              <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>SKILLS</div>
+                              <div style={{ fontSize:7, color:t.color.textMute, fontWeight:700 }}>SKILLS</div>
                             </div>
                             <div style={{ textAlign:'center' }}>
                               <div style={{ fontSize:16, fontWeight:900, color:'#ff8c00' }}>{b.total_reps}</div>
-                              <div style={{ fontSize:7, color:'#555', fontWeight:700 }}>REPS</div>
+                              <div style={{ fontSize:7, color:t.color.textMute, fontWeight:700 }}>REPS</div>
                             </div>
                           </div>
                         </div>
-                        {b.notes && <div style={{ fontSize:11, color:'#666', marginTop:4 }}>{b.notes}</div>}
+                        {b.notes && <div style={{ fontSize:11, color:t.color.textDim, marginTop:4 }}>{b.notes}</div>}
                         {b.skills && (()=>{
                           try {
                             const sk = typeof b.skills==='string'?JSON.parse(b.skills):b.skills
@@ -1683,7 +1683,7 @@ export default function Main({ user }) {
                             return (
                               <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
                                 {practiced.map(([k,v])=>(
-                                  <span key={k} style={{ background:t.color.surface2, border:`1px solid ${t.color.line}`, borderRadius:20, padding:'2px 8px', fontSize:9, color:'#aaa', fontWeight:700 }}>
+                                  <span key={k} style={{ background:t.color.surface2, border:`1px solid ${t.color.line}`, borderRadius:20, padding:'2px 8px', fontSize:9, color:t.color.textDim, fontWeight:700 }}>
                                     {k.replace(/_/g,' ')} ×{v.reps}
                                   </span>
                                 ))}
@@ -1711,7 +1711,7 @@ export default function Main({ user }) {
           <div style={{ display:'flex', gap:6, marginBottom:14, flexWrap:'wrap' }}>
             {[['microreps','⚡ Micro Reps'],['gameday','🎮 Game Day'],['mistakes','🔄 Resets'],['map','🗺️ MAP']].map(([t,l])=>(
               <button key={t} onClick={()=>setMentalTab(t)}
-                style={{ flex:1, background:mentalTab===t?'#fafafa':'#1e1e1e', border:'none', borderRadius:10, padding:'9px 6px', fontSize:10, fontWeight:800, color:mentalTab===t?'#000':'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                style={{ flex:1, background:mentalTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 6px', fontSize:10, fontWeight:800, color:mentalTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                 {l}
               </button>
             ))}
@@ -1735,17 +1735,17 @@ export default function Main({ user }) {
                   <div style={{ fontSize:14, fontWeight:800, lineHeight:1.4 }}>30-60 seconds each. Do them all. This is your daily mindset training. 🧠</div>
                 </div>
                 {drills.map((drill, i) => (
-                  <div key={drill.id} style={{ ...C.card, borderColor: gameDayChecked[drill.id] ? '#fafafa' : '#1e1e1e', marginBottom:10 }}>
+                  <div key={drill.id} style={{ ...C.card, borderColor: gameDayChecked[drill.id] ? t.color.text : t.color.surface2, marginBottom:10 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: gameDayChecked[drill.id] ? 10 : 0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                         <div style={{ fontSize:24 }}>{drill.icon}</div>
                         <div>
                           <div style={{ fontSize:13, fontWeight:800 }}>{drill.title}</div>
-                          <div style={{ fontSize:10, color:'#555' }}>⏱ {drill.time}</div>
+                          <div style={{ fontSize:10, color:t.color.textMute }}>⏱ {drill.time}</div>
                         </div>
                       </div>
                       <button onClick={() => setGameDayChecked(p => ({...p, [drill.id]: !p[drill.id]}))}
-                        style={{ background: gameDayChecked[drill.id] ? '#fafafa' : '#1e1e1e', border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:gameDayChecked[drill.id]?'#000':'#fff', cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+                        style={{ background: gameDayChecked[drill.id] ? t.color.text : t.color.surface2, border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:gameDayChecked[drill.id]?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
                         {gameDayChecked[drill.id] ? '✓ DONE' : 'START'}
                       </button>
                     </div>
@@ -1757,7 +1757,7 @@ export default function Main({ user }) {
                   </div>
                 ))}
                 <div style={{ ...C.card, textAlign:'center', padding:20 }}>
-                  <div style={{ fontSize:13, color:'#555', marginBottom:8 }}>
+                  <div style={{ fontSize:13, color:t.color.textMute, marginBottom:8 }}>
                     {['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length}/{drills.length} completed today
                   </div>
                   <ProgressBar
@@ -1791,12 +1791,12 @@ export default function Main({ user }) {
                 </div>
                 {steps.map(step => (
                   <div key={step.id} onClick={() => setGameDayChecked(p => ({...p, ['gd_'+step.id]: !p['gd_'+step.id]}))}
-                    style={{ ...C.card, borderColor: gameDayChecked['gd_'+step.id] ? '#1a4a1a' : '#1e1e1e', cursor:'pointer', marginBottom:8 }}>
+                    style={{ ...C.card, borderColor: gameDayChecked['gd_'+step.id] ? '#1a4a1a' : t.color.surface2, cursor:'pointer', marginBottom:8 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                      <div style={{ width:28, height:28, borderRadius:'50%', background: gameDayChecked['gd_'+step.id] ? '#00aa44' : '#1e1e1e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background: gameDayChecked['gd_'+step.id] ? '#00aa44' : t.color.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
                         {gameDayChecked['gd_'+step.id] ? '✓' : step.icon}
                       </div>
-                      <div style={{ fontSize:13, fontWeight: gameDayChecked['gd_'+step.id] ? 700 : 600, color: gameDayChecked['gd_'+step.id] ? '#aaa' : '#fff', textDecoration: gameDayChecked['gd_'+step.id] ? 'line-through' : 'none' }}>
+                      <div style={{ fontSize:13, fontWeight: gameDayChecked['gd_'+step.id] ? 700 : 600, color: gameDayChecked['gd_'+step.id] ? t.color.textDim : t.color.text, textDecoration: gameDayChecked['gd_'+step.id] ? 'line-through' : 'none' }}>
                         {step.label}
                       </div>
                     </div>
@@ -1806,7 +1806,7 @@ export default function Main({ user }) {
                   <div style={{ ...C.card, borderColor:'#1a4a1a', textAlign:'center', padding:24 }}>
                     <div style={{ fontSize:40, marginBottom:8 }}>🦈</div>
                     <div style={{ fontSize:18, fontWeight:900, marginBottom:6 }}>YOU ARE READY.</div>
-                    <div style={{ fontSize:13, color:'#555' }}>Go compete. Trust your preparation. Lock in from the first whistle.</div>
+                    <div style={{ fontSize:13, color:t.color.textMute }}>Go compete. Trust your preparation. Lock in from the first whistle.</div>
                   </div>
                 )}
               </>
@@ -1829,7 +1829,7 @@ export default function Main({ user }) {
                 <div style={{ display:'flex', gap:6, marginBottom:8, flexWrap:'wrap' }}>
                   {[['shark','🦈 Shark'],['goldfish','🐠 Goldfish'],['selftalk','💬 Self Talk'],['breath','💨 Breath']].map(([t,l]) => (
                     <button key={t} onClick={() => setNewMistake(p => ({...p, tool:t}))}
-                      style={{ background: newMistake.tool===t ? '#fafafa' : '#1e1e1e', border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:newMistake.tool===t?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                      style={{ background: newMistake.tool===t ? t.color.text : t.color.surface2, border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:newMistake.tool===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                       {l}
                     </button>
                   ))}
@@ -1848,13 +1848,13 @@ export default function Main({ user }) {
               </div>
               {mistakes.length === 0 ? (
                 <div style={{ ...C.card, textAlign:'center', padding:30 }}>
-                  <div style={{ fontSize:13, color:'#555' }}>No resets logged yet. Start tracking your mental game! 🐠</div>
+                  <div style={{ fontSize:13, color:t.color.textMute }}>No resets logged yet. Start tracking your mental game! 🐠</div>
                 </div>
               ) : <>
                 <div style={{ ...C.card, textAlign:'center', padding:16, marginBottom:10 }}>
-                  <div style={{ fontSize:9, color:'#555', letterSpacing:3, fontWeight:700, marginBottom:6 }}>TOTAL RESETS LOGGED</div>
+                  <div style={{ fontSize:9, color:t.color.textMute, letterSpacing:3, fontWeight:700, marginBottom:6 }}>TOTAL RESETS LOGGED</div>
                   <div style={{ fontSize:36, fontWeight:900, color:t.color.text }}>{mistakes.length}</div>
-                  <div style={{ fontSize:11, color:'#555', marginTop:4 }}>Every reset is mental growth 🧠</div>
+                  <div style={{ fontSize:11, color:t.color.textMute, marginTop:4 }}>Every reset is mental growth 🧠</div>
                 </div>
                 {mistakes.map((m, i) => (
                   <div key={i} style={C.card}>
@@ -1864,7 +1864,7 @@ export default function Main({ user }) {
                         {m.tool_used==='shark'?'🦈':m.tool_used==='goldfish'?'🐠':m.tool_used==='selftalk'?'💬':'💨'} {m.tool_used.toUpperCase()}
                       </span>}
                     </div>
-                    <div style={{ fontSize:12, color:'#aaa', marginBottom:4 }}>💥 {m.situation}</div>
+                    <div style={{ fontSize:12, color:t.color.textDim, marginBottom:4 }}>💥 {m.situation}</div>
                     <div style={{ fontSize:12, color:'#4aff4a' }}>✓ {m.reset_description}</div>
                   </div>
                 ))}
@@ -1887,7 +1887,7 @@ export default function Main({ user }) {
                 <div style={{ display:'flex', gap:6, marginBottom:12, flexWrap:'wrap' }}>
                   {['Shark Mentality','Goldfish Mentality','Self Talk','Visualization','Confidence','Consistency'].map(f => (
                     <button key={f} onClick={() => setMap(p => ({...p, focusArea: f}))}
-                      style={{ background: map.focusArea===f ? '#fafafa' : '#1e1e1e', border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:map.focusArea===f?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                      style={{ background: map.focusArea===f ? t.color.text : t.color.surface2, border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:map.focusArea===f?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                       {f}
                     </button>
                   ))}
@@ -1958,7 +1958,7 @@ export default function Main({ user }) {
           <div style={{ display:'flex', gap:8, marginBottom:14 }}>
             {[['leaderboard','🏆 Leaderboard'],['challenges','⚡ Challenges'],['team','👥 Team']].map(([t,l])=>(
               <button key={t} onClick={()=>setCompetitionTab(t)}
-                style={{ flex:1, background:competitionTab===t?'#fafafa':'#1e1e1e', border:'none', borderRadius:10, padding:'9px 4px', fontSize:10, fontWeight:800, color:competitionTab===t?'#000':'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                style={{ flex:1, background:competitionTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 4px', fontSize:10, fontWeight:800, color:competitionTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                 {l}
               </button>
             ))}
@@ -1975,10 +1975,10 @@ export default function Main({ user }) {
                 <div style={{ ...C.card, textAlign:'center', padding:40 }}>
                   <div style={{ fontSize:44, marginBottom:12 }}>🏆</div>
                   <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO ATHLETES YET</div>
-                  <div style={{ fontSize:13, color:'#555' }}>Leaderboard fills up as athletes join and log their work!</div>
+                  <div style={{ fontSize:13, color:t.color.textMute }}>Leaderboard fills up as athletes join and log their work!</div>
                 </div>
               ) : leaderboard.map((a, i) => (
-                <div key={i} style={{ ...C.card, borderColor: i===0?'#fafafa':i===1?'#888':i===2?'#cd7f32':'#1e1e1e', marginBottom:8 }}>
+                <div key={i} style={{ ...C.card, borderColor: i===0?t.color.text:i===1?t.color.textDim:i===2?'#cd7f32':t.color.surface2, marginBottom:8 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                     <div style={{ fontSize: i<3?28:18, fontWeight:900, width:36, textAlign:'center', flexShrink:0 }}>
                       {i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`}
@@ -1987,14 +1987,14 @@ export default function Main({ user }) {
                       <div style={{ fontSize:14, fontWeight:800 }}>{a.full_name||a.email}</div>
                       <div style={{ display:'flex', gap:10, marginTop:4, flexWrap:'wrap' }}>
                         <span style={{ fontSize:9, color:t.color.text, fontWeight:700 }}>🔥 {a.streak||0} streak</span>
-                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>⚽ {a.bmCount} BM</span>
-                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>✅ {a.asCount} AS</span>
-                        <span style={{ fontSize:9, color:'#555', fontWeight:700 }}>📋 {a.ciCount} CI</span>
+                        <span style={{ fontSize:9, color:t.color.textMute, fontWeight:700 }}>⚽ {a.bmCount} BM</span>
+                        <span style={{ fontSize:9, color:t.color.textMute, fontWeight:700 }}>✅ {a.asCount} AS</span>
+                        <span style={{ fontSize:9, color:t.color.textMute, fontWeight:700 }}>📋 {a.ciCount} CI</span>
                       </div>
                     </div>
                     <div style={{ textAlign:'right' }}>
                       <div style={{ fontSize:22, fontWeight:900, color:t.color.text }}>{a.score}</div>
-                      <div style={{ fontSize:8, color:'#555', letterSpacing:2, fontWeight:700 }}>PTS</div>
+                      <div style={{ fontSize:8, color:t.color.textMute, letterSpacing:2, fontWeight:700 }}>PTS</div>
                     </div>
                   </div>
                   {a.id === user.id && <div style={{ marginTop:6, fontSize:9, color:t.color.text, fontWeight:800, letterSpacing:2 }}>← YOU</div>}
@@ -2043,33 +2043,33 @@ export default function Main({ user }) {
                 <div style={{ ...C.card, textAlign:'center', padding:40 }}>
                   <div style={{ fontSize:44, marginBottom:12 }}>⚡</div>
                   <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO CHALLENGES YET</div>
-                  <div style={{ fontSize:13, color:'#555' }}>{isCoach?'Create the first challenge above!':'Coach Valentino will post challenges here. Stay ready! 🦈'}</div>
+                  <div style={{ fontSize:13, color:t.color.textMute }}>{isCoach?'Create the first challenge above!':'Coach Valentino will post challenges here. Stay ready! 🦈'}</div>
                 </div>
               ) : challenges.map((ch, i) => {
                 const completed = ch.challenge_completions?.some(c => c.user_id === user.id)
                 const completedCount = ch.challenge_completions?.length || 0
                 return (
-                  <div key={i} style={{ ...C.card, borderColor: completed?'#1a4a1a':'#1e1e1e', marginBottom:10 }}>
+                  <div key={i} style={{ ...C.card, borderColor: completed?'#1a4a1a':t.color.surface2, marginBottom:10 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                       <div style={{ flex:1 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                          <div style={{ fontSize:9, background: ch.type==='weekly'?'#fafafa':ch.type==='team'?'#36363c':ch.type==='h2h'?'#252528':'#1e1e1e', borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?'#000':'#fff', letterSpacing:1 }}>
+                          <div style={{ fontSize:9, background: ch.type==='weekly'?t.color.text:ch.type==='team'?'#36363c':ch.type==='h2h'?'#252528':t.color.surface2, borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?t.color.bg:t.color.text, letterSpacing:1 }}>
                             {ch.type==='weekly'?'⚡ WEEKLY':ch.type==='team'?'👥 TEAM':ch.type==='h2h'?'⚔️ H2H':'🤖 AUTO'}
                           </div>
                           {completed && <div style={{ fontSize:9, background:'#1a4a1a', borderRadius:20, padding:'2px 8px', fontWeight:800, color:'#4aff4a', letterSpacing:1 }}>✅ DONE</div>}
                         </div>
                         <div style={{ fontSize:15, fontWeight:900, marginBottom:4 }}>{ch.title}</div>
-                        <div style={{ fontSize:12, color:'#888', lineHeight:1.5 }}>{ch.description}</div>
+                        <div style={{ fontSize:12, color:t.color.textDim, lineHeight:1.5 }}>{ch.description}</div>
                       </div>
                     </div>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <div style={{ fontSize:10, color:'#555' }}>👥 {completedCount} completed</div>
+                      <div style={{ fontSize:10, color:t.color.textMute }}>👥 {completedCount} completed</div>
                       {!completed && !isCoach && (
                         <button onClick={async()=>{
                           await supabase.from('challenge_completions').insert([{ challenge_id:ch.id, user_id:user.id }])
                           const { data: chd } = await supabase.from('challenges').select('*, challenge_completions(user_id)').order('created_at',{ascending:false}).limit(20)
                           if(chd) setChallenges(chd)
-                        }} style={{ background:t.color.text, border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, fontWeight:900, color:'#000', cursor:'pointer', fontFamily:'inherit' }}>
+                        }} style={{ background:t.color.text, border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, fontWeight:900, color:t.color.bg, cursor:'pointer', fontFamily:'inherit' }}>
                           MARK COMPLETE ✅
                         </button>
                       )}
@@ -2088,19 +2088,19 @@ export default function Main({ user }) {
                 <div style={{ fontSize:14, fontWeight:800, lineHeight:1.4 }}>The whole DSM team working toward one goal. Every session counts. 🦈</div>
               </div>
               <div style={{ ...C.card, textAlign:'center', padding:24 }}>
-                <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM BALL MASTERY SESSIONS</div>
+                <div style={{ fontSize:13, color:t.color.textMute, marginBottom:16 }}>TOTAL TEAM BALL MASTERY SESSIONS</div>
                 <div style={{ fontSize:48, fontWeight:900, color:t.color.text, marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.bmCount,0)}</div>
-                <div style={{ fontSize:11, color:'#555', marginBottom:16 }}>sessions logged by the whole team</div>
+                <div style={{ fontSize:11, color:t.color.textMute, marginBottom:16 }}>sessions logged by the whole team</div>
                 <ProgressBar
                   pct={Math.min((leaderboard.reduce((a,b)=>a+b.bmCount,0)/100)*100, 100)}
                   height={8}
                   background="#1e1e1e"
                   style={{ marginBottom: 8 }}
                 />
-                <div style={{ fontSize:10, color:'#555' }}>Goal: 100 team sessions 🎯</div>
+                <div style={{ fontSize:10, color:t.color.textMute }}>Goal: 100 team sessions 🎯</div>
               </div>
               <div style={{ ...C.card, textAlign:'center', padding:24 }}>
-                <div style={{ fontSize:13, color:'#555', marginBottom:16 }}>TOTAL TEAM ACTION STEPS</div>
+                <div style={{ fontSize:13, color:t.color.textMute, marginBottom:16 }}>TOTAL TEAM ACTION STEPS</div>
                 <div style={{ fontSize:48, fontWeight:900, color:t.color.text, marginBottom:8 }}>{leaderboard.reduce((a,b)=>a+b.asCount,0)}</div>
                 <ProgressBar
                   pct={Math.min((leaderboard.reduce((a,b)=>a+b.asCount,0)/50)*100, 100)}
@@ -2108,7 +2108,7 @@ export default function Main({ user }) {
                   background="#1e1e1e"
                   style={{ marginBottom: 8 }}
                 />
-                <div style={{ fontSize:10, color:'#555' }}>Goal: 50 team action steps 🎯</div>
+                <div style={{ fontSize:10, color:t.color.textMute }}>Goal: 50 team action steps 🎯</div>
               </div>
             </>
           )}
@@ -2124,7 +2124,7 @@ export default function Main({ user }) {
             <div style={{ display:'flex', gap:8, marginTop:10, marginBottom:0 }}>
               {[['athletes','⚽ Athletes'], ['parents','👨‍👩‍👧 Parents']].map(([t,l])=>(
                 <button key={t} onClick={()=>setCommunityTab(t)}
-                  style={{ flex:1, background:communityTab===t?'#fafafa':'#1e1e1e', border:'none', borderRadius:10, padding:'9px 8px', fontSize:11, fontWeight:800, color:communityTab===t?'#000':'#fff', cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+                  style={{ flex:1, background:communityTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 8px', fontSize:11, fontWeight:800, color:communityTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                   {l}
                 </button>
               ))}
@@ -2139,7 +2139,7 @@ export default function Main({ user }) {
                 <div style={{ display:'flex', gap:6, marginBottom:10, flexWrap:'wrap' }}>
                   {[['win','🏆 Win'],['milestone','📈 Milestone'],['question','❓ Question']].map(([t,l])=>(
                     <button key={t} onClick={()=>setNewPost(p=>({...p,type:t}))}
-                      style={{ background:newPost.type===t?'#fafafa':'#1e1e1e', border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:newPost.type===t?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                      style={{ background:newPost.type===t?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:newPost.type===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                       {l}
                     </button>
                   ))}
@@ -2177,7 +2177,7 @@ export default function Main({ user }) {
               <div style={{ ...C.card, textAlign:'center', padding:40 }}>
                 <div style={{ fontSize:44, marginBottom:12 }}>{communityTab==='athletes'?'⚽':'👨‍👩‍👧'}</div>
                 <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>NO POSTS YET</div>
-                <div style={{ fontSize:13, color:'#555' }}>Be the first to post in the {communityTab} community! 🔥</div>
+                <div style={{ fontSize:13, color:t.color.textMute }}>Be the first to post in the {communityTab} community! 🔥</div>
               </div>
             ) : communityPosts.filter(p=>p.community===communityTab).map((post,i)=>(
               <div key={i} style={{ ...C.card, marginBottom:10 }}>
@@ -2187,7 +2187,7 @@ export default function Main({ user }) {
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:13, fontWeight:800 }}>{post.profiles?.full_name||post.profiles?.email}</div>
-                    <div style={{ fontSize:9, color:'#555', marginTop:1 }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                    <div style={{ fontSize:9, color:t.color.textMute, marginTop:1 }}>{new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
                   <div style={{ background: post.type==='win'?'#1a3a0a':post.type==='milestone'?'#0a1a3a':'#2a1a0a', borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?'#4aff4a':post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
                     {post.type==='win'?'🏆 WIN':post.type==='milestone'?'📈 MILESTONE':'❓ QUESTION'}
@@ -2238,7 +2238,7 @@ export default function Main({ user }) {
                   </div>
                 ) : (
                   <button onClick={()=>{ setPostingComment(post.id); setNewComment('') }}
-                    style={{ background:'none', border:`1px solid ${t.color.line}`, borderRadius:8, padding:'5px 12px', fontSize:10, fontWeight:800, color:'#555', cursor:'pointer', fontFamily:'inherit' }}>
+                    style={{ background:'none', border:`1px solid ${t.color.line}`, borderRadius:8, padding:'5px 12px', fontSize:10, fontWeight:800, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit' }}>
                     💬 COMMENT
                   </button>
                 )}
@@ -2296,13 +2296,13 @@ export default function Main({ user }) {
               padding: 16, marginBottom: 10,
               background: t.color.surface, border: `1px solid ${t.color.line}`,
               borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
-              color: '#ffffff', display: 'flex', alignItems: 'center', gap: 12,
+              color: t.color.text, display: 'flex', alignItems: 'center', gap: 12,
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 1, textTransform: 'uppercase' }}>
                   {item.label}
                 </div>
-                <div style={{ fontSize: 11, color: '#8e8e8e', marginTop: 3, letterSpacing: 0.6 }}>
+                <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3, letterSpacing: 0.6 }}>
                   {item.sub}
                 </div>
               </div>
@@ -2333,7 +2333,7 @@ export default function Main({ user }) {
             {[[allAthletes.filter(a=>a.role==='athlete').length,'ATHLETES'],[allSubmissions.length,'ACTION STEPS'],[allCheckins.length,'CHECK-INS']].map(([n,l],i)=>(
               <div key={i} style={{ ...C.card,textAlign:'center',padding:12 }}>
                 <div style={{ fontSize:20,fontWeight:900,color:t.color.text }}>{n}</div>
-                <div style={{ fontSize:7,color:'#555',letterSpacing:2,fontWeight:700,marginTop:3 }}>{l}</div>
+                <div style={{ fontSize:7,color:t.color.textMute,letterSpacing:2,fontWeight:700,marginTop:3 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -2341,14 +2341,14 @@ export default function Main({ user }) {
           {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||a.assigned_coach===myName)).length > 0 && <>
             <span style={{ ...C.lbl, color:t.color.text }}>⚠️ PENDING ACTIVATION</span>
             {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||a.assigned_coach===myName)).map((a,i)=>(
-              <div key={i} style={{ ...C.card, borderColor:'#fafafa', cursor:'pointer' }} onClick={()=>setSelectedAthlete(a)}>
+              <div key={i} style={{ ...C.card, borderColor:t.color.text, cursor:'pointer' }} onClick={()=>setSelectedAthlete(a)}>
                 <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                   <div>
                     <div style={{ fontSize:16,fontWeight:800,marginBottom:2 }}>{a.full_name||a.email}</div>
                     <div style={{ fontSize:10,color:t.color.text,fontWeight:700 }}>⚠️ WAITING FOR ACTIVATION</div>
                   </div>
                   <button onClick={async(e)=>{ e.stopPropagation(); await updateAccessLevel(a.id,'paid'); loadUserData(); }}
-                    style={{ background:'#00aa44',border:'none',borderRadius:8,padding:'8px 12px',fontSize:10,fontWeight:900,color:'#ffffff',cursor:'pointer',fontFamily:'inherit' }}>
+                    style={{ background:'#00aa44',border:'none',borderRadius:8,padding:'8px 12px',fontSize:10,fontWeight:900,color:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
                     UNLOCK
                   </button>
                 </div>
@@ -2360,16 +2360,16 @@ export default function Main({ user }) {
           {isAdmin && allAthletes.filter(a=>a.role==='coach').length > 0 && (
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
               <button onClick={()=>setCoachFilter('all')}
-                style={{ background:coachFilter==='all'?'#fafafa':'#1e1e1e', border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter==='all'?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ background:coachFilter==='all'?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter==='all'?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                 ALL
               </button>
               <button onClick={()=>setCoachFilter('unassigned')}
-                style={{ background:coachFilter==='unassigned'?'#fafafa':'#1e1e1e', border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter==='unassigned'?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ background:coachFilter==='unassigned'?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter==='unassigned'?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                 UNASSIGNED
               </button>
               {allAthletes.filter(a=>a.role==='coach').map((c,i)=>(
                 <button key={i} onClick={()=>setCoachFilter(c.full_name||c.email)}
-                  style={{ background:coachFilter===(c.full_name||c.email)?'#fafafa':'#1e1e1e', border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter===(c.full_name||c.email)?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                  style={{ background:coachFilter===(c.full_name||c.email)?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'6px 14px', fontSize:10, fontWeight:800, color:coachFilter===(c.full_name||c.email)?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                   👤 {c.full_name||c.email}
                 </button>
               ))}
@@ -2385,7 +2385,7 @@ export default function Main({ user }) {
             ].map(([n,l])=>(
               <div key={l} style={{ ...C.card, textAlign:'center', padding:10 }}>
                 <div style={{ fontSize:22, fontWeight:900, color:t.color.text }}>{n}</div>
-                <div style={{ fontSize:8, color:'#555', letterSpacing:2, fontWeight:700 }}>{l}</div>
+                <div style={{ fontSize:8, color:t.color.textMute, letterSpacing:2, fontWeight:700 }}>{l}</div>
               </div>
             ))}
           </div>}
@@ -2397,7 +2397,7 @@ export default function Main({ user }) {
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                 <div>
                   <div style={{ fontSize:16,fontWeight:800,marginBottom:2 }}>{a.full_name||a.email}</div>
-                  <div style={{ fontSize:10,color:'#555' }}>🔥 {a.streak||0} streak · {a.access_level}</div>
+                  <div style={{ fontSize:10,color:t.color.textMute }}>🔥 {a.streak||0} streak · {a.access_level}</div>
                   {a.assigned_coach && <div style={{ fontSize:9,color:t.color.text,fontWeight:700,marginTop:2 }}>👤 {a.assigned_coach}</div>}
                 </div>
                 <div style={{ fontSize:20,fontWeight:900,color:t.color.text }}>{a.streak||0}</div>
@@ -2416,12 +2416,12 @@ export default function Main({ user }) {
                 {[['energy_level','⚡'],['confidence_level','💪'],['sessions_completed','🏃']].map(([k,icon])=>(
                   <div key={k} style={{ textAlign:'center' }}>
                     <div style={{ fontSize:16,fontWeight:900,color:t.color.text }}>{c[k]}</div>
-                    <div style={{ fontSize:8,color:'#555' }}>{icon}</div>
+                    <div style={{ fontSize:8,color:t.color.textMute }}>{icon}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize:12,color:'#aaa' }}>🏆 {c.biggest_win}</div>
-              {c.message_to_coach&&<div style={{ fontSize:11,color:'#666',marginTop:4,fontStyle:'italic' }}>"{c.message_to_coach}"</div>}
+              <div style={{ fontSize:12,color:t.color.textDim }}>🏆 {c.biggest_win}</div>
+              {c.message_to_coach&&<div style={{ fontSize:11,color:t.color.textDim,marginTop:4,fontStyle:'italic' }}>"{c.message_to_coach}"</div>}
             </div>
           ))}
 
@@ -2432,7 +2432,7 @@ export default function Main({ user }) {
                 <div style={{ fontSize:14,fontWeight:800 }}>{b.profiles?.full_name||b.profiles?.email}</div>
                 <div style={{ fontSize:10,color:t.color.text,fontWeight:700 }}>{b.date}</div>
               </div>
-              <div style={{ fontSize:11,color:'#555',marginTop:4 }}>{b.total_skills} skills · {b.total_reps} reps</div>
+              <div style={{ fontSize:11,color:t.color.textMute,marginTop:4 }}>{b.total_skills} skills · {b.total_reps} reps</div>
             </div>
           ))}
         </div>
@@ -2457,7 +2457,7 @@ export default function Main({ user }) {
           {/* Access buttons */}
           <div style={{ display:'flex',gap:8,marginBottom:12 }}>
             <button onClick={async()=>{ await updateAccessLevel(selectedAthlete.id,'paid'); setSelectedAthlete({...selectedAthlete,access_level:'paid'}); loadUserData(); }}
-              style={{ flex:1,background:'#00aa44',border:'none',borderRadius:10,padding:'10px 8px',fontSize:11,fontWeight:900,color:'#ffffff',cursor:'pointer',fontFamily:'inherit' }}>
+              style={{ flex:1,background:'#00aa44',border:'none',borderRadius:10,padding:'10px 8px',fontSize:11,fontWeight:900,color:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
               ✅ UNLOCK
             </button>
             <button onClick={async()=>{ await updateAccessLevel(selectedAthlete.id,'locked'); setSelectedAthlete({...selectedAthlete,access_level:'locked'}); loadUserData(); }}
@@ -2470,7 +2470,7 @@ export default function Main({ user }) {
           <div style={{ display:'flex',gap:6,marginBottom:14,flexWrap:'wrap' }}>
             {[['overview','📊'],['sessions','🎙️'],['feedback','✅'],['checkins','📋'],['ball','⚽'],['messages','💬']].map(([t,icon])=>(
               <button key={t} onClick={()=>setAthleteProfileTab(t)}
-                style={{ background:athleteProfileTab===t?'#fafafa':'#1e1e1e',border:'none',borderRadius:8,padding:'7px 10px',fontSize:10,fontWeight:800,color:athleteProfileTab===t?'#000':'#fff',cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                style={{ background:athleteProfileTab===t?t.color.text:t.color.surface2,border:'none',borderRadius:8,padding:'7px 10px',fontSize:10,fontWeight:800,color:athleteProfileTab===t?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
                 {icon} {t.toUpperCase()}
               </button>
             ))}
@@ -2482,7 +2482,7 @@ export default function Main({ user }) {
             {/* DOWNLOAD REPORT BUTTON - COACH */}
             <div style={{ display:'flex',gap:8,marginBottom:12 }}>
               <button onClick={()=>downloadReport(selectedAthlete, athleteActionSteps, athleteCheckins, athleteBallMastery, true)}
-                style={{ flex:1,background:t.color.text,border:'none',borderRadius:10,padding:'12px 8px',fontSize:10,fontWeight:800,color:'#000',cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                style={{ flex:1,background:t.color.text,border:'none',borderRadius:10,padding:'12px 8px',fontSize:10,fontWeight:800,color:t.color.bg,cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
                 📥 DOWNLOAD PDF + EXCEL
               </button>
             </div>
@@ -2493,7 +2493,7 @@ export default function Main({ user }) {
                 <div key={l} style={{ ...C.card,textAlign:'center',padding:10 }}>
                   <div style={{ fontSize:10,marginBottom:2 }}>{icon}</div>
                   <div style={{ fontSize:18,fontWeight:900,color:t.color.text }}>{n}</div>
-                  <div style={{ fontSize:7,color:'#555',letterSpacing:1,fontWeight:700,marginTop:1 }}>{l}</div>
+                  <div style={{ fontSize:7,color:t.color.textMute,letterSpacing:1,fontWeight:700,marginTop:1 }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -2514,10 +2514,10 @@ export default function Main({ user }) {
                   ))}
                 </div>
                 <div style={{ display:'flex',gap:14,marginTop:4 }}>
-                  {[['#fafafa','ENERGY'],['#ff8c00','CONFIDENCE']].map(([color,label])=>(
+                  {[[t.color.text,'ENERGY'],['#ff8c00','CONFIDENCE']].map(([color,label])=>(
                     <div key={label} style={{ display:'flex',alignItems:'center',gap:5 }}>
                       <div style={{ width:8,height:8,borderRadius:'50%',background:color }} />
-                      <span style={{ fontSize:9,color:'#aaa',fontWeight:700 }}>{label}</span>
+                      <span style={{ fontSize:9,color:t.color.textDim,fontWeight:700 }}>{label}</span>
                     </div>
                   ))}
                   <div style={{ marginLeft:'auto',fontSize:10,color:t.color.text,fontWeight:900 }}>
@@ -2538,10 +2538,10 @@ export default function Main({ user }) {
                   return (
                     <div key={metric} style={{ marginBottom:12 }}>
                       <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4 }}>
-                        <span style={{ fontSize:11,color:'#aaa',textTransform:'capitalize',fontWeight:700 }}>{metric}</span>
+                        <span style={{ fontSize:11,color:t.color.textDim,textTransform:'capitalize',fontWeight:700 }}>{metric}</span>
                         <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-                          <span style={{ fontSize:9,color:'#555' }}>avg {avg}/10</span>
-                          <span style={{ fontSize:11,fontWeight:800,color:trend>0?'#4aff4a':trend<0?'#ff4444':'#555' }}>
+                          <span style={{ fontSize:9,color:t.color.textMute }}>avg {avg}/10</span>
+                          <span style={{ fontSize:11,fontWeight:800,color:trend>0?'#4aff4a':trend<0?'#ff4444':t.color.textMute }}>
                             {trend>0?'↑':trend<0?'↓':'→'} {Math.abs(trend)}
                           </span>
                         </div>
@@ -2588,7 +2588,7 @@ export default function Main({ user }) {
                   {[[athleteBallMastery.length,'SESSIONS'],[athleteBallMastery.reduce((a,b)=>a+(b.total_reps||0),0),'TOTAL REPS'],[Math.round(athleteBallMastery.reduce((a,b)=>a+(b.total_reps||0),0)/athleteBallMastery.length)||0,'AVG REPS']].map(([n,l])=>(
                     <div key={l} style={{ textAlign:'center' }}>
                       <div style={{ fontSize:20,fontWeight:900,color:t.color.text }}>{n}</div>
-                      <div style={{ fontSize:7,color:'#555',letterSpacing:1,fontWeight:700 }}>{l}</div>
+                      <div style={{ fontSize:7,color:t.color.textMute,letterSpacing:1,fontWeight:700 }}>{l}</div>
                     </div>
                   ))}
                 </div>
@@ -2604,8 +2604,8 @@ export default function Main({ user }) {
             {athleteCheckins[0]?.message_to_coach && (
               <div style={{ ...C.card,borderColor:'#1a3a2a' }}>
                 <span style={C.lbl}>💬 LATEST MESSAGE TO COACH</span>
-                <div style={{ fontSize:13,color:'#aaa',fontStyle:'italic',lineHeight:1.6 }}>"{athleteCheckins[0].message_to_coach}"</div>
-                <div style={{ fontSize:9,color:'#555',marginTop:6 }}>{athleteCheckins[0].week}</div>
+                <div style={{ fontSize:13,color:t.color.textDim,fontStyle:'italic',lineHeight:1.6 }}>"{athleteCheckins[0].message_to_coach}"</div>
+                <div style={{ fontSize:9,color:t.color.textMute,marginTop:6 }}>{athleteCheckins[0].week}</div>
               </div>
             )}
 
@@ -2620,7 +2620,7 @@ export default function Main({ user }) {
                       await supabase.from('profiles').update({ program_week: w }).eq('id', selectedAthlete.id)
                       setSelectedAthlete(p=>({...p, program_week: w}))
                     }}
-                    style={{ background:(selectedAthlete.program_week||1)>=w?'#fafafa':'#1e1e1e', border:'none', borderRadius:8, padding:'8px 12px', fontSize:12, fontWeight:800, color:(selectedAthlete.program_week||1)>=w?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                    style={{ background:(selectedAthlete.program_week||1)>=w?t.color.text:t.color.surface2, border:'none', borderRadius:8, padding:'8px 12px', fontSize:12, fontWeight:800, color:(selectedAthlete.program_week||1)>=w?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                     W{w}
                   </button>
                 ))}
@@ -2632,11 +2632,11 @@ export default function Main({ user }) {
                   { week:4, label:'Week 4', items:['+ Goal Setting'], color:'#e5e5e5', unlocked: (selectedAthlete.program_week||1) >= 4 },
                   { week:5, label:'Week 5', items:['+ Visualization','+ Morning Routine'], color:'#ffaa00', unlocked: (selectedAthlete.program_week||1) >= 5 },
                 ].map((phase,i)=>(
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?'#111':'#0a0a0a', borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:'#1e1e1e'}` }}>
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?'#111':'#0a0a0a', borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:t.color.surface2}` }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:phase.unlocked?phase.color:'#333', flexShrink:0 }} />
                     <div>
-                      <div style={{ fontSize:11, fontWeight:800, color:phase.unlocked?'#fff':'#444' }}>{phase.label}</div>
-                      <div style={{ fontSize:10, color:phase.unlocked?'#888':'#333' }}>{phase.items.join(' · ')}</div>
+                      <div style={{ fontSize:11, fontWeight:800, color:phase.unlocked?t.color.text:'#444' }}>{phase.label}</div>
+                      <div style={{ fontSize:10, color:phase.unlocked?t.color.textDim:'#333' }}>{phase.items.join(' · ')}</div>
                     </div>
                     {phase.unlocked && <div style={{ marginLeft:'auto', fontSize:10, color:phase.color, fontWeight:800 }}>✓ ACTIVE</div>}
                     {!phase.unlocked && <div style={{ marginLeft:'auto', fontSize:10, color:'#333', fontWeight:800 }}>🔒</div>}
@@ -2649,7 +2649,7 @@ export default function Main({ user }) {
             <div style={C.card}>
               <span style={C.lbl}>💪 CONFIDENCE LEVEL OVER TIME</span>
               {athleteCheckins.length === 0 ? (
-                <div style={{ fontSize:12,color:'#555',textAlign:'center',padding:16 }}>No check-ins yet</div>
+                <div style={{ fontSize:12,color:t.color.textMute,textAlign:'center',padding:16 }}>No check-ins yet</div>
               ) : (
                 <>
                   <div style={{ display:'flex',alignItems:'flex-end',gap:4,height:80,marginBottom:8 }}>
@@ -2662,9 +2662,9 @@ export default function Main({ user }) {
                     ))}
                   </div>
                   <div style={{ display:'flex',justifyContent:'space-between' }}>
-                    <div style={{ fontSize:11,color:'#555' }}>Start: <span style={{ color:t.color.text,fontWeight:800 }}>{[...athleteCheckins].reverse()[0]?.confidence_level}/10</span></div>
-                    <div style={{ fontSize:11,color:'#555' }}>Latest: <span style={{ color:t.color.text,fontWeight:800 }}>{athleteCheckins[0]?.confidence_level}/10</span></div>
-                    <div style={{ fontSize:11,color:'#555' }}>Change: <span style={{ fontWeight:800, color: athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? '#4aff4a' : '#ff4444' }}>
+                    <div style={{ fontSize:11,color:t.color.textMute }}>Start: <span style={{ color:t.color.text,fontWeight:800 }}>{[...athleteCheckins].reverse()[0]?.confidence_level}/10</span></div>
+                    <div style={{ fontSize:11,color:t.color.textMute }}>Latest: <span style={{ color:t.color.text,fontWeight:800 }}>{athleteCheckins[0]?.confidence_level}/10</span></div>
+                    <div style={{ fontSize:11,color:t.color.textMute }}>Change: <span style={{ fontWeight:800, color: athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? '#4aff4a' : '#ff4444' }}>
                       {athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level > 0 ? '+' : ''}{athleteCheckins[0]?.confidence_level - [...athleteCheckins].reverse()[0]?.confidence_level}
                     </span></div>
                   </div>
@@ -2677,7 +2677,7 @@ export default function Main({ user }) {
               <div style={C.card}>
                 <span style={C.lbl}>🎯 GOAL SETTING (WEEK 4+)</span>
                 {athleteCheckins.filter(c=>c.goal_next_week).length === 0 ? (
-                  <div style={{ fontSize:12,color:'#555',textAlign:'center',padding:12 }}>No goals set yet</div>
+                  <div style={{ fontSize:12,color:t.color.textMute,textAlign:'center',padding:12 }}>No goals set yet</div>
                 ) : athleteCheckins.filter(c=>c.goal_next_week).slice(0,5).map((c,i)=>(
                   <div key={i} style={{ borderLeft:'2px solid #fafafa', paddingLeft:10, marginBottom:10 }}>
                     <div style={{ fontSize:9,color:t.color.text,fontWeight:700,marginBottom:2 }}>{c.week}</div>
@@ -2693,7 +2693,7 @@ export default function Main({ user }) {
               <div style={C.card}>
                 <span style={C.lbl}>👁️ VISUALIZATION & MORNING ROUTINE (WEEK 5+)</span>
                 {athleteActionSteps.length === 0 ? (
-                  <div style={{ fontSize:12,color:'#555',textAlign:'center',padding:12 }}>No data yet</div>
+                  <div style={{ fontSize:12,color:t.color.textMute,textAlign:'center',padding:12 }}>No data yet</div>
                 ) : (
                   <>
                     <div style={{ display:'flex',gap:12,marginBottom:12 }}>
@@ -2701,16 +2701,16 @@ export default function Main({ user }) {
                         <div style={{ fontSize:20,fontWeight:900,color:t.color.text }}>
                           {athleteCheckins.filter(c=>c.did_visualization).length}
                         </div>
-                        <div style={{ fontSize:9,color:'#555',letterSpacing:1,fontWeight:700 }}>VISUALIZATIONS</div>
+                        <div style={{ fontSize:9,color:t.color.textMute,letterSpacing:1,fontWeight:700 }}>VISUALIZATIONS</div>
                       </div>
                       <div style={{ flex:1,textAlign:'center' }}>
                         <div style={{ fontSize:20,fontWeight:900,color:t.color.text }}>
                           {athleteCheckins.filter(c=>c.did_morning_routine).length}
                         </div>
-                        <div style={{ fontSize:9,color:'#555',letterSpacing:1,fontWeight:700 }}>MORNING ROUTINES</div>
+                        <div style={{ fontSize:9,color:t.color.textMute,letterSpacing:1,fontWeight:700 }}>MORNING ROUTINES</div>
                       </div>
                     </div>
-                    <div style={{ fontSize:11,color:'#555',textAlign:'center' }}>
+                    <div style={{ fontSize:11,color:t.color.textMute,textAlign:'center' }}>
                       Track these in the weekly check-in form
                     </div>
                   </>
@@ -2728,12 +2728,12 @@ export default function Main({ user }) {
                       setSelectedAthlete(p=>({...p, assigned_coach: coach.full_name||coach.email}))
                       loadUserData()
                     }}
-                    style={{ background: selectedAthlete.assigned_coach===(coach.full_name||coach.email)?'#fafafa':'#1e1e1e', border:'none', borderRadius:10, padding:'10px 14px', fontSize:12, fontWeight:800, color:selectedAthlete.assigned_coach===(coach.full_name||coach.email)?'#000':'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                    style={{ background: selectedAthlete.assigned_coach===(coach.full_name||coach.email)?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'10px 14px', fontSize:12, fontWeight:800, color:selectedAthlete.assigned_coach===(coach.full_name||coach.email)?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                     👤 {coach.full_name||coach.email}
                   </button>
                 ))}
                 {allAthletes.filter(a=>a.role==='coach').length === 0 && (
-                  <div style={{ fontSize:12, color:'#555' }}>No coaches found. Make sure coach accounts have role = "coach" in Supabase.</div>
+                  <div style={{ fontSize:12, color:t.color.textMute }}>No coaches found. Make sure coach accounts have role = "coach" in Supabase.</div>
                 )}
               </div>
               {selectedAthlete.assigned_coach && (
@@ -2743,7 +2743,7 @@ export default function Main({ user }) {
                     await supabase.from('profiles').update({ assigned_coach: null }).eq('id', selectedAthlete.id)
                     setSelectedAthlete(p=>({...p, assigned_coach: null}))
                     loadUserData()
-                  }} style={{ background:'none', border:'none', fontSize:10, color:'#555', cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>REMOVE</button>
+                  }} style={{ background:'none', border:'none', fontSize:10, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>REMOVE</button>
                 </div>
               )}
             </div>
@@ -2787,7 +2787,7 @@ export default function Main({ user }) {
             </div>
             {sessionNotes.length===0 ? (
               <div style={{ ...C.card,textAlign:'center',padding:30 }}>
-                <div style={{ fontSize:13,color:'#555' }}>No session notes yet. Add above! 🎙️</div>
+                <div style={{ fontSize:13,color:t.color.textMute }}>No session notes yet. Add above! 🎙️</div>
               </div>
             ) : sessionNotes.map((note,i)=>(
               <div key={i} style={C.card}>
@@ -2801,7 +2801,7 @@ export default function Main({ user }) {
                     🎙️ VIEW RECORDING
                   </a>
                 )}
-                {note.content && <div style={{ fontSize:12,color:'#aaa',lineHeight:1.6,whiteSpace:'pre-wrap' }}>{note.content}</div>}
+                {note.content && <div style={{ fontSize:12,color:t.color.textDim,lineHeight:1.6,whiteSpace:'pre-wrap' }}>{note.content}</div>}
               </div>
             ))}
           </>}
@@ -2809,18 +2809,18 @@ export default function Main({ user }) {
           {/* ACTION STEPS */}
           {athleteProfileTab==='feedback' && (
             athleteActionSteps.length===0 ? (
-              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:'#555' }}>No action steps yet.</div></div>
+              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:t.color.textMute }}>No action steps yet.</div></div>
             ) : athleteActionSteps.map((s,i)=>(
               <div key={i} style={C.card}>
                 <div style={{ display:'flex',justifyContent:'space-between',marginBottom:8 }}>
                   <div style={{ fontSize:10,color:t.color.text,fontWeight:700,letterSpacing:2 }}>{s.date} · {s.session_type}</div>
-                  <div style={{ fontSize:10,color:'#555' }}>{s.did_action_steps==='Yes'?'✅':'❌'}</div>
+                  <div style={{ fontSize:10,color:t.color.textMute }}>{s.did_action_steps==='Yes'?'✅':'❌'}</div>
                 </div>
                 <div style={{ display:'flex',gap:12,marginBottom:8 }}>
                   {['conditioning','strength','technical','mental'].map(k=>(
                     <div key={k} style={{ textAlign:'center' }}>
                       <div style={{ fontSize:16,fontWeight:900,color:t.color.text }}>{s[k]}</div>
-                      <div style={{ fontSize:7,color:'#555',letterSpacing:1,fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
+                      <div style={{ fontSize:7,color:t.color.textMute,letterSpacing:1,fontWeight:700 }}>{k.slice(0,4).toUpperCase()}</div>
                     </div>
                   ))}
                 </div>
@@ -2836,7 +2836,7 @@ export default function Main({ user }) {
           {/* CHECK-INS */}
           {athleteProfileTab==='checkins' && (
             athleteCheckins.length===0 ? (
-              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:'#555' }}>No check-ins yet.</div></div>
+              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:t.color.textMute }}>No check-ins yet.</div></div>
             ) : athleteCheckins.map((c,i)=>(
               <div key={i} style={C.card}>
                 <div style={{ fontSize:10,color:t.color.text,fontWeight:700,letterSpacing:2,marginBottom:8 }}>{c.week}</div>
@@ -2844,13 +2844,13 @@ export default function Main({ user }) {
                   {[['energy_level','⚡'],['confidence_level','💪'],['sessions_completed','🏃']].map(([k,icon])=>(
                     <div key={k} style={{ textAlign:'center' }}>
                       <div style={{ fontSize:18,fontWeight:900,color:t.color.text }}>{c[k]}</div>
-                      <div style={{ fontSize:9,color:'#555' }}>{icon}</div>
+                      <div style={{ fontSize:9,color:t.color.textMute }}>{icon}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ fontSize:12,color:'#aaa',marginBottom:4 }}>🏆 {c.biggest_win}</div>
-                {c.biggest_challenge && <div style={{ fontSize:12,color:'#666',marginBottom:4 }}>💥 {c.biggest_challenge}</div>}
-                {c.goal_next_week && <div style={{ fontSize:12,color:'#555',marginBottom:4 }}>🎯 {c.goal_next_week}</div>}
+                <div style={{ fontSize:12,color:t.color.textDim,marginBottom:4 }}>🏆 {c.biggest_win}</div>
+                {c.biggest_challenge && <div style={{ fontSize:12,color:t.color.textDim,marginBottom:4 }}>💥 {c.biggest_challenge}</div>}
+                {c.goal_next_week && <div style={{ fontSize:12,color:t.color.textMute,marginBottom:4 }}>🎯 {c.goal_next_week}</div>}
                 {c.message_to_coach && <div style={{ fontSize:11,color:t.color.text,fontStyle:'italic',marginTop:6 }}>"{c.message_to_coach}"</div>}
               </div>
             ))
@@ -2859,14 +2859,14 @@ export default function Main({ user }) {
           {/* BALL MASTERY */}
           {athleteProfileTab==='ball' && (
             athleteBallMastery.length===0 ? (
-              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:'#555' }}>No ball mastery sessions yet.</div></div>
+              <div style={{ ...C.card,textAlign:'center',padding:30 }}><div style={{ fontSize:13,color:t.color.textMute }}>No ball mastery sessions yet.</div></div>
             ) : athleteBallMastery.map((b,i)=>(
               <div key={i} style={C.card}>
                 <div style={{ display:'flex',justifyContent:'space-between' }}>
                   <div style={{ fontSize:10,color:t.color.text,fontWeight:700 }}>{b.date}</div>
-                  <div style={{ fontSize:10,color:'#555' }}>{b.total_skills} skills · {b.total_reps} reps</div>
+                  <div style={{ fontSize:10,color:t.color.textMute }}>{b.total_skills} skills · {b.total_reps} reps</div>
                 </div>
-                {b.notes && <div style={{ fontSize:11,color:'#555',marginTop:4 }}>{b.notes}</div>}
+                {b.notes && <div style={{ fontSize:11,color:t.color.textMute,marginTop:4 }}>{b.notes}</div>}
               </div>
             ))
           )}
@@ -2876,10 +2876,10 @@ export default function Main({ user }) {
             <div style={{ display:'flex',flexDirection:'column',gap:8 }}>
               <div style={{ ...C.card,maxHeight:360,overflowY:'auto' }}>
                 {athleteMessages.length===0 ? (
-                  <div style={{ textAlign:'center',padding:20,fontSize:13,color:'#555' }}>No messages yet. Start the conversation! 💬</div>
+                  <div style={{ textAlign:'center',padding:20,fontSize:13,color:t.color.textMute }}>No messages yet. Start the conversation! 💬</div>
                 ) : athleteMessages.map((m,i)=>(
                   <div key={i} style={{ display:'flex',justifyContent:m.sender_id===user.id?'flex-end':'flex-start',marginBottom:8 }}>
-                    <div style={{ maxWidth:'80%',background:m.sender_id===user.id?'#fafafa':'#1e1e1e',borderRadius:10,padding:'8px 12px' }}>
+                    <div style={{ maxWidth:'80%',background:m.sender_id===user.id?t.color.text:t.color.surface2,borderRadius:10,padding:'8px 12px' }}>
                       <div style={{ fontSize:9,color:'rgba(255,255,255,0.6)',marginBottom:3 }}>{m.profiles?.full_name||'Athlete'}</div>
                       <div style={{ fontSize:13 }}>{m.content}</div>
                     </div>
