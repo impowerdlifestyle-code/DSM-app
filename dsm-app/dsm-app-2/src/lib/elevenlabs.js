@@ -1,11 +1,12 @@
 // Client-side TTS — POSTs to /api/tts which holds ELEVENLABS_API_KEY server-side.
 // Falls back to the browser's SpeechSynthesis if the proxy is unavailable.
 
+import { authFetch } from './authFetch.js'
+
 export async function speakText(text, voiceId) {
   try {
-    const res = await fetch('/api/tts', {
+    const res = await authFetch('/api/tts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(voiceId ? { text, voiceId } : { text }),
     })
     if (!res.ok) throw new Error(`TTS proxy ${res.status}`)

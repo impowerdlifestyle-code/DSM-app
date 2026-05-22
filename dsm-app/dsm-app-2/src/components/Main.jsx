@@ -203,7 +203,7 @@ export default function Main({ user }) {
       supabase.from('weekly_checkins').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('ball_mastery').select('*').eq('user_id', athlete.id).order('created_at', {ascending:false}).limit(20),
       supabase.from('session_notes').select('*').eq('athlete_id', athlete.id).order('created_at', {ascending:false}).limit(20),
-      supabase.from('coach_messages').select('*, profiles!coach_messages_sender_id_fkey(full_name, role)').or(`athlete_id.eq.${athlete.id}`).order('created_at', {ascending:true}).limit(50),
+      supabase.from('coach_messages').select('*, profiles!coach_messages_sender_id_fkey(full_name, role)').eq('athlete_id', athlete.id).order('created_at', {ascending:true}).limit(50),
     ])
     setAthleteActionSteps(as.data || [])
     setAthleteCheckins(ci.data || [])

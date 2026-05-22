@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { tokens as t } from '../../styles.js'
 import { supabase } from '../../lib/supabase.js'
+import { authFetch } from '../../lib/authFetch.js'
 
 // Coach V voice — clip management. Lists every personalized message the
 // athlete has been sent, lets them play it back (signed URL) or delete it,
@@ -43,10 +44,9 @@ export default function Settings({ user }) {
   async function deleteClip(clip) {
     setBusyClipId(clip.id); setError('')
     try {
-      const res = await fetch('/api/future-self/delete-clip', {
+      const res = await authFetch('/api/future-self/delete-clip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, clipId: clip.id }),
+        body: JSON.stringify({ clipId: clip.id }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || `Delete failed (${res.status})`)

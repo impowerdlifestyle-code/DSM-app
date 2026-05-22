@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { tokens as t, C } from '../../styles.js'
 import FutureSelfPlayer from './FutureSelfPlayer.jsx'
 import { getCurrentMonth, getMonthlyCheckin } from './lib/checkin.js'
+import { authFetch } from '../../lib/authFetch.js'
 
 // Once-per-month Coach V check-in.
 // Flow: available → asking (Coach V poses the question in his cloned voice)
@@ -76,10 +77,9 @@ export default function MonthlyCheckin({ user }) {
     }
     setPhase('saving'); setError('')
     try {
-      const res = await fetch('/api/future-self/save-checkin', {
+      const res = await authFetch('/api/future-self/save-checkin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, month, prompt, transcript: finalText }),
+        body: JSON.stringify({ month, prompt, transcript: finalText }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {

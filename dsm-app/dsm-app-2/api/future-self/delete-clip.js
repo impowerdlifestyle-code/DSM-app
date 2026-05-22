@@ -1,9 +1,9 @@
 // Vercel serverless — delete a single future_self_clips row + its storage object.
-// Body: { userId, clipId, actorId? }   // actorId = parent UUID if a linked parent
-//                                       //          is deleting on a minor's behalf
-// Auth model: matches existing endpoints (trust the body). Service-role only.
+// Body: { clipId }
+// Auth: requires Supabase JWT. Caller can only delete their own clips.
+// (Parent-acting-on-behalf flow lives in a separate endpoint — TODO.)
 
-import { createClient } from '@supabase/supabase-js'
+import { authGuard } from '../_auth.js'
 
 const STORAGE_BUCKET = 'future-self-audio'
 
@@ -12,33 +12,23 @@ function err(res, status, code, message, extra = {}) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') return err(res, 405, 'method', 'Method not allowed')
-
-  const supaUrl = process.env.SUPABASE_URL
-  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supaUrl || !supaKey) return err(res, 500, 'env', 'Supabase server credentials missing')
+  const auth = await authGuard(req, res, { requirePaidAccess: true })
+  if (!auth.ok) return
+  const { user, admin } = auth
 
   let body
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body }
   catch { return err(res, 400, 'bad_json', 'Invalid JSON') }
 
-  const { userId, clipId, actorId } = body || {}
-  if (!userId || !clipId) return err(res, 400, 'missing_field', 'userId and clipId required')
-
-  const admin = createClient(supaUrl, supaKey)
+  const { clipId } = body || {}
+  if (!clipId) return err(res, 400, 'missing_field', 'clipId required')
 
   try {
     const { data: clip, error: readErr } = await admin
       .from('future_self_clips').select('*').eq('id', clipId).maybeSingle()
     if (readErr) return err(res, 500, 'db', 'Read failed', { detail: readErr.message })
     if (!clip) return err(res, 404, 'not_found', 'Clip not found')
-    if (clip.user_id !== userId) return err(res, 403, 'forbidden', 'Clip does not belong to that user')
+    if (clip.user_id !== user.id) return err(res, 403, 'forbidden', 'Clip does not belong to caller')
 
     if (clip.audio_url) {
       const { error: stErr } = await admin.storage.from(STORAGE_BUCKET).remove([clip.audio_url])
@@ -49,7 +39,7 @@ export default async function handler(req, res) {
     if (delErr) return err(res, 500, 'db', 'Delete failed', { detail: delErr.message })
 
     await admin.from('voice_audit_log').insert([{
-      user_id: userId, actor_id: actorId || userId, event: 'clip_deleted', ref_id: clipId,
+      user_id: user.id, actor_id: user.id, event: 'clip_deleted', ref_id: clipId,
       metadata: { context: clip.context, audio_url: clip.audio_url },
     }])
 

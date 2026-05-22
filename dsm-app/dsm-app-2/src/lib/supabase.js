@@ -58,6 +58,66 @@ export function isSurfaceAllowed(surface, profile) {
   return true
 }
 
+// ─── COPPA PARENT CONSENT ───────────────────────────────────
+// Under-13 athletes can't use the app until a parent approves. The approval
+// link lives at /?consent=<uuid>. Server endpoints validate the token via
+// service-role and flip the status; the app reads the resulting profile
+// state to decide whether to render the WaitingForParent gate.
+export async function savePendingConsent(userId, parentEmail) {
+  const email = (parentEmail || '').trim().toLowerCase()
+  if (!email || !email.includes('@')) {
+    return { data: null, error: { message: 'Valid parent email required.' } }
+  }
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      parent_consent_required: true,
+      parent_consent_email:    email,
+      parent_consent_status:   'pending',
+      access_level:            'locked',
+      trial_ends_at:           null,
+    })
+    .eq('id', userId)
+    .select('id, parent_consent_token, parent_consent_email, parent_consent_status')
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Could not save consent state.' } }
+  return { data, error: null }
+}
+
+export async function getProfileConsentInfo(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, age, parent_consent_required, parent_consent_email, parent_consent_status, parent_consent_token, parent_consent_sent_at, parent_consent_granted_at')
+    .eq('id', userId)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function adminManualGrantConsent(userId) {
+  // Admin escape hatch — used when parental consent was verified through
+  // some other channel (in-person form, phone call, etc.).
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      parent_consent_status:   'granted',
+      parent_consent_granted_at: new Date().toISOString(),
+      access_level:            'trial',
+      trial_ends_at:           new Date(Date.now() + 14 * 86400000).toISOString(),
+    })
+    .eq('id', userId)
+    .select('id, parent_consent_status, access_level')
+    .maybeSingle()
+  if (error) return { data: null, error }
+  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  return { data, error: null }
+}
+
+export function buildConsentUrl(token, origin) {
+  const base = origin || (typeof window !== 'undefined' ? window.location.origin : 'https://dsm-app-2.vercel.app')
+  return `${base}/?consent=${token}`
+}
+
 export async function setProgramTrack(userId, track) {
   if (track !== 'youth' && track !== 'teen') {
     return { data: null, error: { message: 'track must be youth or teen' } }
@@ -184,17 +244,20 @@ export async function getStreak(userId) {
     .from('profiles')
     .select('streak, last_logged')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
   return { data, error }
 }
 
 export async function logDay(userId) {
   const today = new Date().toISOString().split('T')[0]
-  const { data: profile } = await supabase.from('profiles').select('streak, last_logged').eq('id', userId).single()
+  const { data: profile, error: readErr } = await supabase
+    .from('profiles').select('streak, last_logged').eq('id', userId).maybeSingle()
+  if (readErr) return { streak: null, error: readErr }
+  if (!profile) return { streak: null, error: { message: 'No profile row to update' } }
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   let newStreak = 1
-  if (profile?.last_logged === yesterday) newStreak = (profile.streak || 0) + 1
-  else if (profile?.last_logged === today) return { streak: profile.streak }
+  if (profile.last_logged === yesterday) newStreak = (profile.streak || 0) + 1
+  else if (profile.last_logged === today) return { streak: profile.streak }
   const { error } = await supabase.from('profiles').update({ streak: newStreak, last_logged: today }).eq('id', userId)
   return { streak: newStreak, error }
 }
@@ -205,7 +268,7 @@ export async function getProfile(userId) {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
   return { data, error }
 }
 
@@ -236,13 +299,15 @@ export async function saveChatMessage(userId, role, content) {
 }
 
 export async function getChatHistory(userId, limit = 50) {
+  // Pull the newest N messages, then reverse so callers still get
+  // chronological order (oldest → newest) for normal chat rendering.
   const { data, error } = await supabase
     .from('chat_history')
     .select('id, role, content, created_at')
     .eq('user_id', userId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(limit)
-  return { data: data || [], error }
+  return { data: (data || []).reverse(), error }
 }
 
 // ─── COACH MEMORY (per-user persistent summary) ──────────────
@@ -574,7 +639,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
 export async function getAdminAthleteList() {
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier, program_track, age')
+    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier, program_track, age, parent_consent_required, parent_consent_status, parent_consent_email, parent_consent_token')
     .order('created_at', { ascending: false })
   if (!profiles) return { data: [], error: null }
 

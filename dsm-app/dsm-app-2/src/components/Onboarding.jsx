@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { saveOnboarding } from '../lib/supabase.js'
+import { saveOnboarding, savePendingConsent } from '../lib/supabase.js'
+import { authFetch } from '../lib/authFetch.js'
 import { tokens as t, C } from '../styles.js'
 import ProgressBar from './widgets/ProgressBar.jsx'
 
@@ -91,7 +92,8 @@ const s = {
   err: { fontSize: 12, color: t.color.err, marginTop: 8 },
 }
 
-const STEPS = ['identity', 'position', 'baseline', 'obstacles', 'cadence', 'plan']
+const STEPS_DEFAULT = ['identity', 'position', 'baseline', 'obstacles', 'cadence', 'plan']
+const STEPS_YOUTH   = ['identity', 'position', 'consent', 'baseline', 'obstacles', 'cadence', 'plan']
 
 export default function Onboarding({ user, profile, onDone }) {
   const [step, setStep] = useState(0)
@@ -102,6 +104,7 @@ export default function Onboarding({ user, profile, onDone }) {
     position: '',
     age: '',
     clubTeam: '',
+    parentEmail: '',
     baseline: { shark: 5, goldfish: 5, selftalk: 5, tuneout: 5, confidence: 5 },
     obstacles: [],
     matchCadence: '',
@@ -110,21 +113,24 @@ export default function Onboarding({ user, profile, onDone }) {
   const [plan, setPlan] = useState(null)
 
   const update = (patch) => setData(d => ({ ...d, ...patch }))
+  const needsConsent = typeof data.age === 'number' && data.age < 13
+  const STEPS = needsConsent ? STEPS_YOUTH : STEPS_DEFAULT
+  const currentKey = STEPS[step]
   const pct = ((step + 1) / STEPS.length) * 100
 
   function canAdvance() {
-    if (step === 0) return data.identityGoal.trim().length >= 5
-    if (step === 1) return data.position && data.age
-    if (step === 4) return !!data.matchCadence
+    if (currentKey === 'identity') return data.identityGoal.trim().length >= 5
+    if (currentKey === 'position') return data.position && typeof data.age === 'number'
+    if (currentKey === 'consent')  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.parentEmail.trim())
+    if (currentKey === 'cadence')  return !!data.matchCadence
     return true
   }
 
   async function generatePlan() {
     setPlanLoading(true); setErr('')
     try {
-      const res = await fetch('/api/coach', {
+      const res = await authFetch('/api/coach', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'starter_plan',
           onboarding: data,
@@ -154,8 +160,12 @@ export default function Onboarding({ user, profile, onDone }) {
   async function finish() {
     setSaving(true); setErr('')
     const { error } = await saveOnboarding(user.id, { ...data, starterFocus: plan || {} })
+    if (error) { setSaving(false); setErr(error.message || 'Failed to save'); return }
+    if (needsConsent && data.parentEmail) {
+      const { error: consentErr } = await savePendingConsent(user.id, data.parentEmail)
+      if (consentErr) { setSaving(false); setErr(consentErr.message || 'Saved profile but consent state failed.'); return }
+    }
     setSaving(false)
-    if (error) { setErr(error.message || 'Failed to save'); return }
     onDone?.()
   }
 
@@ -165,7 +175,7 @@ export default function Onboarding({ user, profile, onDone }) {
         <div style={s.step}>Step {step + 1} of {STEPS.length}</div>
         <ProgressBar pct={pct} height={4} style={{ marginBottom: 22 }} duration={240} />
 
-        {step === 0 && (
+        {currentKey === 'identity' && (
           <>
             <h2 style={s.h}>Set your<br/>identity.</h2>
             <p style={s.hint}>Finish this sentence — Coach V will hold you to it.</p>
@@ -179,7 +189,7 @@ export default function Onboarding({ user, profile, onDone }) {
           </>
         )}
 
-        {step === 1 && (
+        {currentKey === 'position' && (
           <>
             <h2 style={s.h}>The basics.</h2>
             <p style={s.hint}>Your position shapes how Coach V talks about the game.</p>
@@ -206,7 +216,34 @@ export default function Onboarding({ user, profile, onDone }) {
           </>
         )}
 
-        {step === 2 && (
+        {currentKey === 'consent' && (
+          <>
+            <h2 style={s.h}>One quick<br/>thing.</h2>
+            <p style={s.hint}>
+              You're under 13, so we need a parent's permission before Coach V can start. Drop their email below — we'll send them a link to approve.
+            </p>
+            <div style={s.qLabel}>Parent or guardian email</div>
+            <input
+              style={C.inp}
+              type="email"
+              placeholder="parent@example.com"
+              value={data.parentEmail}
+              onChange={e => update({ parentEmail: e.target.value })}
+              autoFocus
+            />
+            <div style={{
+              marginTop: 14, padding: 12,
+              background: 'rgba(96,165,250,0.08)',
+              border: '1px solid rgba(96,165,250,0.3)',
+              borderRadius: 12,
+              fontSize: 11, color: t.color.textDim, lineHeight: 1.5,
+            }}>
+              Why? COPPA — the U.S. law for under-13 apps. Your parent has to OK what we collect (action steps, mood, chats with Coach V) before you can start. Until then, your account stays paused. Takes them one tap.
+            </div>
+          </>
+        )}
+
+        {currentKey === 'baseline' && (
           <>
             <h2 style={s.h}>Baseline scan.</h2>
             <p style={s.hint}>Honest scores. We'll measure progress against this in 4 weeks.</p>
@@ -227,7 +264,7 @@ export default function Onboarding({ user, profile, onDone }) {
           </>
         )}
 
-        {step === 3 && (
+        {currentKey === 'obstacles' && (
           <>
             <h2 style={s.h}>Top obstacles.</h2>
             <p style={s.hint}>Pick up to 3. Coach V will steer toward these.</p>
@@ -252,7 +289,7 @@ export default function Onboarding({ user, profile, onDone }) {
           </>
         )}
 
-        {step === 4 && (
+        {currentKey === 'cadence' && (
           <>
             <h2 style={s.h}>Game cadence.</h2>
             <p style={s.hint}>When do most of your matches happen right now?</p>
@@ -266,7 +303,7 @@ export default function Onboarding({ user, profile, onDone }) {
           </>
         )}
 
-        {step === 5 && (
+        {currentKey === 'plan' && (
           <>
             <h2 style={s.h}>Your 4-week<br/>starter focus.</h2>
             <p style={s.hint}>Coach V drafted this from your answers. You can rework it any time.</p>
@@ -313,7 +350,7 @@ export default function Onboarding({ user, profile, onDone }) {
               style={{ ...s.next, opacity: saving || !plan?.weeks?.length ? 0.4 : 1 }}
               disabled={saving || !plan?.weeks?.length}
               onClick={finish}
-            >{saving ? 'Saving…' : 'Lock it in'}</button>
+            >{saving ? 'Saving…' : (needsConsent ? 'Send to parent →' : 'Lock it in')}</button>
           )}
         </div>
       </div>

@@ -16,7 +16,7 @@
 // kids hear their actual coach, not themselves.
 
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
+import { authGuard } from '../_auth.js'
 import { buildScriptPrompt } from '../../src/features/future-self/lib/scriptPrompt.js'
 
 const MODEL = 'claude-sonnet-4-6'
@@ -46,23 +46,17 @@ async function loadAthleteDigest(admin, userId) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') return err(res, 405, 'method', 'Method not allowed')
+  const auth = await authGuard(req, res, { requirePaidAccess: true })
+  if (!auth.ok) return
+  const { user: caller, admin } = auth
+  const userId = caller.id  // verified — body userId is ignored
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const elevenKey = process.env.ELEVENLABS_API_KEY
   const coachVoiceId = process.env.ELEVENLABS_VOICE_ID
-  const supaUrl = process.env.SUPABASE_URL
-  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!anthropicKey) return err(res, 500, 'env', 'ANTHROPIC_API_KEY not configured')
   if (!elevenKey)    return err(res, 500, 'env', 'ELEVENLABS_API_KEY not configured')
   if (!coachVoiceId) return err(res, 503, 'voice_not_configured', "Coach V's voice isn't configured yet — admin task pending.")
-  if (!supaUrl || !supaKey) return err(res, 500, 'env', 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured')
 
   let body
   try {
@@ -71,10 +65,8 @@ export default async function handler(req, res) {
     return err(res, 400, 'bad_json', 'Invalid JSON')
   }
 
-  const { userId, context = 'custom', matchId = null } = body || {}
-  if (!userId) return err(res, 400, 'missing_user', 'userId is required')
+  const { context = 'custom', matchId = null } = body || {}
 
-  const admin = createClient(supaUrl, supaKey)
   const anthropic = new Anthropic({ apiKey: anthropicKey })
 
   try {

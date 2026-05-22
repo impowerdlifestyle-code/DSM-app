@@ -7,6 +7,8 @@
  * This is INSECURE for production — only for local prototyping.
  */
 
+import { authFetch } from './authFetch.js'
+
 const PROXY_URL = '/api/coach'
 const CONSOLIDATE_AFTER_N_MESSAGES = 10
 
@@ -57,9 +59,8 @@ export function shouldConsolidate(messagesSinceConsolidation) {
 async function callProxy(payload) {
   if (DEV_DIRECT_KEY) return callAnthropicDirect(payload)
 
-  const res = await fetch(PROXY_URL, {
+  const res = await authFetch(PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
   if (!res.ok) {

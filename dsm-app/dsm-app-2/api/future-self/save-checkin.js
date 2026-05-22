@@ -11,7 +11,7 @@
 // Body: { userId, month, prompt, transcript }
 
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
+import { authGuard } from '../_auth.js'
 
 const MODEL = 'claude-sonnet-4-6'
 const XP_AMOUNT = 250
@@ -30,19 +30,13 @@ function err(res, status, code, message, extra = {}) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') return err(res, 405, 'method', 'Method not allowed')
+  const auth = await authGuard(req, res, { requirePaidAccess: true })
+  if (!auth.ok) return
+  const { user: caller, admin } = auth
+  const userId = caller.id  // verified — body userId is ignored
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  const supaUrl = process.env.SUPABASE_URL
-  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!anthropicKey) return err(res, 500, 'env', 'ANTHROPIC_API_KEY not configured')
-  if (!supaUrl || !supaKey) return err(res, 500, 'env', 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured')
 
   let body
   try {
@@ -51,14 +45,13 @@ export default async function handler(req, res) {
     return err(res, 400, 'bad_json', 'Invalid JSON')
   }
 
-  const { userId, month, prompt, transcript } = body || {}
-  if (!userId || !month || !prompt) {
-    return err(res, 400, 'missing_field', 'userId, month, prompt required')
+  const { month, prompt, transcript } = body || {}
+  if (!month || !prompt) {
+    return err(res, 400, 'missing_field', 'month and prompt required')
   }
   const responseText = (transcript || '').trim()
   if (!responseText) return err(res, 400, 'empty_response', 'response transcript is empty')
 
-  const admin = createClient(supaUrl, supaKey)
   const anthropic = new Anthropic({ apiKey: anthropicKey })
 
   try {

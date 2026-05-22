@@ -3,6 +3,12 @@
 //
 // Body: { text: string, voiceId?: string, modelId?: string, voiceSettings?: {...} }
 // Returns: audio/mpeg bytes on 200, JSON { error } on failure.
+//
+// Auth: requires Supabase JWT in Authorization: Bearer. Caller must have an
+// active subscription tier (trial-with-time-left, paid, mentoring_elite, or
+// coach/parent/admin role) — gated by authGuard requirePaidAccess.
+
+import { authGuard } from './_auth.js'
 
 const DEFAULT_MODEL = 'eleven_monolingual_v1'
 const DEFAULT_SETTINGS = {
@@ -13,15 +19,8 @@ const DEFAULT_SETTINGS = {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  const auth = await authGuard(req, res, { requirePaidAccess: true })
+  if (!auth.ok) return
 
   const apiKey = process.env.ELEVENLABS_API_KEY
   if (!apiKey) {

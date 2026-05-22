@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { tokens as t, C } from '../../styles.js'
 import { logAudit } from './lib/voiceIdentity.js'
+import { authFetch } from '../../lib/authFetch.js'
 
 // Renders a "Coach V message" CTA → on click, generates + plays a personalized
 // 15-30s message in Valentino's cloned voice. Gates with a 'voice_not_configured'
@@ -38,10 +39,9 @@ export default function FutureSelfPlayer({ user, context = 'custom', matchId = n
     if (!user?.id) return
     setPhase('generating'); setErrCode(null); setErrMsg('')
     try {
-      const res = await fetch('/api/future-self/generate-clip', {
+      const res = await authFetch('/api/future-self/generate-clip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, context, matchId }),
+        body: JSON.stringify({ context, matchId }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
