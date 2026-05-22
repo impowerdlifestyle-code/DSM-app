@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { WEEKDAYS } from '../lib/constants.js'
+import { tokens as t } from '../styles.js'
 
 const StepCard = React.memo(({ icon, title, desc, k, usedSteps, occasions, comments, onToggle, onOccasion, onComment }) => {
   const [occ, setOcc] = useState(occasions[k] || '')
@@ -27,12 +28,12 @@ const StepCard = React.memo(({ icon, title, desc, k, usedSteps, occasions, comme
       {used && (
         <div>
           <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:7 }}>OCCASION</div>
-          <input style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#fff', fontFamily:'inherit', outline:'none', boxSizing:'border-box', marginBottom:8 }}
+          <input style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#ffffff', fontFamily:'inherit', outline:'none', boxSizing:'border-box', marginBottom:8 }}
             placeholder="When did you use this?" value={occ}
             autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
             onChange={e => { const v = e.target.value; setOcc(v); occRef.current(k, v) }} />
           <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:7 }}>COMMENTS</div>
-          <textarea style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:13, color:'#fff', fontFamily:'inherit', outline:'none', resize:'none', boxSizing:'border-box', height:55 }}
+          <textarea style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:13, color:'#ffffff', fontFamily:'inherit', outline:'none', resize:'none', boxSizing:'border-box', height:55 }}
             placeholder="How did it help?" value={com}
             onChange={e => { const v = e.target.value; setCom(v); comRef.current(k, v) }} />
         </div>
@@ -75,7 +76,7 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
     setSaving(false)
   }
 
-  const inp = { width:'100%', background:'#0a0a0a', border:'1px solid #36363c', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#fafafa', fontFamily:'inherit', outline:'none', boxSizing:'border-box' }
+  const inp = { width:'100%', background:'#0a0a0a', border:'1px solid #36363c', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#ffffff', fontFamily:'inherit', outline:'none', boxSizing:'border-box' }
   const lbl = { fontSize:10, letterSpacing:2.4, color:'#4a4a4a', fontWeight:600, marginBottom:8, display:'block', textTransform:'uppercase' }
   const btn = { background:'#fafafa', border:'none', borderRadius:10, padding:'14px 18px', fontSize:13, fontWeight:700, letterSpacing:1.6, color:'#000', cursor:'pointer', width:'100%', fontFamily:'inherit', marginBottom:8, textTransform:'uppercase' }
   const card = { background:'#0a0a0a', borderRadius:14, padding:16, marginBottom:10, border:'1px solid #252528' }
@@ -85,7 +86,7 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
       <div style={{ fontSize:10, letterSpacing:2.4, color:'#8e8e8e', fontWeight:600, textTransform:'uppercase' }}>After every practice & game</div>
       <h1 style={{
         fontFamily:"'Bebas Neue', sans-serif", fontSize:42, fontWeight:400,
-        letterSpacing:1.5, lineHeight:0.95, color:'#fafafa',
+        letterSpacing:1.5, lineHeight:0.95, color:t.color.text,
         marginTop:6, marginBottom:14, textTransform:'uppercase',
       }}>Action Steps</h1>
 
@@ -99,22 +100,22 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
           position:'absolute', top:0, bottom:0, left:0, width:3, background:'#fafafa',
         }} />
         <div style={{
-          fontSize:10, letterSpacing:2.4, color:'#fafafa', fontWeight:700, textTransform:'uppercase',
+          fontSize:10, letterSpacing:2.4, color:t.color.text, fontWeight:700, textTransform:'uppercase',
         }}>Required — no exceptions</div>
         <div style={{
-          fontSize:14, fontWeight:500, lineHeight:1.5, color:'#fafafa', marginTop:6,
+          fontSize:14, fontWeight:500, lineHeight:1.5, color:t.color.text, marginTop:6,
         }}>Fill this out after every practice and game. It goes straight to Coach Valentino.</div>
       </div>
       <div style={card}>
         <span style={lbl}>PLAYER</span>
-        <div style={{ ...inp, color:'#fafafa', fontWeight:800, background:'#0d0d0d', cursor:'default', marginBottom:10 }}>
+        <div style={{ ...inp, color:'#ffffff', fontWeight:800, background:'#0d0d0d', cursor:'default', marginBottom:10 }}>
           {playerName || '—'}
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
           <div>
             <span style={lbl}>SESSION</span>
             <select value={form.sessionType} onChange={e => set('sessionType', e.target.value)}
-              style={{ background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', color:'#fff', fontFamily:'inherit', fontSize:14, outline:'none', width:'100%' }}>
+              style={{ background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', color:'#ffffff', fontFamily:'inherit', fontSize:14, outline:'none', width:'100%' }}>
               <option>Practice</option><option>Game</option>
             </select>
           </div>
@@ -178,7 +179,7 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
           <div key={k} style={{ marginBottom:12 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
               <span style={{ fontSize:12, color:'#aaa', textTransform:'capitalize' }}>{k}</span>
-              <span style={{ fontSize:14, fontWeight:900, color:'#fafafa' }}>{form[k]}/10</span>
+              <span style={{ fontSize:14, fontWeight:900, color:t.color.text }}>{form[k]}/10</span>
             </div>
             <input type="range" min="1" max="10" value={form[k]} onChange={e => set(k, parseInt(e.target.value))}
               style={{ accentColor:'#fafafa', width:'100%' }} />
@@ -193,7 +194,7 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
           <span style={{ ...lbl, marginTop:16 }}>PAST SUBMISSIONS</span>
           {initialSubmissions.slice(0,5).map((s,i) => (
             <div key={i} style={card}>
-              <div style={{ fontSize:10, color:'#fafafa', fontWeight:700, letterSpacing:2 }}>{s.day_of_week}, {s.date} · {s.session_type}</div>
+              <div style={{ fontSize:10, color:t.color.text, fontWeight:700, letterSpacing:2 }}>{s.day_of_week}, {s.date} · {s.session_type}</div>
               <div style={{ fontSize:14, fontWeight:800, marginTop:2 }}>{s.player_name}</div>
             </div>
           ))}

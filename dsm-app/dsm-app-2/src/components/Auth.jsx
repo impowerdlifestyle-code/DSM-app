@@ -166,7 +166,7 @@ const s = {
     fontSize: 13,
     fontWeight: 600,
     letterSpacing: 1.6,
-    color: '#ffffff',
+    color: t.color.text,
     cursor: 'pointer',
     width: '100%',
     fontFamily: t.font.sans,
