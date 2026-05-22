@@ -89,7 +89,9 @@ export const C = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: 'rgba(0,0,0,0.85)',
+    // Themed sticky bar — was hardcoded rgba(0,0,0,0.85) (top bar showed
+    // dark even in Daylight theme). t.color.surface flips correctly.
+    background: t.color.surface,
     backdropFilter: 'blur(16px) saturate(140%)',
     WebkitBackdropFilter: 'blur(16px) saturate(140%)',
     position: 'sticky',

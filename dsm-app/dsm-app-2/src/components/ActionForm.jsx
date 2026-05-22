@@ -11,7 +11,7 @@ const StepCard = React.memo(({ icon, title, desc, k, usedSteps, occasions, comme
   useEffect(() => { occRef.current = onOccasion }, [onOccasion])
   useEffect(() => { comRef.current = onComment }, [onComment])
   return (
-    <div style={{ background:'#111', borderRadius:12, padding:16, marginBottom:8, border:`1px solid ${used?'#fafafa':'#1e1e1e'}` }}>
+    <div style={{ background:t.color.surface, borderRadius:12, padding:16, marginBottom:8, border:`1px solid ${used?'#fafafa':'#1e1e1e'}` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: used?10:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ fontSize:20 }}>{icon}</div>
@@ -28,12 +28,12 @@ const StepCard = React.memo(({ icon, title, desc, k, usedSteps, occasions, comme
       {used && (
         <div>
           <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:7 }}>OCCASION</div>
-          <input style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#ffffff', fontFamily:'inherit', outline:'none', boxSizing:'border-box', marginBottom:8 }}
+          <input style={{ width:'100%', background:t.color.surface, border:`1px solid ${t.color.line}`, borderRadius:10, padding:'12px 14px', fontSize:14, color: t.color.text, fontFamily:'inherit', outline:'none', boxSizing:'border-box', marginBottom:8 }}
             placeholder="When did you use this?" value={occ}
             autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
             onChange={e => { const v = e.target.value; setOcc(v); occRef.current(k, v) }} />
           <div style={{ fontSize:9, letterSpacing:3, color:'#555', fontWeight:700, marginBottom:7 }}>COMMENTS</div>
-          <textarea style={{ width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', fontSize:13, color:'#ffffff', fontFamily:'inherit', outline:'none', resize:'none', boxSizing:'border-box', height:55 }}
+          <textarea style={{ width:'100%', background:t.color.surface, border:`1px solid ${t.color.line}`, borderRadius:10, padding:'12px 14px', fontSize:13, color: t.color.text, fontFamily:'inherit', outline:'none', resize:'none', boxSizing:'border-box', height:55 }}
             placeholder="How did it help?" value={com}
             onChange={e => { const v = e.target.value; setCom(v); comRef.current(k, v) }} />
         </div>
@@ -76,10 +76,10 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
     setSaving(false)
   }
 
-  const inp = { width:'100%', background:'#0a0a0a', border:'1px solid #36363c', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#ffffff', fontFamily:'inherit', outline:'none', boxSizing:'border-box' }
+  const inp = { width:'100%', background:t.color.surface, border:`1px solid ${t.color.line2}`, borderRadius:10, padding:'12px 14px', fontSize:14, color: t.color.text, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }
   const lbl = { fontSize:10, letterSpacing:2.4, color:'#4a4a4a', fontWeight:600, marginBottom:8, display:'block', textTransform:'uppercase' }
-  const btn = { background:'#fafafa', border:'none', borderRadius:10, padding:'14px 18px', fontSize:13, fontWeight:700, letterSpacing:1.6, color:'#000', cursor:'pointer', width:'100%', fontFamily:'inherit', marginBottom:8, textTransform:'uppercase' }
-  const card = { background:'#0a0a0a', borderRadius:14, padding:16, marginBottom:10, border:'1px solid #252528' }
+  const btn = { background:t.color.text, border:'none', borderRadius:10, padding:'14px 18px', fontSize:13, fontWeight:700, letterSpacing:1.6, color:'#000', cursor:'pointer', width:'100%', fontFamily:'inherit', marginBottom:8, textTransform:'uppercase' }
+  const card = { background:t.color.surface, borderRadius:14, padding:16, marginBottom:10, border:`1px solid ${t.color.line}` }
 
   return (
     <div style={{ padding:'18px 22px 56px' }}>
@@ -93,11 +93,11 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
       {/* Callout — dark surface with white left accent, replaces the old orange gradient */}
       <div style={{
         position:'relative',
-        background:'#141414', borderRadius:14, padding:'16px 18px 16px 22px',
-        marginBottom:14, border:'1px solid #252528', overflow:'hidden',
+        background:t.color.surface2, borderRadius:14, padding:'16px 18px 16px 22px',
+        marginBottom:14, border:`1px solid ${t.color.line}`, overflow:'hidden',
       }}>
         <div style={{
-          position:'absolute', top:0, bottom:0, left:0, width:3, background:'#fafafa',
+          position:'absolute', top:0, bottom:0, left:0, width:3, background:t.color.text,
         }} />
         <div style={{
           fontSize:10, letterSpacing:2.4, color:t.color.text, fontWeight:700, textTransform:'uppercase',
@@ -108,14 +108,14 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
       </div>
       <div style={card}>
         <span style={lbl}>PLAYER</span>
-        <div style={{ ...inp, color:'#ffffff', fontWeight:800, background:'#0d0d0d', cursor:'default', marginBottom:10 }}>
+        <div style={{ ...inp, color: t.color.text, fontWeight:800, background:t.color.surface, cursor:'default', marginBottom:10 }}>
           {playerName || '—'}
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
           <div>
             <span style={lbl}>SESSION</span>
             <select value={form.sessionType} onChange={e => set('sessionType', e.target.value)}
-              style={{ background:'#0a0a0a', border:'1px solid #2a2a2a', borderRadius:10, padding:'12px 14px', color:'#ffffff', fontFamily:'inherit', fontSize:14, outline:'none', width:'100%' }}>
+              style={{ background:t.color.surface, border:`1px solid ${t.color.line}`, borderRadius:10, padding:'12px 14px', color: t.color.text, fontFamily:'inherit', fontSize:14, outline:'none', width:'100%' }}>
               <option>Practice</option><option>Game</option>
             </select>
           </div>
@@ -170,7 +170,7 @@ export default function ActionForm({ playerName, onSubmit, initialSubmissions })
               <div style={{ fontSize:10, color:'#444' }}>Unlocks at Lesson 5</div>
             </div>
           </div>
-          <div style={{ background:'#1e1e1e', borderRadius:20, padding:'4px 10px', fontSize:9, fontWeight:800, color:'#555' }}>🔒 LOCKED</div>
+          <div style={{ background:t.color.surface2, borderRadius:20, padding:'4px 10px', fontSize:9, fontWeight:800, color:'#555' }}>🔒 LOCKED</div>
         </div>
       </div>
       <div style={card}>
