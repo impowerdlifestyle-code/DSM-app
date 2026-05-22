@@ -8,7 +8,8 @@
     <meta name="description" content="DiLorenzo Soccer Mindset — train your mind, dominate the pitch." />
 
     <!-- Favicons -->
-    <link rel="icon" type="image/png" href="/dsm-logo.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/dsm-icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/dsm-icon-512.png" />
 
     <!-- PWA / iOS standalone install -->
     <link rel="manifest" href="/manifest.json" />
@@ -17,7 +18,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="DSM" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="apple-touch-icon" href="/dsm-logo.png" />
+    <link rel="apple-touch-icon" href="/dsm-apple-touch.png" />
 
     <!-- Open Graph / sharing -->
     <meta property="og:title" content="DSM — DiLorenzo Soccer Mindset" />
@@ -34,7 +35,11 @@
 
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body, #root { background: #000; min-height: 100vh; min-height: 100dvh; width: 100%; color-scheme: dark; }
+      /* Initial dark paint while theme CSS injects. Overridden by
+         :root[data-theme="..."] blocks added by src/lib/theme.js bootTheme(). */
+      :root { --color-bg: #000; --color-text: #fafafa; color-scheme: dark; }
+      :root[data-theme="daylight"] { color-scheme: light; }
+      html, body, #root { background: var(--color-bg); min-height: 100vh; min-height: 100dvh; width: 100%; color: var(--color-text); }
       body {
         font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
         -webkit-font-smoothing: antialiased;
@@ -45,7 +50,7 @@
         overscroll-behavior: none;
       }
       ::-webkit-scrollbar { width: 0; }
-      ::selection { background: #fafafa; color: #000; }
+      ::selection { background: var(--color-text); color: var(--color-bg); }
 
       /* iOS inputs: 16px+ font prevents zoom-on-focus.
          Apply globally so every input/textarea/select inherits. */

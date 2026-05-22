@@ -211,20 +211,33 @@ export default function Auth() {
   const [message, setMessage] = useState('')
   const [invitedBy, setInvitedBy] = useState(null)
 
-  // Read invite + prefill params from the URL once. Lets admins share a link
-  // like /?coach=Valentino&email=x@y.com&name=John that lands ready-to-sign-up.
+  // Read invite + prefill params from the URL once. New signed-token flow:
+  //   /?invite=<base64url(payload).base64url(hmac)>&email=x&name=Y
+  // The token is opaque to the client — we just hand it to /api/invite/redeem
+  // after sign-up. Coach label is shown from the payload (un-verified) purely
+  // for the "Invited by" hint; the real binding happens server-side.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const coach    = params.get('coach')
-    const eParam   = params.get('email')
-    const nParam   = params.get('name')
-    if (coach) {
-      sessionStorage.setItem('dsm_pending_coach', coach)
-      setInvitedBy(coach)
+    const invite = params.get('invite')
+    const eParam = params.get('email')
+    const nParam = params.get('name')
+    if (invite) {
+      sessionStorage.setItem('dsm_pending_invite', invite)
+      try {
+        const [payloadEncoded] = invite.split('.', 2)
+        const payload = JSON.parse(atob(payloadEncoded.replace(/-/g, '+').replace(/_/g, '/')))
+        if (payload?.coachLabel) setInvitedBy(payload.coachLabel)
+      } catch { /* malformed — server will reject on redeem */ }
       setMode('signup')
     } else {
-      const stored = sessionStorage.getItem('dsm_pending_coach')
-      if (stored) setInvitedBy(stored)
+      const stored = sessionStorage.getItem('dsm_pending_invite')
+      if (stored) {
+        try {
+          const [payloadEncoded] = stored.split('.', 2)
+          const payload = JSON.parse(atob(payloadEncoded.replace(/-/g, '+').replace(/_/g, '/')))
+          if (payload?.coachLabel) setInvitedBy(payload.coachLabel)
+        } catch { /* malformed */ }
+      }
     }
     if (eParam) setEmail(eParam)
     if (nParam) { setName(nParam); setMode('signup') }

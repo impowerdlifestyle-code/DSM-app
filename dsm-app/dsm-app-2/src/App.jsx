@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase, redeemParentInvite, updateProfileAssignedCoach } from './lib/supabase.js'
+import { supabase, redeemParentInvite } from './lib/supabase.js'
+import { authFetch } from './lib/authFetch.js'
 import Auth from './components/Auth.jsx'
 import Main from './components/Main.jsx'
 import ParentShell from './components/ParentShell.jsx'
@@ -50,12 +51,17 @@ export default function App() {
         sessionStorage.removeItem('dsm_pending_parent_code')
         await redeemParentInvite(user.id, pending)
       }
-      const pendingCoach = sessionStorage.getItem('dsm_pending_coach')
+      const pendingInvite = sessionStorage.getItem('dsm_pending_invite')
       const { data } = await supabase.from('profiles')
         .select('role, full_name, assigned_coach').eq('id', user.id).maybeSingle()
-      if (pendingCoach && data && !data.assigned_coach) {
-        sessionStorage.removeItem('dsm_pending_coach')
-        await updateProfileAssignedCoach(user.id, decodeURIComponent(pendingCoach))
+      if (pendingInvite && data && !data.assigned_coach) {
+        sessionStorage.removeItem('dsm_pending_invite')
+        try {
+          await authFetch('/api/invite/redeem', {
+            method: 'POST',
+            body: JSON.stringify({ token: pendingInvite }),
+          })
+        } catch { /* server rejected — invite was forged/expired, signup still succeeds */ }
       }
       setRole(data?.role || 'athlete')
       if (data?.full_name) localStorage.setItem('dsm_player_name', data.full_name)

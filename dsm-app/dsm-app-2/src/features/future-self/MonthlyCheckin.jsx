@@ -34,6 +34,14 @@ export default function MonthlyCheckin({ user }) {
     return () => { live = false }
   }, [user?.id, month])
 
+  // Stop any running recognizer on unmount so navigating away mid-recording
+  // doesn't leave the mic open (H10 — mirrors VoiceJournal cleanup).
+  useEffect(() => () => {
+    const rec = recognizerRef.current
+    if (rec?.stop) { try { rec.stop() } catch { /* ignore */ } }
+    recognizerRef.current = null
+  }, [])
+
   function startRecord() {
     setError(''); setTranscript('')
     const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)

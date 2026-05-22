@@ -133,17 +133,9 @@ export async function setProgramTrack(userId, track) {
   return { data, error: null }
 }
 
-export async function updateProfileAssignedCoach(userId, coachLabel) {
-  const clean = (coachLabel || '').trim().slice(0, 80)
-  if (!clean) return { data: null, error: { message: 'Coach label required' } }
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ assigned_coach: clean })
-    .eq('id', userId)
-    .select('id, assigned_coach')
-    .maybeSingle()
-  return { data, error }
-}
+// Removed: updateProfileAssignedCoach client write. Replaced by the signed
+// /api/invite/redeem flow — the client can't directly set assigned_coach
+// anymore (server enforces the HMAC + expiry on the invite token).
 
 export async function signIn(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })

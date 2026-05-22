@@ -118,36 +118,73 @@ async function callAnthropicDirect(payload) {
     throw new Error(`Direct Anthropic call failed (${res.status}): ${errText.slice(0, 200)}`)
   }
   const data = await res.json()
-  const text = data.content?.[0]?.text || ''
+  // Anthropic returns content as an array of typed blocks (text, tool_use,
+  // image, ...). Pick the first text block — picking [0] blindly returns
+  // empty string for non-text leaders. Defensive over guess-correct.
+  const text = extractText(data?.content)
   const cleaned = text.trim().replace(/^```json\s*|\s*```$/g, '')
 
   if (action === 'analyze_journal') {
-    try { return JSON.parse(cleaned) }
-    catch { return { cues: [], sentiment: 'neutral', aiNote: '', proposedActions: [] } }
+    const parsed = safeParse(cleaned)
+    return {
+      cues: toStringArray(parsed?.cues),
+      sentiment: toStr(parsed?.sentiment) || 'neutral',
+      aiNote: toStr(parsed?.aiNote),
+      proposedActions: toStringArray(parsed?.proposedActions),
+    }
   }
   if (action === 'consolidate') {
-    try {
-      const parsed = JSON.parse(cleaned)
-      return {
-        summary: parsed.summary || '',
-        themes: {
-          mindset:   parsed.mindset   || '',
-          technique: parsed.technique || '',
-          recovery:  parsed.recovery  || '',
-          goals:     parsed.goals     || '',
-        },
-      }
-    } catch { return { summary: text, themes: { mindset:'', technique:'', recovery:'', goals:'' } } }
+    const parsed = safeParse(cleaned)
+    if (!parsed) return { summary: text, themes: { mindset:'', technique:'', recovery:'', goals:'' } }
+    return {
+      summary: toStr(parsed.summary),
+      themes: {
+        mindset:   toStr(parsed.mindset),
+        technique: toStr(parsed.technique),
+        recovery:  toStr(parsed.recovery),
+        goals:     toStr(parsed.goals),
+      },
+    }
   }
   if (action === 'nudge_check') {
-    try { return JSON.parse(cleaned) }
-    catch { return { send: false, kind: 'none', message: '', signal: '' } }
+    const parsed = safeParse(cleaned)
+    return {
+      send: !!parsed?.send,
+      kind: toStr(parsed?.kind) || 'none',
+      message: toStr(parsed?.message),
+      signal: toStr(parsed?.signal),
+    }
   }
   if (action === 'extract_actions') {
-    try { return JSON.parse(cleaned) }
-    catch { return { proposedActions: [] } }
+    const parsed = safeParse(cleaned)
+    return { proposedActions: toStringArray(parsed?.proposedActions) }
   }
   return { content: text, usage: data.usage }
+}
+
+// ─── RESPONSE SHAPE GUARDS (H7) ────────────────────────────────────────
+// Anthropic SDK shapes drift across versions and tool-use can put non-text
+// blocks at content[0]. These helpers prevent malformed responses from
+// poisoning coach_memory.themes or VoiceJournal state.
+function extractText(content) {
+  if (!Array.isArray(content)) return ''
+  for (const block of content) {
+    if (block?.type === 'text' && typeof block.text === 'string') return block.text
+  }
+  return ''
+}
+function safeParse(raw) {
+  if (!raw) return null
+  try { return JSON.parse(raw) } catch { return null }
+}
+function toStr(v) {
+  if (typeof v === 'string') return v
+  if (v == null) return ''
+  return ''  // discard non-string scalars/objects rather than coerce JSON garbage
+}
+function toStringArray(v) {
+  if (!Array.isArray(v)) return []
+  return v.filter(x => typeof x === 'string').slice(0, 20)
 }
 
 // ─── DEV-MODE PERSONA (mirror of server prompts) ──────────────────────
