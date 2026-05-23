@@ -861,12 +861,22 @@ export default function Main({ user }) {
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-        @keyframes dsmGlow {
-          0%,100% { text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.30), 0 0 56px rgba(255,255,255,0.15) }
-          50%     { text-shadow: 0 0 20px rgba(255,255,255,0.75), 0 0 40px rgba(255,255,255,0.42), 0 0 72px rgba(255,255,255,0.22) }
+        /* Glow text-shadows are tuned for the Onyx dark bg — pure-white
+           shadows on a light page would be invisible. Gate to dark themes. */
+        :root[data-theme="onyx"] {
+          --dsm-glow-rgb: 255,255,255;
         }
-        .dsm-glow { text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.30), 0 0 56px rgba(255,255,255,0.15); animation: dsmGlow 3.2s ease-in-out infinite; }
-        .dsm-glow-strong { text-shadow: 0 0 18px rgba(255,255,255,0.7), 0 0 36px rgba(255,255,255,0.4), 0 0 64px rgba(255,255,255,0.2); animation: dsmGlow 2.6s ease-in-out infinite; }
+        :root[data-theme="daylight"] {
+          /* Subtle ink glow instead of white — still adds presence, but on
+             a light bg it reads as a soft halo, not invisible. */
+          --dsm-glow-rgb: 30,30,30;
+        }
+        @keyframes dsmGlow {
+          0%,100% { text-shadow: 0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.30), 0 0 56px rgba(var(--dsm-glow-rgb),0.15) }
+          50%     { text-shadow: 0 0 20px rgba(var(--dsm-glow-rgb),0.75), 0 0 40px rgba(var(--dsm-glow-rgb),0.42), 0 0 72px rgba(var(--dsm-glow-rgb),0.22) }
+        }
+        .dsm-glow { text-shadow: 0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.30), 0 0 56px rgba(var(--dsm-glow-rgb),0.15); animation: dsmGlow 3.2s ease-in-out infinite; }
+        .dsm-glow-strong { text-shadow: 0 0 18px rgba(var(--dsm-glow-rgb),0.7), 0 0 36px rgba(var(--dsm-glow-rgb),0.4), 0 0 64px rgba(var(--dsm-glow-rgb),0.2); animation: dsmGlow 2.6s ease-in-out infinite; }
         .fade { animation: fadeIn 0.28s cubic-bezier(.2,.7,.2,1); }
         input::placeholder, textarea::placeholder { color: var(--color-text-mute); }
         input, textarea, select { -webkit-user-select: text; user-select: text; }
@@ -2463,6 +2473,29 @@ export default function Main({ user }) {
               🔒 LOCK
             </button>
           </div>
+
+          {/* H9: partial-failure banner. Surfaces RLS denials / network
+              failures from loadAthleteProfile so coaches know data is
+              missing rather than thinking sections are empty. */}
+          {athleteLoadErrors.length > 0 && (
+            <div style={{
+              marginBottom: 12,
+              padding: '10px 12px',
+              background: t.color.errBg || 'rgba(248,113,113,0.08)',
+              border: `1px solid ${t.color.err}`,
+              borderRadius: 10,
+              fontSize: 12,
+              color: t.color.err,
+              lineHeight: 1.4,
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 2 }}>
+                Some sections couldn't load
+              </div>
+              <div style={{ fontSize: 12 }}>
+                {athleteLoadErrors.join(' · ')} — likely an RLS permission issue. Refresh to retry; if it persists, check the migration order.
+              </div>
+            </div>
+          )}
 
           {/* Profile tabs */}
           <div style={{ display:'flex',gap:6,marginBottom:14,flexWrap:'wrap' }}>

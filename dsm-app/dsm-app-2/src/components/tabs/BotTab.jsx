@@ -52,6 +52,17 @@ export default function BotTab({
                 }}>
                   {msg.content}
                 </div>
+                {!isUser && msg.savedFailed && (
+                  <div style={{
+                    marginTop: 4, paddingLeft: 4,
+                    fontSize: 10, color: t.color.err,
+                    letterSpacing: 0.3,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }} title="This reply wasn't saved to history — feedback/rating isn't available">
+                    <span aria-hidden="true">⚠</span>
+                    <span>Not saved — feedback unavailable</span>
+                  </div>
+                )}
                 {canRate && (
                   <div style={{ display:'flex', gap:4, marginTop:6, paddingLeft:4 }}>
                     <button
