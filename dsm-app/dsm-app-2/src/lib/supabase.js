@@ -348,11 +348,14 @@ export async function updateCoachMemoryThemes(userId, themes) {
 }
 
 // ─── SQUADS ──────────────────────────────────────────────────
+// Uses crypto.getRandomValues — Math.random is predictable and inadequate
+// for security-relevant codes (M1 from 2026-05-21 audit).
 function randomInviteCode() {
-  // 6-char alphanumeric, omit ambiguous chars
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const buf = new Uint32Array(6)
+  crypto.getRandomValues(buf)
   let s = ''
-  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < 6; i++) s += chars[buf[i] % chars.length]
   return s
 }
 
@@ -1059,33 +1062,28 @@ export async function upsertQuestProgress(userId, questId, progress, target) {
   return { data, error }
 }
 
-// Bump quest progress by 1 (capped at target). Returns { row, justCompleted }.
+// Bump quest progress by 1 (capped at target). Atomic via Postgres RPC
+// (migrations/023_bump_quest_rpc.sql) — was a read-then-update that lost
+// increments under concurrent bumps (M6 fix from 2026-05-21 audit).
+// Returns { row, justCompleted, error }.
 export async function bumpQuest(userId, questId, increment = 1) {
   const today = new Date().toISOString().slice(0, 10)
-  const { data: prior } = await supabase
-    .from('daily_quests')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('quest_id', questId)
-    .eq('date', today)
-    .maybeSingle()
-  if (!prior) return { row: null, justCompleted: false }
-  if (prior.completed) return { row: prior, justCompleted: false }
-  const newProgress = Math.min(prior.target, (prior.progress || 0) + increment)
-  const justCompleted = newProgress >= prior.target
-  const { data, error } = await supabase
-    .from('daily_quests')
-    .update({
-      progress: newProgress,
-      completed: justCompleted,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .eq('quest_id', questId)
-    .eq('date', today)
-    .select()
-    .single()
-  return { row: data, error, justCompleted }
+  const { data, error } = await supabase.rpc('bump_daily_quest', {
+    p_user_id: userId,
+    p_quest_id: questId,
+    p_date: today,
+    p_increment: increment,
+  })
+  const row = Array.isArray(data) && data[0] ? data[0] : null
+  if (!row) return { row: null, justCompleted: false, error }
+  return {
+    row: {
+      id: row.id, user_id: row.user_id, quest_id: row.quest_id, date: row.date,
+      progress: row.progress, target: row.target, completed: row.completed,
+    },
+    justCompleted: !!row.just_completed,
+    error,
+  }
 }
 
 // ─── WORKOUTS ────────────────────────────────────────────────
@@ -1413,11 +1411,13 @@ export async function getActiveMatch(userId) {
 }
 
 // ─── PARENT LINKS ───────────────────────────────────────────
+// crypto.getRandomValues per M1 (Math.random isn't secure for invite codes).
 function genInviteCode() {
-  // 6-char readable, no ambiguous chars
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const buf = new Uint32Array(6)
+  crypto.getRandomValues(buf)
   let s = ''
-  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)]
+  for (let i = 0; i < 6; i++) s += alphabet[buf[i] % alphabet.length]
   return s
 }
 

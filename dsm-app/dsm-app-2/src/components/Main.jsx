@@ -76,7 +76,7 @@
  * ══════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
   saveChatMessage, getChatHistory, getCoachMemory, bumpMessagesSinceConsolidation, consolidateCoachMemory,
   rateMessage, getRecentFeedback, getAthleteStateDigest, awardXp,
@@ -98,24 +98,27 @@ import ActionsTab from './tabs/ActionsTab.jsx'
 import ActionsSubNav from './tabs/ActionsSubNav.jsx'
 import BodySubNav from './tabs/BodySubNav.jsx'
 import CoachSubNav from './tabs/CoachSubNav.jsx'
-import BotTab from './tabs/BotTab.jsx'
-import WorkoutsTab from './tabs/WorkoutsTab.jsx'
-import NutritionTab from './tabs/NutritionTab.jsx'
-import CalendarTab from './tabs/CalendarTab.jsx'
-import BodyStatsTab from './tabs/BodyStatsTab.jsx'
-import InboxTab from './tabs/InboxTab.jsx'
 import PlayerTab from './tabs/PlayerTab.jsx'
-import CourseTab from './tabs/CourseTab.jsx'
-import SquadTab from './tabs/SquadTab.jsx'
-import LockerRoomTab from './tabs/LockerRoomTab.jsx'
-import AdminTab from './tabs/AdminTab.jsx'
 import Onboarding from './Onboarding.jsx'
-import MatchDayTab from './tabs/MatchDayTab.jsx'
 import TiltCard from './widgets/TiltCard.jsx'
 import QuestCard from './widgets/QuestCard.jsx'
 import ProgressBar from './widgets/ProgressBar.jsx'
-import VoiceJournal from './widgets/VoiceJournal.jsx'
-import MonthlyCheckin from '../features/future-self/MonthlyCheckin.jsx'
+// Route-level code-split: heavy / lower-frequency tabs become async chunks.
+// Initial bundle drops ~150 KiB; users only pay download cost the first
+// time they visit each tab. Wrap render sites in <Suspense> below.
+const BotTab        = lazy(() => import('./tabs/BotTab.jsx'))
+const WorkoutsTab   = lazy(() => import('./tabs/WorkoutsTab.jsx'))
+const NutritionTab  = lazy(() => import('./tabs/NutritionTab.jsx'))
+const CalendarTab   = lazy(() => import('./tabs/CalendarTab.jsx'))
+const BodyStatsTab  = lazy(() => import('./tabs/BodyStatsTab.jsx'))
+const InboxTab      = lazy(() => import('./tabs/InboxTab.jsx'))
+const CourseTab     = lazy(() => import('./tabs/CourseTab.jsx'))
+const SquadTab      = lazy(() => import('./tabs/SquadTab.jsx'))
+const LockerRoomTab = lazy(() => import('./tabs/LockerRoomTab.jsx'))
+const AdminTab      = lazy(() => import('./tabs/AdminTab.jsx'))
+const MatchDayTab   = lazy(() => import('./tabs/MatchDayTab.jsx'))
+const VoiceJournal  = lazy(() => import('./widgets/VoiceJournal.jsx'))
+const MonthlyCheckin = lazy(() => import('../features/future-self/MonthlyCheckin.jsx'))
 import WeeklyRecapCard from './widgets/WeeklyRecapCard.jsx'
 import BadgeHints, { markBadgeHintsSeen } from './BadgeHints.jsx'
 import WelcomeTour, { shouldShowTourAutomatically } from './WelcomeTour.jsx'
@@ -171,7 +174,7 @@ export default function Main({ user }) {
   const [allBallMastery, setAllBallMastery] = useState([])
   const [athleteProfileTab, setAthleteProfileTab] = useState('overview')
   const [coachFilter, setCoachFilter] = useState('all')
-  const [athleteProgramWeek, setAthleteProgramWeek] = useState(1)
+  // L3: removed athleteProgramWeek — was set on athlete switch but never read.
   const [gameDayChecked, setGameDayChecked] = useState({})
   const [mistakes, setMistakes] = useState([])
   const [newMistake, setNewMistake] = useState({ situation:'', reset:'', tool:'' })
@@ -252,7 +255,12 @@ export default function Main({ user }) {
     setProfile(p)
     setStreak(p?.streak || 0)
     const { data: hd } = await getHabits(user.id)
-    if (hd?.habits) setHabits(JSON.parse(hd.habits))
+    // M2: habits may come back as a parsed object (jsonb column) or as a
+    // string (text column with JSON). Branch on type so we don't throw
+    // JSON.parse on an already-parsed object.
+    if (hd?.habits) {
+      setHabits(typeof hd.habits === 'string' ? JSON.parse(hd.habits) : hd.habits)
+    }
     const { data: sd } = await getActionSteps(user.id)
     if (sd) setSubmissions(sd)
     const { data: bd } = await supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14)
@@ -962,6 +970,13 @@ export default function Main({ user }) {
         </div>
       </div>
 
+      <Suspense fallback={
+        <div style={{
+          padding: '40px 22px', textAlign: 'center',
+          fontSize: 11, letterSpacing: 2, color: t.color.textDim,
+          fontWeight: 600, textTransform: 'uppercase',
+        }}>Loading…</div>
+      }>
       {tab === 'home' && (
         <HomeView
           user={user}
@@ -2647,7 +2662,6 @@ export default function Main({ user }) {
                 {[1,2,3,4,5,6,7,8].map(w=>(
                   <button key={w}
                     onClick={async()=>{
-                      setAthleteProgramWeek(w)
                       await supabase.from('profiles').update({ program_week: w }).eq('id', selectedAthlete.id)
                       setSelectedAthlete(p=>({...p, program_week: w}))
                     }}
@@ -2938,6 +2952,7 @@ export default function Main({ user }) {
           )}
         </div>
       )}
+      </Suspense>
 
       {/* NAV — premium animated glass toolbar */}
       <InteractiveMenu
