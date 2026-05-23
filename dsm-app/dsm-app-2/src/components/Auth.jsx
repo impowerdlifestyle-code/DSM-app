@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { signIn, signUp, redeemParentInvite, sendPasswordReset, supabase } from '../lib/supabase.js'
 import { tokens as t } from '../styles.js'
 import TiltCard from './widgets/TiltCard.jsx'
+import PasswordInput from './widgets/PasswordInput.jsx'
 
 const s = {
   shell: {
@@ -403,14 +404,13 @@ export default function Auth() {
               >Forgot?</button>
             )}
           </div>
-          <input
-            style={s.inp}
-            type="password"
-            placeholder="••••••••"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            inputStyle={s.inp}
+            style={{ marginBottom: s.inp?.marginBottom || 14 }}
           />
 
           <button

@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { tokens as t } from '../styles.js'
 import { supabase, signOut } from '../lib/supabase.js'
+import PasswordInput from './widgets/PasswordInput.jsx'
 
 const MIN_LEN = 8
 
@@ -53,25 +54,19 @@ export default function PasswordResetPage() {
         <p style={body}>Pick something strong — at least {MIN_LEN} characters.</p>
 
         <div style={lbl}>New password</div>
-        <input
-          type="password"
+        <PasswordInput
           autoFocus
           autoComplete="new-password"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          placeholder="••••••••"
-          style={input}
         />
 
         <div style={{ ...lbl, marginTop: 10 }}>Confirm password</div>
-        <input
-          type="password"
+        <PasswordInput
           autoComplete="new-password"
           value={confirm}
           onChange={e => setConfirm(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && submit()}
-          placeholder="••••••••"
-          style={input}
         />
 
         {err && <div style={errBox}>{err}</div>}
