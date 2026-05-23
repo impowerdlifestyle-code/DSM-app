@@ -7,12 +7,21 @@ import ParentShell from './components/ParentShell.jsx'
 import LoadingBall from './components/LoadingBall.jsx'
 import BugReporter from './components/BugReporter.jsx'
 import ParentConsentPage from './components/ParentConsentPage.jsx'
+import PasswordResetPage from './components/PasswordResetPage.jsx'
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
+  const [passwordRecovery, setPasswordRecovery] = useState(
+    typeof window !== 'undefined' && (
+      // Hash returned by Supabase magic links carries type=recovery
+      window.location.hash.includes('type=recovery') ||
+      // Our redirectTo also adds ?reset=1 so we can fall back to that
+      new URLSearchParams(window.location.search).get('reset') === '1'
+    )
+  )
 
   // Parent-consent landing — short-circuits auth so parents (who have no account)
   // can approve their child's signup via a tokenized URL.
@@ -31,7 +40,13 @@ export default function App() {
       setUser(session?.user ?? null)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Supabase fires PASSWORD_RECOVERY when the user clicks the magic link
+      // from the reset email. At that point there IS a session, but we want
+      // to gate the app behind a "set new password" form instead of letting
+      // them straight into Main with a temporary session.
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
+      if (event === 'SIGNED_OUT')        setPasswordRecovery(false)
       setUser(session?.user ?? null)
       setRole(null)
     })
@@ -66,6 +81,10 @@ export default function App() {
   }, [user?.id])
 
   if (consentToken) return <ParentConsentPage token={consentToken} />
+
+  // Password-reset gate — short-circuits everything else so the user is
+  // forced to set a new password before continuing into the app.
+  if (passwordRecovery) return <PasswordResetPage />
 
   if (loading || (user && roleLoading)) return <LoadingBall />
 
