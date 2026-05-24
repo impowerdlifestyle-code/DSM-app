@@ -1,80 +1,8 @@
-/*
- * ══════════════════════════════════════════════════════════════════
- * DSM APP — Main-26.jsx (FULLY DEBUGGED VERSION)
- * ══════════════════════════════════════════════════════════════════
- *
- * BUGS FIXED (search "BUG FIX" for critical DB fixes):
- *
- *   1.  loadAthleteProfile() — Action steps query was replaced with
- *       Promise.resolve({data:[]}) so coach dashboard NEVER loaded
- *       athlete action steps. Restored to getActionSteps(athlete.id).
- *
- *   2.  Leaderboard — asCount was hardcoded to 0 instead of querying
- *       the action_steps table. Restored the Supabase count query.
- *       ⚠️  VERIFY: table name may differ — check supabase.js.
- *
- *   3.  Weekly check-in upsert — missing onConflict parameter.
- *       Added { onConflict: 'user_id,week' }.
- *       ⚠️  REQUIRES in Supabase SQL Editor:
- *         ALTER TABLE weekly_checkins
- *           ADD CONSTRAINT weekly_checkins_user_week_unique
- *           UNIQUE (user_id, week);
- *
- *   4.  mindset_map upsert — same onConflict fix.
- *       ⚠️  REQUIRES:
- *         ALTER TABLE mindset_map
- *           ADD CONSTRAINT mindset_map_user_week_unique
- *           UNIQUE (user_id, week);
- *
- *   5.  downloadReport() called with `user` instead of `profile` —
- *       the user object doesn't have full_name, so reports showed
- *       wrong name. Fixed to pass `profile`.
- *
- *   6.  loadUserData() had zero error handling — one failed query
- *       would silently crash the whole app. Wrapped in try/catch.
- *       Also added null check on profile result.
- *
- *   7.  loadAthleteProfile() — same missing error handling. Wrapped.
- *
- *   8.  Micro reps progress bar counted ALL gameDayChecked items
- *       including gameday checklist entries, inflating the count.
- *       Fixed to only count drill-specific IDs.
- *
- *   9.  Coach dashboard typo: "COACH VALENTINOIEW" → "COACH VALENTINO VIEW"
- *
- *   10. Duplicate matchMsg for "how are you" — second block was dead
- *       code (first match always wins). Removed.
- *
- *   11. Chat send button (→) called sendChat() with no arguments,
- *       so clicking it did nothing. Fixed to read from input ref.
- *
- *   12. Removed dead code: handleSubmitForm (replaced by ActionForm),
- *       form state, savingForm state, setF, microRepDone state.
- *
- *   13. Added error handling to: mistake resets, MAP save, community
- *       post creation. All previously had no error feedback.
- *
- * ──────────────────────────────────────────────────────────────────
- * REMAINING ISSUES (need supabase.js or DB access to fix):
- *
- *   A. Verify submitActionSteps() in lib/supabase.js maps form
- *      fields to the correct database columns.
- *
- *   B. The action_steps table name in leaderboard query (~line 700)
- *      may not match your actual table. Check supabase.js.
- *
- *   C. ElevenLabs API key is exposed client-side via VITE_ env var.
- *      Should be proxied through a Vercel serverless function.
- *
- *   D. N+1 leaderboard query fires one DB call per athlete.
- *      Replace with aggregated query or Supabase RPC.
- *
- *   E. Supabase Site URL must be set to your live domain
- *      (dsm-app-beta.vercel.app) not localhost:3000.
- *
- *   F. This 3300-line file should be split into separate components.
- * ══════════════════════════════════════════════════════════════════
- */
+// DSM Main shell — athlete + coach + admin app.
+// Historical changelog comment block (70 lines) removed 2026-05-24
+// per audit L7. The 13 "bugs fixed" items are in git history;
+// the 6 "remaining issues" items are tracked in
+// ~/.claude/projects/-Users-ciaranwentz/memory/project_dsm_audit_findings.md.
 
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { supabase, signOut, submitActionSteps, getActionSteps, saveHabits, getHabits, logDay, getAllProfiles, getAllActionSteps, updateAccessLevel,
@@ -206,6 +134,19 @@ export default function Main({ user }) {
   const [progressTab, setProgressTab] = useState('overview')
   const [savingChallenge, setSavingChallenge] = useState(false)
   const chatEnd = useRef(null)
+  // L5: refresh today/currentWeek across midnight so a user who keeps
+  // the app open overnight sees a clean rollover (was computed once at
+  // mount, so quest-seeding + week filters could be a day behind).
+  const [, setDayTick] = useState(0)
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date()
+      const msToMidnight = (24 - now.getHours()) * 3600_000 - now.getMinutes() * 60_000 - now.getSeconds() * 1000 + 1000
+      return setTimeout(() => { setDayTick(t => t + 1); id = tick() }, msToMidnight)
+    }
+    let id = tick()
+    return () => clearTimeout(id)
+  }, [])
   const today = new Date().toISOString().split('T')[0]
   const currentWeek = getWeekKey()
 
@@ -216,6 +157,16 @@ export default function Main({ user }) {
 
   async function loadAthleteProfile(athlete) {
     try {
+    // L2: load this coach's private note for the athlete. Was previously
+    // never re-loaded on athlete select, so the textarea would show
+    // whatever was last typed for whoever was viewed before — confusing
+    // and risked saving notes against the wrong athlete.
+    const noteRes = await supabase
+      .from('coach_athlete_notes')
+      .select('notes')
+      .eq('coach_id', user.id).eq('athlete_id', athlete.id)
+      .maybeSingle()
+    setCoachNote(noteRes.data?.notes || '')
     const [as, ci, bm, sn, msgs] = await Promise.all([
       // BUG FIX: was Promise.resolve({data:[]}) — action steps were never being fetched
       getActionSteps(athlete.id),

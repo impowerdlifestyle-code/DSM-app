@@ -34,7 +34,10 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
   useEffect(() => { load() }, [targetId, adminView])
 
   async function load() {
-    if (!targetId) return
+    // M12 follow-up: when targetId is missing, the old code returned
+    // without flipping loading=false, leaving the user stuck on
+    // "Loading locker room…" indefinitely.
+    if (!targetId) { setLoading(false); return }
     setLoading(true)
     const d = await getLockerRoomData(targetId, { isAdmin: adminView })
     setData(d)

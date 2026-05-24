@@ -71,10 +71,24 @@ export default function ParentDashboardTab({ user }) {
     setCode('')
     await load()
     if (athleteId) {
-      // re-fetch and auto-select the newly linked athlete
-      const { data } = await getLinkedAthletes(user.id)
-      const a = (data || []).find(x => x.id === athleteId)
-      if (a) selectAthlete(a)
+      // M18: re-fetch and auto-select. Retry once on replication lag —
+      // sometimes the just-linked row hasn't propagated to the read
+      // replica yet, and the find() returned undefined leaving the
+      // parent staring at an empty state until manual refresh.
+      const tryFind = async () => {
+        const { data } = await getLinkedAthletes(user.id)
+        return (data || []).find(x => x.id === athleteId)
+      }
+      let a = await tryFind()
+      if (!a) {
+        await new Promise(r => setTimeout(r, 600))
+        a = await tryFind()
+      }
+      if (a) {
+        selectAthlete(a)
+      } else {
+        setErr('Linked successfully — refresh the page in a moment to see them.')
+      }
     }
   }
 

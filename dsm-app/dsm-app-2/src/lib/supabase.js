@@ -129,7 +129,17 @@ export async function setProgramTrack(userId, track) {
     .select('id, program_track')
     .maybeSingle()
   if (error) return { data: null, error }
-  if (!data)  return { data: null, error: { message: 'Update blocked by RLS — your account needs profiles.is_admin = true.' } }
+  // M7: a null row from update().select().maybeSingle() can mean either
+  // (a) no matching profile, or (b) RLS blocked the write. Probe to
+  // distinguish so the user-facing message is accurate (was always
+  // claiming "needs is_admin = true" — misleading for athletes editing
+  // their own track).
+  if (!data) {
+    const { data: exists } = await supabase
+      .from('profiles').select('id').eq('id', userId).maybeSingle()
+    if (!exists) return { data: null, error: { message: 'Profile not found for this user.' } }
+    return { data: null, error: { message: 'Update blocked by RLS — try again or contact an admin.' } }
+  }
   return { data, error: null }
 }
 
@@ -541,8 +551,9 @@ export async function deleteLockerRoomNote(noteId) {
 export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
   // Each query is per-query-tolerant: a missing table, RLS denial, or schema
   // drift on any one source degrades that section to empty instead of blowing
-  // up the whole locker room load. Surfaces the failed table names via console
-  // so we can spot config drift without breaking the user-facing view.
+  // up the whole locker room load. The `console.warn` calls also feed
+  // BugReporter's consoleBuffer ring (see components/BugReporter.jsx), so
+  // when users submit a bug report the failed table names ride along (M11).
   const safe = (label, p) => p.then(
     r => (r?.error ? (console.warn(`[locker] ${label}:`, r.error.message), { data: r.data ?? null }) : r),
   ).catch(err => { console.warn(`[locker] ${label}:`, err?.message || err); return { data: null } })
