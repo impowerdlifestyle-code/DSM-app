@@ -106,9 +106,14 @@ export default function VoiceJournal({ user }) {
     const finalTranscript = (transcript || '').trim()
     setState('transcribing')
 
-    // If no transcript was captured (no SR support), use the fake result so UI still demos
+    // L10: was showing FAKE_RESULT as if it were the athlete's own
+    // transcript when SpeechRecognition was unavailable — misleading.
+    // Now: explicit "type instead" UX. The static demo content is
+    // retained at module scope only as a reference for the UI shape.
     if (!finalTranscript) {
-      setTimeout(() => { setResult(FAKE_RESULT); setState('analyzed') }, 1200)
+      setError('Speech recognition unavailable on this device — type your reflection in the next field, or try a different browser.')
+      setResult({ transcript: '', cues: [], sentiment: 'neutral', aiNote: '' })
+      setState('analyzed')
       return
     }
 

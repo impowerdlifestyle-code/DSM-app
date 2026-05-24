@@ -375,7 +375,9 @@ function Overview({ name }) {
 
 function BadgesView({ earnedFromDb }) {
   const earnedSet = new Set((earnedFromDb || []).map(e => e.badge_id))
-  const merged = BADGES.map(b => earnedSet.has(b.id) ? { ...b, earned: true } : { ...b, earned: b.earned && false })
+  // L9: was `earned: b.earned && false` — always-false short-circuit on
+  // the not-earned branch. Replaced with the explicit literal.
+  const merged = BADGES.map(b => earnedSet.has(b.id) ? { ...b, earned: true } : { ...b, earned: false })
   const earned = merged.filter(b => b.earned)
   const locked = merged.filter(b => !b.earned)
   return (

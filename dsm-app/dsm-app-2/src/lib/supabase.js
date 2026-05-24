@@ -495,11 +495,18 @@ export async function markNudgeActedOn(nudgeId) {
 
 export async function nudgeCreatedToday(userId) {
   const start = new Date(); start.setHours(0, 0, 0, 0)
-  const { count } = await supabase
+  // L11: surface RLS denials. The old code dropped { error } and treated
+  // count=null as "no nudge today", which triggered another nudge insert
+  // every page load when RLS was misconfigured.
+  const { count, error } = await supabase
     .from('coach_nudges')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('created_at', start.toISOString())
+  if (error) {
+    console.warn('[nudgeCreatedToday] count failed — assuming created to avoid duplicate nudge spam:', error.message)
+    return true
+  }
   return (count || 0) > 0
 }
 
@@ -1297,6 +1304,21 @@ export async function evaluateBadges(userId) {
     supabase.from('action_steps').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('shark_used', true),
     supabase.from('badges_earned').select('badge_id').eq('user_id', userId),
   ])
+
+  // M5: surface RLS-denied count queries. count=null from a denied head
+  // request used to silently degrade to 0, which meant valid streaks
+  // never earned their badge. Log and bail; caller will retry on the
+  // next XP event once RLS is healthy.
+  const countErrors = [
+    ['action_steps', actionRes], ['ball_mastery', ballRes],
+    ['voice_journal', voiceRes], ['workouts_log', workoutRes],
+    ['shark_used', sharkRes],
+  ].filter(([, r]) => r.error || r.count == null)
+  if (countErrors.length) {
+    console.warn('[evaluateBadges] count queries failed — skipping evaluation this pass:',
+      countErrors.map(([name, r]) => `${name}:${r.error?.message || 'count=null'}`).join(', '))
+    return newly
+  }
 
   const streak       = profileRes.data?.streak || 0
   const actionsCount = actionRes.count || 0

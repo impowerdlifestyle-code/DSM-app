@@ -24,6 +24,9 @@ export default function WeeklyRecapCard({ user }) {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    // M13: guard against mounting before user loads — was throwing on
+    // user.id when this card rendered during the loading window.
+    if (!user?.id) { setLoading(false); return }
     (async () => {
       const { data } = await getLatestRecap(user.id)
       if (data?.week_key && getDismissedSet().has(data.week_key)) {
@@ -32,7 +35,7 @@ export default function WeeklyRecapCard({ user }) {
       setRecap(data)
       setLoading(false)
     })()
-  }, [user])
+  }, [user?.id])
 
   if (loading || !recap || !recap.highlights || dismissed) return null
 

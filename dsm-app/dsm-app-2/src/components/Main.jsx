@@ -1733,9 +1733,9 @@ export default function Main({ user }) {
 
           {/* Sub tabs */}
           <div style={{ display:'flex', gap:6, marginBottom:14, flexWrap:'wrap' }}>
-            {[['microreps','⚡ Micro Reps'],['gameday','🎮 Game Day'],['mistakes','🔄 Resets'],['map','🗺️ MAP']].map(([t,l])=>(
-              <button key={t} onClick={()=>setMentalTab(t)}
-                style={{ flex:1, background:mentalTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 6px', fontSize:10, fontWeight:800, color:mentalTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+            {[['microreps','⚡ Micro Reps'],['gameday','🎮 Game Day'],['mistakes','🔄 Resets'],['map','🗺️ MAP']].map(([id,l])=>(
+              <button key={id} onClick={()=>setMentalTab(id)}
+                style={{ flex:1, background:mentalTab===id?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 6px', fontSize:10, fontWeight:800, color:mentalTab===id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                 {l}
               </button>
             ))}
@@ -1851,9 +1851,9 @@ export default function Main({ user }) {
                   value={newMistake.situation} onChange={e => setNewMistake(p => ({...p, situation: e.target.value}))} />
                 <span style={C.lbl}>WHICH TOOL DID YOU USE</span>
                 <div style={{ display:'flex', gap:6, marginBottom:8, flexWrap:'wrap' }}>
-                  {[['shark','🦈 Shark'],['goldfish','🐠 Goldfish'],['selftalk','💬 Self Talk'],['breath','💨 Breath']].map(([t,l]) => (
-                    <button key={t} onClick={() => setNewMistake(p => ({...p, tool:t}))}
-                      style={{ background: newMistake.tool===t ? t.color.text : t.color.surface2, border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:newMistake.tool===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
+                  {[['shark','🦈 Shark'],['goldfish','🐠 Goldfish'],['selftalk','💬 Self Talk'],['breath','💨 Breath']].map(([id,l]) => (
+                    <button key={id} onClick={() => setNewMistake(p => ({...p, tool:id}))}
+                      style={{ background: newMistake.tool===id ? t.color.text : t.color.surface2, border:'none', borderRadius:20, padding:'6px 12px', fontSize:10, fontWeight:800, color:newMistake.tool===id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                       {l}
                     </button>
                   ))}
@@ -1980,9 +1980,9 @@ export default function Main({ user }) {
 
           {/* Tab switcher */}
           <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-            {[['leaderboard','🏆 Leaderboard'],['challenges','⚡ Challenges'],['team','👥 Team']].map(([t,l])=>(
-              <button key={t} onClick={()=>setCompetitionTab(t)}
-                style={{ flex:1, background:competitionTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 4px', fontSize:10, fontWeight:800, color:competitionTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+            {[['leaderboard','🏆 Leaderboard'],['challenges','⚡ Challenges'],['team','👥 Team']].map(([id,l])=>(
+              <button key={id} onClick={()=>setCompetitionTab(id)}
+                style={{ flex:1, background:competitionTab===id?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 4px', fontSize:10, fontWeight:800, color:competitionTab===id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                 {l}
               </button>
             ))}
@@ -2146,9 +2146,9 @@ export default function Main({ user }) {
             <div style={C.title}>COMMUNITY</div>
             <div style={C.sub}>DSM ATHLETE & PARENT NETWORK</div>
             <div style={{ display:'flex', gap:8, marginTop:10, marginBottom:0 }}>
-              {[['athletes','⚽ Athletes'], ['parents','👨‍👩‍👧 Parents']].map(([t,l])=>(
-                <button key={t} onClick={()=>setCommunityTab(t)}
-                  style={{ flex:1, background:communityTab===t?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 8px', fontSize:11, fontWeight:800, color:communityTab===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
+              {[['athletes','⚽ Athletes'], ['parents','👨‍👩‍👧 Parents']].map(([id,l])=>(
+                <button key={id} onClick={()=>setCommunityTab(id)}
+                  style={{ flex:1, background:communityTab===id?t.color.text:t.color.surface2, border:'none', borderRadius:10, padding:'9px 8px', fontSize:11, fontWeight:800, color:communityTab===id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', letterSpacing:1 }}>
                   {l}
                 </button>
               ))}
@@ -2161,9 +2161,9 @@ export default function Main({ user }) {
               <div style={{ ...C.card, marginBottom:12 }}>
                 <span style={C.lbl}>SHARE WITH THE COMMUNITY</span>
                 <div style={{ display:'flex', gap:6, marginBottom:10, flexWrap:'wrap' }}>
-                  {[['win','🏆 Win'],['milestone','📈 Milestone'],['question','❓ Question']].map(([t,l])=>(
-                    <button key={t} onClick={()=>setNewPost(p=>({...p,type:t}))}
-                      style={{ background:newPost.type===t?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:newPost.type===t?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
+                  {[['win','🏆 Win'],['milestone','📈 Milestone'],['question','❓ Question']].map(([id,l])=>(
+                    <button key={id} onClick={()=>setNewPost(p=>({...p,type:id}))}
+                      style={{ background:newPost.type===id?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'5px 12px', fontSize:10, fontWeight:800, color:newPost.type===id?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                       {l}
                     </button>
                   ))}
@@ -2514,10 +2514,10 @@ export default function Main({ user }) {
 
           {/* Profile tabs */}
           <div style={{ display:'flex',gap:6,marginBottom:14,flexWrap:'wrap' }}>
-            {[['overview','📊'],['sessions','🎙️'],['feedback','✅'],['checkins','📋'],['ball','⚽'],['messages','💬']].map(([t,icon])=>(
-              <button key={t} onClick={()=>setAthleteProfileTab(t)}
-                style={{ background:athleteProfileTab===t?t.color.text:t.color.surface2,border:'none',borderRadius:8,padding:'7px 10px',fontSize:10,fontWeight:800,color:athleteProfileTab===t?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
-                {icon} {t.toUpperCase()}
+            {[['overview','📊'],['sessions','🎙️'],['feedback','✅'],['checkins','📋'],['ball','⚽'],['messages','💬']].map(([id,icon])=>(
+              <button key={id} onClick={()=>setAthleteProfileTab(id)}
+                style={{ background:athleteProfileTab===id?t.color.text:t.color.surface2,border:'none',borderRadius:8,padding:'7px 10px',fontSize:10,fontWeight:800,color:athleteProfileTab===id?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit',letterSpacing:1 }}>
+                {icon} {id.toUpperCase()}
               </button>
             ))}
           </div>
