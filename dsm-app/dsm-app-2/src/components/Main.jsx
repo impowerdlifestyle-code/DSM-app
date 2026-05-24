@@ -250,7 +250,10 @@ export default function Main({ user }) {
 
   async function loadUserData() {
     try {
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    // M8 + C2: maybeSingle so a brand-new account (no profile row yet)
+    // doesn't crash with PGRST116. We branch on null below.
+    const { data: p, error: pErr } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+    if (pErr) { console.error('[loadUserData] profile fetch failed:', pErr.message); return }
     if (!p) { console.error('No profile found for user'); return }
     setProfile(p)
     setStreak(p?.streak || 0)
@@ -316,7 +319,7 @@ export default function Main({ user }) {
     if (mr) setMistakes(mr)
 
     // Load MAP
-    const { data: mapData } = await supabase.from('mindset_map').select('*').eq('user_id', user.id).eq('week', getWeekKey()).single()
+    const { data: mapData } = await supabase.from('mindset_map').select('*').eq('user_id', user.id).eq('week', getWeekKey()).maybeSingle()
     if (mapData) { setMap({ goal: mapData.goal||'', focusArea: mapData.focus_area||'', weeklyWin: mapData.weekly_win||'', adjustment: mapData.adjustment||'', commitment: mapData.commitment||'' }); setMapSaved(true) }
 
     // Load challenges
@@ -810,6 +813,7 @@ export default function Main({ user }) {
         open={showBadgeHints}
         onClose={closeBadgeHints}
         onJumpTo={(targetTab) => setTab(targetTab)}
+        user={user}
       />
       <WelcomeTour
         open={showTour}
@@ -2663,7 +2667,11 @@ export default function Main({ user }) {
                   <button key={w}
                     onClick={async()=>{
                       await supabase.from('profiles').update({ program_week: w }).eq('id', selectedAthlete.id)
+                      // M9: keep allAthletes in sync so the Athletes grid
+                      // reflects the new program_week immediately (otherwise
+                      // the list stays stale until next loadUserData).
                       setSelectedAthlete(p=>({...p, program_week: w}))
+                      setAllAthletes(prev => prev.map(a => a.id === selectedAthlete.id ? { ...a, program_week: w } : a))
                     }}
                     style={{ background:(selectedAthlete.program_week||1)>=w?t.color.text:t.color.surface2, border:'none', borderRadius:8, padding:'8px 12px', fontSize:12, fontWeight:800, color:(selectedAthlete.program_week||1)>=w?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit' }}>
                     W{w}

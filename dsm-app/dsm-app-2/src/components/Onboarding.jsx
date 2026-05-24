@@ -142,8 +142,12 @@ export default function Onboarding({ user, profile, onDone }) {
       if (!json?.weeks?.length) throw new Error('empty plan')
       setPlan(json)
     } catch (e) {
-      // graceful fallback: deterministic plan
+      // M15: graceful fallback — but mark it explicitly as fallback so the
+      // UI can distinguish from a real Coach V plan. Was rendering a hard-
+      // coded plan identical-looking to the real one; only the red err
+      // text hinted at the failure.
       setPlan({
+        _fallback: true,
         weeks: [
           { focus: 'Identity reps', cue: data.identityGoal, action: 'State identity out loud before every session.' },
           { focus: 'Bounce-back drill', cue: 'Goldfish 🐠', action: 'After every mistake in training: 3-breath reset, name the next play.' },
@@ -151,7 +155,7 @@ export default function Onboarding({ user, profile, onDone }) {
           { focus: 'Match-day stack', cue: 'Lock in', action: 'Run pre-match warmup (mood → intention → breath) for every game.' },
         ],
       })
-      setErr('Generated a starter plan offline — Coach V will refine it later.')
+      setErr("Couldn't reach Coach V — showing a starter plan from the playbook. It'll be replaced next time the app reaches the server.")
     } finally {
       setPlanLoading(false)
     }

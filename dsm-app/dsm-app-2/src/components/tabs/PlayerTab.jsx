@@ -183,6 +183,12 @@ function FamilyView({ user }) {
     setCreating(true)
     const { data } = await createParentInvite(user.id)
     if (data) setInvites(i => [data, ...i])
+    // M14: re-fetch from the DB so the list reflects the canonical
+    // expires_at + state. Pure optimistic prepend was getting stale
+    // when the server-side default for expires_at didn't match the
+    // local clock (e.g. user on a wrong device-clock).
+    const { data: fresh } = await listParentInvites(user.id)
+    if (fresh) setInvites(fresh)
     setCreating(false)
   }
 

@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react'
 import { tokens as t } from '../styles.js'
 import { BADGES, XP_TABLE } from '../data/gamification.js'
+import { getEarnedBadges } from '../lib/supabase.js'
 
 const FLAG_KEY = 'dsm_badge_hints_seen_v1'
 
@@ -27,16 +28,18 @@ const XP_TIPS = [
   { action: 'Perfect week (every day logged)', xp: XP_TABLE.perfectWeek, tab: null,        cue: 'The hidden achievement — most kids never hit it' },
 ]
 
-const BADGE_TIPS = BADGES.filter(b => !b.earned).map(b => ({
-  ...b,
-  hint: b.id === 'century'          ? '100 days straight. No skip days. Set a reminder.'
-       : b.id === 'pr-streak'       ? 'New personal record three weeks in a row — keep pushing weight or reps.'
-       : b.id === 'mvp-week'        ? 'Top your squad leaderboard. Stack XP early Monday-Wednesday.'
-       : b.id === 'elite-mind'      ? 'Your mental score has to hit 95+. Stack 👍s on Coach V chats.'
-       : b.id === 'iron-streak'     ? 'A FULL YEAR. The streak badge for the obsessed.'
-       : b.id === 'community-leader' ? 'Post 25 wins or insights. Help your squad, get the badge.'
-       : 'Keep going — small daily reps unlock it.',
-}))
+// M16: tips are computed per-render from the LIVE earned set, not from
+// the mock `b.earned` field that gamification.js ships. Old behavior
+// listed badges as "still to earn" even after the athlete unlocked them.
+function badgeHint(id) {
+  return id === 'century'          ? '100 days straight. No skip days. Set a reminder.'
+       : id === 'pr-streak'        ? 'New personal record three weeks in a row — keep pushing weight or reps.'
+       : id === 'mvp-week'         ? 'Top your squad leaderboard. Stack XP early Monday-Wednesday.'
+       : id === 'elite-mind'       ? 'Your mental score has to hit 95+. Stack 👍s on Coach V chats.'
+       : id === 'iron-streak'      ? 'A FULL YEAR. The streak badge for the obsessed.'
+       : id === 'community-leader' ? 'Post 25 wins or insights. Help your squad, get the badge.'
+       : 'Keep going — small daily reps unlock it.'
+}
 
 const FAST_TRACK = [
   '🦈 Stack 3 wins by 10am — Action steps (50 XP), Ball mastery (40 XP), Voice journal (60 XP). 150 XP before practice.',
@@ -126,14 +129,27 @@ const s = {
   },
 }
 
-export default function BadgeHints({ open, onClose, onJumpTo }) {
+export default function BadgeHints({ open, onClose, onJumpTo, user }) {
   const [mode, setMode] = useState('xp')
+  const [earnedIds, setEarnedIds] = useState(() => new Set())
 
   useEffect(() => {
-    if (open) setMode('xp')
-  }, [open])
+    if (!open) return
+    setMode('xp')
+    if (!user?.id) return
+    let live = true
+    ;(async () => {
+      const { data } = await getEarnedBadges(user.id)
+      if (!live) return
+      setEarnedIds(new Set((data || []).map(b => b.badge_id)))
+    })()
+    return () => { live = false }
+  }, [open, user?.id])
 
   if (!open) return null
+
+  const earnedCount  = BADGES.filter(b => earnedIds.has(b.id)).length
+  const unearnedTips = BADGES.filter(b => !earnedIds.has(b.id)).map(b => ({ ...b, hint: badgeHint(b.id) }))
 
   return (
     <div style={s.overlay} onClick={onClose}>
@@ -169,9 +185,9 @@ export default function BadgeHints({ open, onClose, onJumpTo }) {
         {mode === 'badges' && (
           <>
             <div style={s.tipBox}>
-              You've earned {BADGES.filter(b => b.earned).length} of {BADGES.length} badges. Here's what's left:
+              You've earned {earnedCount} of {BADGES.length} badges. Here's what's left:
             </div>
-            {BADGE_TIPS.map(b => (
+            {unearnedTips.map(b => (
               <div key={b.id} style={s.row}>
                 <div style={{ ...s.xpBadge, background: t.color.surface2, color: t.color.text, border: `1px solid ${t.color.line2}` }}>
                   {b.icon}
