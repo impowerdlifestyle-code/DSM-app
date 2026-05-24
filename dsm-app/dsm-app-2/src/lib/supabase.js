@@ -170,6 +170,12 @@ export async function sendPasswordReset(email) {
 }
 
 // ─── ACTION STEPS ────────────────────────────────────────────
+// M4 (verified 2026-05-24): column names below match the canonical
+// action_steps schema after migrations 008_fix_recursion_and_columns
+// (renames did_steps → did_action_steps) and 015_action_steps_columns_fix
+// (renames *_comment → *_comments + adds visualization_*). The earlier
+// drift between 001_schema.sql and 003_full_migration.sql is reconciled
+// by those migrations. Audit M4 verification: see audit-findings memory.
 export async function submitActionSteps(formData, userId) {
   const { data, error } = await supabase
     .from('action_steps')
