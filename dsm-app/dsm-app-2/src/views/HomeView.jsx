@@ -28,14 +28,14 @@ export default function HomeView({
       {activeNudge && (
         <div style={{
           margin: '14px 22px 0', padding: 14,
-          background: 'rgba(255,255,255,0.04)',
-          border: '`1px solid `',
+          background: t.color.surface,
+          border: `1px solid ${t.color.line}`,
           borderRadius: 14,
           display: 'flex', alignItems: 'flex-start', gap: 12,
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
-            background: t.color.bg, border: '`1px solid `',
+            background: t.color.bg, border: `1px solid ${t.color.line}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Cormorant Garamond', serif", fontSize: 17,
             fontStyle: 'italic', color: t.color.text, fontWeight: 500, flexShrink: 0,
@@ -56,7 +56,7 @@ export default function HomeView({
               }}>Reply</button>
               <button onClick={onDismissNudge} style={{
                 padding: '6px 12px', background: 'transparent', color: t.color.textDim,
-                border: '`1px solid `', borderRadius: 8,
+                border: `1px solid ${t.color.line}`, borderRadius: 8,
                 fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>Dismiss</button>
@@ -142,12 +142,12 @@ export default function HomeView({
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '12px 4px',
                   background: 'transparent', border: 'none',
-                  borderBottom: i < todayTasks.length - 1 ? '`1px solid `' : 'none',
+                  borderBottom: i < todayTasks.length - 1 ? `1px solid ${t.color.line}` : 'none',
                   cursor: 'pointer', width: '100%', textAlign: 'left',
                 }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 7,
-                  border: task.done ? '1px solid rgba(74,222,128,0.4)' : '`1px solid `',
+                  border: task.done ? '1px solid rgba(74,222,128,0.4)' : `1px solid ${t.color.line}`,
                   background: task.done ? 'rgba(74,222,128,0.10)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: "'Cormorant Garamond', serif",
@@ -158,7 +158,7 @@ export default function HomeView({
                   {task.done ? '✓' : task.glyph}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#f4f3ef', letterSpacing: -0.1 }}>{task.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: t.color.text, letterSpacing: -0.1 }}>{task.label}</div>
                   <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 2 }}>{task.sub}</div>
                 </div>
                 <div style={{ fontSize: 16, color: task.done ? t.color.pitch : t.color.line2 }}>{task.done ? '' : '→'}</div>
@@ -174,8 +174,8 @@ export default function HomeView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
             <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
               <svg width="72" height="72" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="36" cy="36" r="30" fill="none" stroke="#1c1c1c" strokeWidth="3" />
-                <circle cx="36" cy="36" r="30" fill="none" stroke="#fafafa" strokeWidth="3"
+                <circle cx="36" cy="36" r="30" fill="none" stroke={t.color.line} strokeWidth="3" />
+                <circle cx="36" cy="36" r="30" fill="none" stroke={t.color.text} strokeWidth="3"
                   strokeDasharray={`${2*Math.PI*30}`} strokeDashoffset={`${2*Math.PI*30*(1-pct/100)}`}
                   strokeLinecap="round" style={{ transition: 'stroke-dashoffset 600ms cubic-bezier(.2,.7,.2,1)' }} />
               </svg>
@@ -215,7 +215,7 @@ export default function HomeView({
               <TiltCard key={target} tiltLimit={14} scale={1.04} style={{ borderRadius: 14 }}>
               <button onClick={() => setTab(target)} style={{
                 width: '100%',
-                background: t.color.surface, border: '`1px solid `',
+                background: t.color.surface, border: `1px solid ${t.color.line}`,
                 borderRadius: 14, padding: '14px 14px', textAlign: 'left',
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
                 fontFamily: 'inherit', color: 'inherit',

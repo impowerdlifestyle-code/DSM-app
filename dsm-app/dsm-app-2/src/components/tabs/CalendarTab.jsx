@@ -4,7 +4,7 @@ import TiltCard from '../widgets/TiltCard.jsx'
 
 const TYPE_META = {
   workout:  { label: 'Workout',  color: t.color.ember,   glyph: 'W' },
-  practice: { label: 'Practice', color: '#e8e3d5',        glyph: 'P' },
+  practice: { label: 'Practice', color: t.color.bone,     glyph: 'P' },
   game:     { label: 'Game',     color: t.color.pitch,        glyph: 'G' },
   rest:     { label: 'Rest',     color: t.color.textDim,  glyph: '·' },
 }

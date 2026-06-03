@@ -919,13 +919,13 @@ export default function Main({ user }) {
           </div>
           <button onClick={() => { setTab('locker'); setSelectedAthlete(null); }} style={{
             background: tab === 'locker' ? t.color.text : 'transparent',
-            border: '`1px solid `',
+            border: `1px solid ${t.color.line}`,
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
             color: tab === 'locker' ? t.color.bg : t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Locker</button>
           <button onClick={() => signOut()} style={{
-            background: 'transparent', border: '`1px solid `',
+            background: 'transparent', border: `1px solid ${t.color.line}`,
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
             color: t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
@@ -1622,7 +1622,7 @@ export default function Main({ user }) {
                         {c.goldfish_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>🐠 {c.goldfish_moment}</div>}
                         {c.self_talk_moment && <div style={{ fontSize:11, color:t.color.textDim, marginBottom:3 }}>💬 {c.self_talk_moment}</div>}
                         {c.goal_next_week && <div style={{ fontSize:12, color:t.color.text, marginTop:6 }}>🎯 Next week: {c.goal_next_week}</div>}
-                        {c.message_to_coach && <div style={{ fontSize:11, color:t.color.textDim, fontStyle:'italic', marginTop:6, borderTop:'`1px solid `', paddingTop:6 }}>"{c.message_to_coach}"</div>}
+                        {c.message_to_coach && <div style={{ fontSize:11, color:t.color.textDim, fontStyle:'italic', marginTop:6, borderTop:`1px solid ${t.color.line}`, paddingTop:6 }}>"{c.message_to_coach}"</div>}
                       </div>
                     ))}
                   </>}
@@ -2184,7 +2184,7 @@ export default function Main({ user }) {
 
                 {/* Comments */}
                 {post.community_comments?.length > 0 && (
-                  <div style={{ borderTop:'`1px solid `', paddingTop:8, marginBottom:8 }}>
+                  <div style={{ borderTop:`1px solid ${t.color.line}`, paddingTop:8, marginBottom:8 }}>
                     {post.community_comments.map((c,ci)=>(
                       <div key={ci} style={{ display:'flex', gap:8, marginBottom:6 }}>
                         <div style={{ width:24, height:24, borderRadius:'50%', background:t.color.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, flexShrink:0 }}>

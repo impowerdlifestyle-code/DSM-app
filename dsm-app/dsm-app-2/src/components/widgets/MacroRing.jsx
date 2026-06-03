@@ -22,7 +22,7 @@ export default function MacroRing({ totals, targets, size = 160, stroke = 14 }) 
   let offset = 0
   const segments = [
     { color: t.color.ember,         len: seg(pPct), label: 'Protein' },
-    { color: '#e8e3d5',             len: seg(cPct), label: 'Carbs' },
+    { color: t.color.bone,             len: seg(cPct), label: 'Carbs' },
     { color: t.color.textDim,             len: seg(fPct), label: 'Fat' },
   ]
 
@@ -67,7 +67,7 @@ export default function MacroRing({ totals, targets, size = 160, stroke = 14 }) 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[
           { key: 'p', label: 'Protein', val: totals.p, tgt: targets.p, color: t.color.ember,  unit: 'g' },
-          { key: 'c', label: 'Carbs',   val: totals.c, tgt: targets.c, color: '#e8e3d5',       unit: 'g' },
+          { key: 'c', label: 'Carbs',   val: totals.c, tgt: targets.c, color: t.color.bone,       unit: 'g' },
           { key: 'f', label: 'Fat',     val: totals.f, tgt: targets.f, color: t.color.textDim,       unit: 'g' },
         ].map(m => {
           const pct = Math.min(100, Math.round((m.val / m.tgt) * 100))
