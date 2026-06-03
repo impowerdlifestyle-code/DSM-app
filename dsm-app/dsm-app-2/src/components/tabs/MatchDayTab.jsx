@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
-  getMatches, createMatchPre, updateMatchPost, getActiveMatch,
+  getMatches, createMatchPre, updateMatchPost, getActiveMatch, awardXp,
 } from '../../lib/supabase.js'
+import { XP_TABLE } from '../../data/gamification.js'
 import { tokens as t, C } from '../../styles.js'
 import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
 
@@ -198,6 +199,9 @@ export default function MatchDayTab({ user, profile }) {
     setErr(''); setOk('')
     const { data, error } = await updateMatchPost(active.id, post)
     if (error) return setErr(error.message)
+    // Reward the reflection, not the result — XP for showing up to process the
+    // game mentally regardless of W/L/D. Consistency over outcome.
+    await awardXp(user.id, 'match_reflection', XP_TABLE.matchReflection, active.id, 'post-game reflection')
     // H4: pre-fetch fresh history BEFORE clearing local state. The old order
     // (clear, then refetch) would empty "recent matches" forever if the
     // refetch failed — because the active match was already wiped from

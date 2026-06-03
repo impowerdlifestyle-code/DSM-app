@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { tokens as t } from '../../styles.js'
-import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS } from '../../data/gamification.js'
+import { PLAYER, BADGES, SQUAD, SEASON, SKILL_TREE, LEVELS, rankFromXp } from '../../data/gamification.js'
 import { getXpTotals, getEarnedBadges, levelFromXp, createParentInvite, listParentInvites } from '../../lib/supabase.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 import BadgeTile from '../widgets/BadgeTile.jsx'
 import ProgressBar from '../widgets/ProgressBar.jsx'
+import RankCard from '../widgets/RankCard.jsx'
 import FutureSelfSettings from '../../features/future-self/Settings.jsx'
 
 export default function PlayerTab({ profile, user }) {
@@ -31,6 +32,7 @@ export default function PlayerTab({ profile, user }) {
   }, [user?.id, profile?.mental_score])
 
   const lvl = useMemo(() => levelFromXp(xpTotal, LEVELS), [xpTotal])
+  const rank = useMemo(() => rankFromXp(xpTotal), [xpTotal])
   const xpPct = Math.min(100, Math.round((xpTotal / lvl.xpToNext) * 100))
   const name = profile?.full_name || user?.email?.split('@')[0] || 'Athlete'
   const earnedCount = earned.length
@@ -60,7 +62,7 @@ export default function PlayerTab({ profile, user }) {
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>
-                {lvl.title} · Season {romanize(SEASON.number)}
+                {rank.rank.icon} {rank.rank.name} · LV {lvl.level}
               </div>
               <h1 style={{
                 fontFamily: t.font.athletic, fontSize: 38, fontWeight: 400,
@@ -153,7 +155,7 @@ export default function PlayerTab({ profile, user }) {
         })}
       </div>
 
-      {tab === 'overview' && <Overview name={name} />}
+      {tab === 'overview' && <Overview name={name} xpTotal={xpTotal} />}
       {tab === 'badges'   && <BadgesView earnedFromDb={earned} />}
       {tab === 'squad'    && <SquadView />}
       {tab === 'skills'   && <SkillTreeView />}
@@ -271,10 +273,12 @@ function FamilyView({ user }) {
 
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function Overview({ name }) {
+function Overview({ name, xpTotal = 0 }) {
   const seasonPct = Math.round(SEASON.weeksElapsed / SEASON.weeksTotal * 100)
   return (
     <>
+      <RankCard xpTotal={xpTotal} />
+
       {/* Season card */}
       <TiltCard tiltLimit={8} scale={1.015} style={{ borderRadius: 16, marginBottom: 12 }}>
         <div style={{

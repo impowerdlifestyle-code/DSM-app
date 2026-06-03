@@ -20,7 +20,7 @@ const XP_TIPS = [
   { action: 'Finish a weekly check-in',     xp: XP_TABLE.weeklyCheckin,  tab: 'weekly',    cue: 'Mondays · 5 min · biggest XP per minute' },
   { action: 'Complete a workout',           xp: XP_TABLE.workoutComplete, tab: 'workouts',  cue: 'Any session, any volume — counts when you tap Done' },
   { action: 'Hit your daily quests',        xp: XP_TABLE.questComplete,   tab: 'home',      cue: 'Triple-stack quests = bonus XP every day' },
-  { action: 'Log a personal record',        xp: XP_TABLE.pr,              tab: 'workouts',  cue: 'Massive boost — only when you actually PR' },
+  { action: 'Post-game reflection',         xp: XP_TABLE.matchReflection, tab: 'matchday',  cue: 'Process every game — win or lose, the reps count' },
   { action: 'Drop a voice journal',         xp: XP_TABLE.voiceJournal,    tab: 'home',      cue: '30 seconds, Coach V reads it' },
   { action: 'Log action steps',             xp: XP_TABLE.actionStep,      tab: 'actions',   cue: 'After every practice or game' },
   { action: 'Daily ball mastery',           xp: XP_TABLE.ballMastery,     tab: 'ball',      cue: '3+ skills, any reps' },

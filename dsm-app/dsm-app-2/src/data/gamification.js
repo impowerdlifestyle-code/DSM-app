@@ -25,7 +25,8 @@ export const XP_TABLE = {
   videoFormCheck: 75,
   voiceJournal: 60,
   questComplete: 150,
-  pr: 300,
+  matchReflection: 80,   // post-game mental reflection — rewards processing, not the result
+  challengeComplete: 250, // weekly mindset challenge completed
   perfectWeek: 500,
 }
 
@@ -39,6 +40,38 @@ export const LEVELS = [
   { lvl: 25, title: 'Elite',    tier: 'Elite',   threshold: 40000 },
   { lvl: 30, title: 'Legend',   tier: 'Elite',   threshold: 80000 },
 ]
+
+// ─── DSM MINDSET RANKS ───────────────────────────────────────────────
+// The real progression ladder. Earned by CONSISTENCY XP only — daily
+// check-ins, routines, reflections, bounce-backs, streaks. Never by goals
+// scored, wins, or stats. A bench player who shows up out-ranks a star who
+// doesn't. Thresholds are cumulative lifetime XP from xp_log.
+export const RANKS = [
+  { key: 'rookie',     name: 'Rookie Mindset',          threshold: 0,     icon: '🌱', blurb: 'Every shark started here. Show up, log your reps, build the base.' },
+  { key: 'competitor', name: 'Competitor',              threshold: 1500,  icon: '⚡', blurb: "The habit's forming. You're choosing the work more days than not." },
+  { key: 'pressure',   name: 'Pressure Performer',      threshold: 5000,  icon: '🔥', blurb: "You do the reps when it's hard. Pressure's turning into fuel." },
+  { key: 'leader',     name: 'Team Leader',             threshold: 12000, icon: '⭐', blurb: 'Your consistency sets the standard. Teammates feel it.' },
+  { key: 'elite',      name: 'Elite Mentality',         threshold: 25000, icon: '💎', blurb: 'Locked in. The mental game is your real edge now.' },
+  { key: 'shark',      name: 'Shark Mindset Certified', threshold: 50000, icon: '🦈', blurb: 'Relentless. Short memory, big intent. You hunt every rep.' },
+]
+
+// Pure: derive current mindset rank + progress from cumulative XP.
+export function rankFromXp(totalXp = 0) {
+  const sorted = [...RANKS].sort((a, b) => a.threshold - b.threshold)
+  let idx = 0
+  for (let i = 0; i < sorted.length; i++) {
+    if (totalXp >= sorted[i].threshold) idx = i
+    else break
+  }
+  const rank = sorted[idx]
+  const next = sorted[idx + 1] || null
+  const floor = rank.threshold
+  const ceil = next ? next.threshold : rank.threshold
+  const xpInto = totalXp - floor
+  const xpForNext = next ? ceil - floor : 0
+  const pct = next ? Math.min(100, Math.round((xpInto / xpForNext) * 100)) : 100
+  return { rank, next, idx, total: sorted.length, xpInto, xpForNext, pct, xpToNext: next ? ceil - totalXp : 0 }
+}
 
 // Daily quests — refresh at midnight
 export const DAILY_QUESTS = [
