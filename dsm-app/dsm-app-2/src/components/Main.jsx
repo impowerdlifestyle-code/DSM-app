@@ -550,7 +550,10 @@ export default function Main({ user }) {
       console.error('[Coach V error]', err)
       setChatLoading(false)
       setTypingMsg('')
-      setMessages(p => [...p, { role: 'assistant', content: '⚠️ Coach V is offline — try again in a moment.' }])
+      const content = err?.code === 'daily_message_cap'
+        ? err.message
+        : '⚠️ Coach V is offline — try again in a moment.'
+      setMessages(p => [...p, { role: 'assistant', content }])
     }
   }
 

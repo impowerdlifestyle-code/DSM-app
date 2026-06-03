@@ -84,6 +84,11 @@ async function callProxy(payload) {
   })
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}))
+    if (res.status === 429 && errBody.error === 'daily_message_cap') {
+      const e = new Error(errBody.message || "You've hit today's Coach V limit — back tomorrow.")
+      e.code = 'daily_message_cap'
+      throw e
+    }
     throw new Error(errBody.error || `Coach V request failed (${res.status})`)
   }
   return res.json()

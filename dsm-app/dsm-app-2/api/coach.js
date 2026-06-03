@@ -364,6 +364,28 @@ export default async function handler(req, res) {
     nudgeContext,
   } = body || {}
 
+  // Per-user daily message cap (cost guardrail). Only conversational actions
+  // count; coaches/admins are exempt. Fails open if the counter RPC is
+  // unavailable — chat is never blocked by a counter outage.
+  const billable = action === 'chat' || action === 'parent_chat'
+  const capExempt = auth.profile?.is_admin || auth.profile?.role === 'coach'
+  if (billable && !capExempt) {
+    const cap = Number.parseInt(process.env.COACH_DAILY_MESSAGE_CAP || '40', 10)
+    const { data: usage, error: usageErr } = await auth.admin
+      .rpc('bump_coach_usage', { p_user_id: auth.user.id, p_limit: cap })
+      .maybeSingle()
+    if (usageErr) {
+      console.warn('[coach usage cap] bump_coach_usage failed, allowing:', usageErr.message)
+    } else if (usage && usage.allowed === false) {
+      return res.status(429).json({
+        error: 'daily_message_cap',
+        message: "That's it for today — you've maxed out your Coach V messages. He'll be right here tomorrow. Go rest up and put in the reps. 🦈",
+        used: usage.used,
+        limit: usage.lim,
+      })
+    }
+  }
+
   const client = new Anthropic({ apiKey })
 
   try {
