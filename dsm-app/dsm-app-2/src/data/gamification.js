@@ -95,6 +95,19 @@ export const WEEKLY_CHALLENGE_POOL = [
   { id: 'breath-reset', title: 'Box-breath reset',        sub: 'Use the breath to settle nerves — 5 times',     target: 5, icon: '🌬', badge: 'challenge-breath' },
 ]
 
+// ─── PARENT INVOLVEMENT CHALLENGES ───────────────────────────────────
+// Self-attested challenges for the parent (Parent Mode). Stored in the same
+// challenge_progress table keyed by the parent's own user_id, so no extra
+// schema. Makes the whole family participate. Parent XP never touches the
+// athlete leaderboards (the RPCs filter role='athlete').
+export const PARENT_CHALLENGES = [
+  { id: 'parent-positive',    title: 'Positive communication streak', sub: "Lead with 'I love watching you play' — 7 days", target: 7, icon: '💬', badge: 'parent-positive' },
+  { id: 'parent-reflection',  title: 'Post-game reflection',          sub: 'Calm debrief, let them lead — after 4 games',  target: 4, icon: '🗣', badge: 'parent-reflection' },
+  { id: 'parent-no-sideline', title: 'No sideline coaching',          sub: 'Zero coaching from the sideline — 3 matches',   target: 3, icon: '🤐', badge: 'parent-sideline' },
+  { id: 'parent-car-ride',    title: 'The car ride home',             sub: 'Let them lead the conversation — 5 rides',      target: 5, icon: '🚗', badge: 'parent-carride' },
+  { id: 'parent-process',     title: 'Praise the process',            sub: 'Praise effort & mindset, not stats — 7 times',  target: 7, icon: '🌱', badge: 'parent-process' },
+]
+
 // ISO-style week key, e.g. '2026-W23'. Stable Mon-Sun bucket.
 export function isoWeekKey(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))

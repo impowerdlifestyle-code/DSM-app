@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getLinkedAthletes, getParentDashboard, redeemParentInvite, signOut } from '../../lib/supabase.js'
 import { tokens as t, C } from '../../styles.js'
+import ParentChallengesCard from '../widgets/ParentChallengesCard.jsx'
 
 const s = {
   card: { ...C.card },
@@ -256,6 +257,10 @@ export default function ParentDashboardTab({ user }) {
           </div>
         </>
       )}
+
+      <div style={{ marginTop: 4 }}>
+        <ParentChallengesCard user={user} />
+      </div>
 
       <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, marginTop: 18 }} onClick={() => signOut()}>
         Sign out
