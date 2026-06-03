@@ -152,6 +152,19 @@ export async function signIn(email, password) {
   return { data, error }
 }
 
+// In-app account deletion (Apple 5.1.1(v)). Hits the JWT-gated endpoint that
+// service-role-deletes the auth user; cascades remove all their data.
+export async function deleteAccount() {
+  const { authFetch } = await import('./authFetch.js')
+  const res = await authFetch('/api/delete-account', { method: 'POST', body: '{}' })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    return { error: new Error(body.error || `Delete failed (${res.status})`) }
+  }
+  await supabase.auth.signOut()
+  return { error: null }
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   return { error }

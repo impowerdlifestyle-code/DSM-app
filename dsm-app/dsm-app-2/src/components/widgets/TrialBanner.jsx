@@ -1,4 +1,5 @@
 import { tokens as t } from '../../styles.js'
+import { isNativeApp } from '../../lib/platform.js'
 
 const UPGRADE_URL = import.meta.env.VITE_UPGRADE_URL || 'https://www.fanbasis.com'
 
@@ -41,16 +42,19 @@ export default function TrialBanner({ access }) {
             : 'Full access to Coach V, voice journal, and the program.'}
         </div>
       </div>
-      <a href={UPGRADE_URL} target="_blank" rel="noreferrer" style={{
-        padding: '8px 14px',
-        background: urgent ? t.color.err : t.color.text,
-        color: urgent ? t.color.text : t.color.bg,
-        borderRadius: 10, textDecoration: 'none',
-        fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase',
-        fontFamily: t.font.sans, flexShrink: 0,
-      }}>
-        Upgrade
-      </a>
+      {/* Apple 3.1.1 — no external purchase link inside the native app. */}
+      {!isNativeApp() && (
+        <a href={UPGRADE_URL} target="_blank" rel="noreferrer" style={{
+          padding: '8px 14px',
+          background: urgent ? t.color.err : t.color.text,
+          color: urgent ? t.color.text : t.color.bg,
+          borderRadius: 10, textDecoration: 'none',
+          fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase',
+          fontFamily: t.font.sans, flexShrink: 0,
+        }}>
+          Upgrade
+        </a>
+      )}
     </div>
   )
 }

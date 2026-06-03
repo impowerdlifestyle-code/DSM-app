@@ -16,6 +16,7 @@ import {
   AI_SYSTEM, emptyCheckin,
 } from '../lib/constants.js'
 import { getWeekKey } from '../lib/dates.js'
+import { isNativeApp } from '../lib/platform.js'
 import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate, checkForNudge } from '../lib/coachV.js'
 import { speakText as elevenSpeak } from '../lib/elevenlabs.js'
 import { downloadReport } from '../lib/reports.js'
@@ -43,6 +44,7 @@ const InboxTab      = lazy(() => import('./tabs/InboxTab.jsx'))
 const CourseTab     = lazy(() => import('./tabs/CourseTab.jsx'))
 const SquadTab      = lazy(() => import('./tabs/SquadTab.jsx'))
 const CompetitionsTab = lazy(() => import('./tabs/CompetitionsTab.jsx'))
+const SettingsTab     = lazy(() => import('./tabs/SettingsTab.jsx'))
 const LockerRoomTab = lazy(() => import('./tabs/LockerRoomTab.jsx'))
 const AdminTab      = lazy(() => import('./tabs/AdminTab.jsx'))
 const MatchDayTab   = lazy(() => import('./tabs/MatchDayTab.jsx'))
@@ -676,13 +678,23 @@ export default function Main({ user }) {
               </div>
             ))}
           </div>
-          <a href="https://www.fanbasis.com" target="_blank" rel="noreferrer"
-            style={{ display:'block', width:'100%', maxWidth:340, background:t.color.text, border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:t.color.bg, cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
-            JOIN NOW -- FANBASIS 🔥
-          </a>
-          <div style={{ fontSize:11, color:t.color.line2, lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
-            After payment, your coach will activate your account within 24 hours.
-          </div>
+          {isNativeApp() ? (
+            // Apple 3.1.1 — no external purchase link inside the native app.
+            // Until in-app purchase is wired, point them to their coach.
+            <div style={{ width:'100%', maxWidth:340, background:t.color.surface, border:`1px solid ${t.color.line2}`, borderRadius:12, padding:'16px 18px', marginBottom:14, fontSize:13, color:t.color.textDim, lineHeight:1.6 }}>
+              Reach out to your coach to activate full access.
+            </div>
+          ) : (
+            <>
+              <a href="https://www.fanbasis.com" target="_blank" rel="noreferrer"
+                style={{ display:'block', width:'100%', maxWidth:340, background:t.color.text, border:'none', borderRadius:12, padding:'16px 18px', fontSize:15, fontWeight:900, letterSpacing:2, color:t.color.bg, cursor:'pointer', textDecoration:'none', marginBottom:14 }}>
+                JOIN NOW -- FANBASIS 🔥
+              </a>
+              <div style={{ fontSize:11, color:t.color.line2, lineHeight:1.6, maxWidth:300, marginBottom:24 }}>
+                After payment, your coach will activate your account within 24 hours.
+              </div>
+            </>
+          )}
           <button onClick={() => signOut()} style={{ background:'none', border:`1px solid ${t.color.line2}`, borderRadius:8, padding:'8px 16px', fontSize:11, color:t.color.textMute, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
             SIGN OUT
           </button>
@@ -2263,6 +2275,7 @@ export default function Main({ user }) {
             { id: 'weekly',    label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
             { id: 'course',    label: 'Course',        sub: 'Modules + resources' },
             { id: 'parents',   label: 'Parent Guide',  sub: 'For the people in your corner' },
+            { id: 'settings',  label: 'Settings',      sub: 'Account · privacy · delete · export' },
           ].filter(item => surfaceAllowed(item.id)).map(item => (
             <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
               width: '100%', textAlign: 'left',
@@ -2293,6 +2306,9 @@ export default function Main({ user }) {
 
       {/* ── COMPETE (team / league / country leaderboards + monthly cup) ── */}
       {tab === 'compete' && <CompetitionsTab user={user} profile={profile} />}
+
+      {/* ── SETTINGS (account · privacy · data export · delete) ── */}
+      {tab === 'settings' && <SettingsTab user={user} profile={profile} />}
 
       {/* ── LOCKER ROOM (athlete-facing) ── */}
       {tab === 'locker' && <LockerRoomTab user={user} adminView={false} setTab={setTab} />}
