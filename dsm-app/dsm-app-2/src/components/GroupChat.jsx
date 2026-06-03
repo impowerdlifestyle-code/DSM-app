@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { tokens as t, C } from '../styles.js'
-import { getGroupMessages, sendGroupMessage, deleteGroupMessage } from '../lib/supabase.js'
+import { supabase, getGroupMessages, sendGroupMessage, deleteGroupMessage } from '../lib/supabase.js'
 
 // Shared group chat panel. Used in the athlete Team tab and the coach Admin
 // group view. Polls every 5s while mounted (no realtime dependency).
@@ -25,9 +25,17 @@ export default function GroupChat({ groupId, user, canModerate = false, height =
   useEffect(() => {
     setLoading(true)
     load(true)
-    const iv = setInterval(() => load(false), 5000)
-    return () => clearInterval(iv)
-  }, [load])
+    // Realtime: instant delivery on insert/delete for this group. RLS gates
+    // which rows each subscriber receives, so members only get their group.
+    const ch = supabase
+      .channel(`group-${groupId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, () => load(false))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, () => load(false))
+      .subscribe()
+    // Slow poll as a reconnect/missed-event safety net.
+    const iv = setInterval(() => load(false), 20000)
+    return () => { clearInterval(iv); supabase.removeChannel(ch) }
+  }, [load, groupId])
 
   function onScroll() {
     const el = scrollRef.current
