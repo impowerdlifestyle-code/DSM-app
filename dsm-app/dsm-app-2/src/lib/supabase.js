@@ -1160,6 +1160,46 @@ export async function bumpChallenge(userId, challengeId, weekKey, target, increm
   return { row: data, justCompleted: completed && !wasCompleted, error }
 }
 
+// ─── TEAM COMPETITIONS ───────────────────────────────────────
+// All read through SECURITY DEFINER RPCs (migration 026) so leaderboards
+// can aggregate other athletes' XP without leaking private data.
+function monthStartIso() {
+  const d = new Date()
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString()
+}
+
+// scope: 'global' | 'team' | 'league' | 'country'; period: 'all' | 'month'
+export async function getLeaderboard({ scope = 'global', value = null, period = 'all' } = {}) {
+  const { data, error } = await supabase.rpc('dsm_leaderboard', {
+    p_scope: scope,
+    p_value: value,
+    p_since: period === 'month' ? monthStartIso() : null,
+  })
+  return { data: data || [], error }
+}
+
+export async function getTeamStandings({ period = 'all' } = {}) {
+  const { data, error } = await supabase.rpc('dsm_team_standings', {
+    p_since: period === 'month' ? monthStartIso() : null,
+  })
+  return { data: data || [], error }
+}
+
+// Self-update of non-privileged competition fields (allowed by RLS).
+export async function setTeamLeague(userId, { clubTeam, league, country }) {
+  const patch = {}
+  if (clubTeam !== undefined) patch.club_team = clubTeam || null
+  if (league !== undefined)   patch.league = league || null
+  if (country !== undefined)  patch.country = country || null
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(patch)
+    .eq('id', userId)
+    .select('id, club_team, league, country')
+    .maybeSingle()
+  return { data, error }
+}
+
 // ─── WORKOUTS ────────────────────────────────────────────────
 export async function finishWorkout(userId, workout) {
   const { name, workoutId, block, durationSeconds, sets } = workout

@@ -73,6 +73,12 @@ export function rankFromXp(totalXp = 0) {
   return { rank, next, idx, total: sorted.length, xpInto, xpForNext, pct, xpToNext: next ? ceil - totalXp : 0 }
 }
 
+// Competitive circuits for the league leaderboards + ECNL/MLS NEXT challenges.
+export const LEAGUES = [
+  'ECNL', 'ECNL RL', 'MLS NEXT', 'Girls Academy', 'EA', 'NPL', 'DPL',
+  'State / Travel', 'High School', 'Rec', 'Other',
+]
+
 // ─── WEEKLY MINDSET CHALLENGES ───────────────────────────────────────
 // A pool of consistency challenges. Three rotate in each week, picked
 // deterministically by week number so every athlete sees the same set.
