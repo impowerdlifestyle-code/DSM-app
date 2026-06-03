@@ -89,8 +89,8 @@ const BreathDot = ({ phase }) => (
     width: phase === 'in' ? 140 : phase === 'hold' ? 140 : 60,
     height: phase === 'in' ? 140 : phase === 'hold' ? 140 : 60,
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 70%)',
-    border: '1px solid rgba(255,255,255,0.25)',
+    background: 'radial-gradient(circle, rgba(var(--dsm-glow-rgb),0.18) 0%, rgba(var(--dsm-glow-rgb),0.02) 70%)',
+    border: '1px solid rgba(var(--dsm-glow-rgb),0.25)',
     transition: 'all 4s ease',
     margin: '0 auto',
   }} />

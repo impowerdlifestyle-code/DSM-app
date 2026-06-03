@@ -43,7 +43,7 @@ export default function CourseTab() {
           fontFamily: t.font.athletic, fontSize: 36, fontWeight: 400,
           color: t.color.text, marginTop: 6, letterSpacing: 1, lineHeight: 0.95,
           textTransform: 'uppercase',
-          textShadow: '0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.15)',
+          textShadow: '0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.3), 0 0 56px rgba(var(--dsm-glow-rgb),0.15)',
         }}>
           The full <span style={{ color: t.color.textDim }}>method.</span>
         </h2>

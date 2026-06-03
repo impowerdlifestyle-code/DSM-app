@@ -41,6 +41,9 @@ const onyx = {
   '--color-err-bg':     'rgba(248,113,113,0.08)',
   '--color-coral':      '#f87171',
 
+  // Title/heading glow color (rgb triplet for rgba()). Light glow on dark bg.
+  '--dsm-glow-rgb':     '255,255,255',
+
   // The OS chrome (Safari address bar, Android status bar)
   '--color-scheme-os':  'dark',
   '--color-meta-theme': '#000000',
@@ -77,6 +80,10 @@ const daylight = {
   '--color-err-bg':     'rgba(220,38,38,0.08)',
   '--color-coral':      '#dc2626',
 
+  // Dark ink glow on the light bg — a soft halo, never a wash-out. This is
+  // what keeps headers crisp + premium in Daylight instead of disappearing.
+  '--dsm-glow-rgb':     '20,20,20',
+
   '--color-scheme-os':  'light',
   '--color-meta-theme': '#fafafa',
 }
@@ -111,6 +118,8 @@ const pitch = {
   '--color-err':        '#fca5a5',
   '--color-err-bg':     'rgba(252,165,165,0.08)',
   '--color-coral':      '#fca5a5',
+
+  '--dsm-glow-rgb':     '134,239,172',
 
   '--color-scheme-os':  'dark',
   '--color-meta-theme': '#04130c',
@@ -147,6 +156,8 @@ const crimson = {
   '--color-err-bg':     'rgba(252,165,165,0.10)',
   '--color-coral':      '#fca5a5',
 
+  '--dsm-glow-rgb':     '251,191,36',
+
   '--color-scheme-os':  'dark',
   '--color-meta-theme': '#150506',
 }
@@ -180,6 +191,8 @@ const mist = {
   '--color-err':        '#f87171',
   '--color-err-bg':     'rgba(248,113,113,0.10)',
   '--color-coral':      '#f87171',
+
+  '--dsm-glow-rgb':     '125,211,252',
 
   '--color-scheme-os':  'dark',
   '--color-meta-theme': '#070a14',

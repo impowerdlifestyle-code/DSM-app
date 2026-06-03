@@ -651,7 +651,7 @@ export default function Main({ user }) {
       <div style={C.app}>
         <style>{`
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          html, body, #root { background: #0a0a0a; min-height: 100vh; }
+          html, body, #root { background: var(--color-bg); min-height: 100vh; }
           @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
           .fade { animation: fadeIn 0.3s ease; }
         `}</style>
@@ -825,16 +825,9 @@ export default function Main({ user }) {
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-        /* Glow text-shadows are tuned for the Onyx dark bg — pure-white
-           shadows on a light page would be invisible. Gate to dark themes. */
-        :root[data-theme="onyx"] {
-          --dsm-glow-rgb: 255,255,255;
-        }
-        :root[data-theme="daylight"] {
-          /* Subtle ink glow instead of white — still adds presence, but on
-             a light bg it reads as a soft halo, not invisible. */
-          --dsm-glow-rgb: 30,30,30;
-        }
+        /* --dsm-glow-rgb is defined per-theme in src/themes/index.js so the
+           title/heading glow flips with the palette (light glow on dark bg,
+           dark ink glow on Daylight). */
         @keyframes dsmGlow {
           0%,100% { text-shadow: 0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.30), 0 0 56px rgba(var(--dsm-glow-rgb),0.15) }
           50%     { text-shadow: 0 0 20px rgba(var(--dsm-glow-rgb),0.75), 0 0 40px rgba(var(--dsm-glow-rgb),0.42), 0 0 72px rgba(var(--dsm-glow-rgb),0.22) }
@@ -2888,8 +2881,8 @@ export default function Main({ user }) {
                   <div style={{ textAlign:'center',padding:20,fontSize:13,color:t.color.textMute }}>No messages yet. Start the conversation! 💬</div>
                 ) : athleteMessages.map((m,i)=>(
                   <div key={i} style={{ display:'flex',justifyContent:m.sender_id===user.id?'flex-end':'flex-start',marginBottom:8 }}>
-                    <div style={{ maxWidth:'80%',background:m.sender_id===user.id?t.color.text:t.color.surface2,borderRadius:10,padding:'8px 12px' }}>
-                      <div style={{ fontSize:9,color:'rgba(255,255,255,0.6)',marginBottom:3 }}>{m.profiles?.full_name||'Athlete'}</div>
+                    <div style={{ maxWidth:'80%',background:m.sender_id===user.id?t.color.text:t.color.surface2,borderRadius:10,padding:'8px 12px',color:m.sender_id===user.id?t.color.bg:t.color.text }}>
+                      <div style={{ fontSize:9,opacity:0.6,marginBottom:3 }}>{m.profiles?.full_name||'Athlete'}</div>
                       <div style={{ fontSize:13 }}>{m.content}</div>
                     </div>
                   </div>

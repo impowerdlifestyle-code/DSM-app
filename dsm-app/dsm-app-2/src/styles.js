@@ -149,7 +149,7 @@ export const C = {
     marginBottom: 4,
     textTransform: 'uppercase',
     color: t.color.text,
-    textShadow: '0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.15)',
+    textShadow: '0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.3), 0 0 56px rgba(var(--dsm-glow-rgb),0.15)',
     animation: 'dsmGlow 3.2s ease-in-out infinite',
   },
   sub: {

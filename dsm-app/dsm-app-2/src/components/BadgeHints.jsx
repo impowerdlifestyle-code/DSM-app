@@ -74,7 +74,7 @@ const s = {
     fontFamily: t.font.athletic, fontSize: 30, lineHeight: 1, fontWeight: 400,
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 14,
     color: t.color.text,
-    textShadow: '0 0 14px rgba(255,255,255,0.45), 0 0 28px rgba(255,255,255,0.22)',
+    textShadow: '0 0 14px rgba(var(--dsm-glow-rgb),0.45), 0 0 28px rgba(var(--dsm-glow-rgb),0.22)',
   },
   tabRow: {
     display: 'flex', gap: 4, padding: 4,

@@ -93,7 +93,7 @@ const s = {
     fontFamily: t.font.athletic, fontSize: 80, lineHeight: 1,
     textAlign: 'center', marginBottom: 14, letterSpacing: 1,
     color: t.color.text,
-    textShadow: '0 0 18px rgba(255,255,255,0.55), 0 0 36px rgba(255,255,255,0.3)',
+    textShadow: '0 0 18px rgba(var(--dsm-glow-rgb),0.55), 0 0 36px rgba(var(--dsm-glow-rgb),0.3)',
     animation: 'dsmGlow 3.2s ease-in-out infinite',
   },
   eyebrow: {
