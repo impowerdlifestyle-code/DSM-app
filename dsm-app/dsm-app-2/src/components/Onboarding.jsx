@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { saveOnboarding, savePendingConsent } from '../lib/supabase.js'
 import { authFetch } from '../lib/authFetch.js'
+import { isNativeApp } from '../lib/platform.js'
 import { tokens as t, C } from '../styles.js'
 import ProgressBar from './widgets/ProgressBar.jsx'
 
@@ -114,13 +115,16 @@ export default function Onboarding({ user, profile, onDone }) {
 
   const update = (patch) => setData(d => ({ ...d, ...patch }))
   const needsConsent = typeof data.age === 'number' && data.age < 13
+  // App Store builds are gated to 13+ to keep COPPA out of review scope; the
+  // under-13 parental-consent flow stays available on the web.
+  const under13Native = isNativeApp() && needsConsent
   const STEPS = needsConsent ? STEPS_YOUTH : STEPS_DEFAULT
   const currentKey = STEPS[step]
   const pct = ((step + 1) / STEPS.length) * 100
 
   function canAdvance() {
     if (currentKey === 'identity') return data.identityGoal.trim().length >= 5
-    if (currentKey === 'position') return data.position && typeof data.age === 'number'
+    if (currentKey === 'position') return data.position && typeof data.age === 'number' && !under13Native
     if (currentKey === 'consent')  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.parentEmail.trim())
     if (currentKey === 'cadence')  return !!data.matchCadence
     return true
@@ -224,6 +228,11 @@ export default function Onboarding({ user, profile, onDone }) {
               value={data.clubTeam}
               onChange={e => update({ clubTeam: e.target.value })}
             />
+            {under13Native && (
+              <div style={{ marginTop: 14, padding: '12px 14px', background: t.color.errBg, border: `1px solid ${t.color.err}`, borderRadius: 12, fontSize: 13, color: t.color.text, lineHeight: 1.5 }}>
+                DSM in the app is for ages 13+. If you're under 13, ask a parent to set you up at <b>dsm-app-2.vercel.app</b> in a browser — it has a parent-approval step.
+              </div>
+            )}
           </>
         )}
 

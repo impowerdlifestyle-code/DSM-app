@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
 import { saveVoiceJournal, awardXp, evaluateBadges, supabase, bumpQuest } from '../../lib/supabase.js'
+import { startDictation, speechSupported } from '../../lib/speech.js'
 import { XP_TABLE } from '../../data/gamification.js'
 import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
 
@@ -38,63 +39,37 @@ export default function VoiceJournal({ user }) {
     }
   }, [])
 
-  function startRecord() {
+  async function startRecord() {
     setError('')
     setSaved(false)
     setResult(null)
     setTranscript('')
     setElapsed(0)
 
-    const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)
-    if (!SR) {
-      // Fallback: still allow the UI flow but warn — user can type, or we use the mock transcript on stop
+    if (!speechSupported()) {
+      // Fallback: still allow the UI flow but warn — user can type.
       setError('Live speech recognition not available in this browser. Try Chrome or Safari (iOS 14.5+).')
       setState('recording')
       return
     }
 
-    const rec = new SR()
-    rec.lang = 'en-US'
-    rec.continuous = true
-    rec.interimResults = true
-    rec.onresult = (e) => {
-      let full = ''
-      for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript + ' '
-      setTranscript(full.trim())
-    }
-    rec.onerror = (e) => {
-      // H12: surface SR errors instead of only handling 'not-allowed'.
-      console.warn('[VoiceJournal SR error]', e.error)
-      if (e.error === 'not-allowed')  setError('Microphone permission denied.')
-      else if (e.error === 'no-speech') setError("Didn't catch any speech — try again.")
-      else if (e.error === 'audio-capture') setError("Couldn't access your mic — check the OS settings.")
-      else if (e.error === 'network')  setError('Speech recognition needs network — check your connection.')
-      else if (e.error === 'aborted')  { /* user cancelled — silent */ }
-      else                              setError(`Recorder error: ${e.error || 'unknown'}`)
-    }
-    rec.onend = () => {
-      // If user wants to keep recording but the browser auto-stopped, restart
-      if (state === 'recording') {
-        try { rec.start() }
-        catch (err) {
-          // iOS Safari throws InvalidStateError if start() is called twice.
-          // Surface to UI so the user doesn't think they're still recording.
-          console.warn('[VoiceJournal restart failed]', err?.name, err?.message)
-          setError('Recorder stopped — tap record to try again.')
-          setState('ready')
-        }
-      }
-    }
-    try {
-      rec.start()
-    } catch (err) {
-      console.warn('[VoiceJournal start failed]', err?.name, err?.message)
-      setError('Could not start the recorder — close any other mic-using app and retry.')
-      setState('ready')
-      return
-    }
-    recognizerRef.current = rec
     setState('recording')
+    recognizerRef.current = await startDictation({
+      continuous: true,
+      onText: (txt) => setTranscript(txt),
+      onError: (code) => {
+        console.warn('[VoiceJournal SR error]', code)
+        if (code === 'not-allowed')           setError('Microphone permission denied.')
+        else if (code === 'no-speech')        setError("Didn't catch any speech — try again.")
+        else if (code === 'audio-capture')    setError("Couldn't access your mic — check the OS settings.")
+        else if (code === 'network')          setError('Speech recognition needs network — check your connection.')
+        else if (code === 'aborted')          { /* user cancelled — silent */ }
+        else if (code === 'restart-failed' || code === 'start-failed') {
+          setError('Recorder stopped — tap record to try again.'); setState('ready')
+        } else                                 setError(`Recorder error: ${code || 'unknown'}`)
+      },
+      onEnd: () => {},
+    })
   }
 
   async function stopRecord() {

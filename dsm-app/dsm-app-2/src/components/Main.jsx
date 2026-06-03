@@ -17,6 +17,7 @@ import {
 } from '../lib/constants.js'
 import { getWeekKey } from '../lib/dates.js'
 import { isNativeApp } from '../lib/platform.js'
+import { startDictation, speechSupported } from '../lib/speech.js'
 import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate, checkForNudge } from '../lib/coachV.js'
 import { speakText as elevenSpeak } from '../lib/elevenlabs.js'
 import { downloadReport } from '../lib/reports.js'
@@ -561,17 +562,15 @@ export default function Main({ user }) {
   }
 
 
-  const startVoice = () => {
-    try {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-      if (!SR) return alert('Try Chrome!')
-      const r = new SR(); r.lang = 'en-US'
-      r.onstart = () => setIsRecording(true)
-      r.onend = () => setIsRecording(false)
-      r.onresult = e => sendChat(e.results[0][0].transcript)
-      r.onerror = () => setIsRecording(false)
-      r.start()
-    } catch { alert('Voice not supported.') }
+  const startVoice = async () => {
+    if (!speechSupported()) return alert('Voice input not available on this device.')
+    setIsRecording(true)
+    await startDictation({
+      continuous: false,
+      onText: (txt) => { if (txt) sendChat(txt) },
+      onError: () => setIsRecording(false),
+      onEnd: () => setIsRecording(false),
+    })
   }
 
   // PAYWALL CHECK — see lib/supabase.js → evaluateAccess
