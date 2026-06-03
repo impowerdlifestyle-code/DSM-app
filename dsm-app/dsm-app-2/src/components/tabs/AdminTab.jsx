@@ -21,8 +21,10 @@ import {
   addGroupMember,
   removeGroupMember,
   getRecentActivity,
+  getGroupActivity,
 } from '../../lib/supabase.js'
 import LockerRoomTab from './LockerRoomTab.jsx'
+import GroupChat from '../GroupChat.jsx'
 
 const TIER_LABELS = { 1: 'Assistant', 2: 'Coach', 3: 'Mentor' }
 const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' }
@@ -134,7 +136,7 @@ export default function AdminTab({ user }) {
       )}
 
       {section === 'groups' && (
-        <GroupsView user={user} coaches={coaches} athletes={athletes} />
+        <GroupsView user={user} coaches={coaches} athletes={athletes} onViewAthlete={setSelectedId} />
       )}
 
       {section === 'activity' && (
@@ -491,7 +493,7 @@ function CoachesView({ loading, coaches, athletes, onAddCoach, onChangeTier, onD
   )
 }
 
-function GroupsView({ user, coaches, athletes }) {
+function GroupsView({ user, coaches, athletes, onViewAthlete }) {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
@@ -520,11 +522,13 @@ function GroupsView({ user, coaches, athletes }) {
         <GroupRow
           key={g.id}
           group={g}
+          user={user}
           isOwner={g.lead_coach_id === user?.id}
           expanded={expandedId === g.id}
           onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
           coaches={coaches}
           athletes={athletes}
+          onViewAthlete={onViewAthlete}
           onDelete={async () => {
             if (!confirm(`Delete group "${g.name}"? This removes all memberships.`)) return
             await deleteCoachingGroup(g.id)
@@ -549,10 +553,11 @@ function GroupsView({ user, coaches, athletes }) {
   )
 }
 
-function GroupRow({ group, isOwner, expanded, onToggle, coaches, athletes, onDelete }) {
+function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes, onViewAthlete, onDelete }) {
   const [members, setMembers] = useState([])
   const [loadingMembers, setLoadingMembers] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [view, setView] = useState('members') // members | chat | activity
 
   async function loadMembers() {
     setLoadingMembers(true)
@@ -587,30 +592,51 @@ function GroupRow({ group, isOwner, expanded, onToggle, coaches, athletes, onDel
 
       {expanded && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.color.line}` }}>
-          {loadingMembers && <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading members…</div>}
-          {!loadingMembers && (
-            <>
-              <div style={subLabel}>Coaches · {groupCoaches.length}</div>
-              {groupCoaches.map(m => (
-                <MemberRow key={m.user_id} member={m} canEdit={isOwner} onRemove={async () => {
-                  await removeGroupMember(group.id, m.user_id); await loadMembers()
-                }} />
-              ))}
-              <div style={{ ...subLabel, marginTop: 10 }}>Athletes · {groupAthletes.length}</div>
-              {groupAthletes.map(m => (
-                <MemberRow key={m.user_id} member={m} canEdit={isOwner} onRemove={async () => {
-                  await removeGroupMember(group.id, m.user_id); await loadMembers()
-                }} />
-              ))}
-              {isOwner && (
-                <button onClick={() => setAddOpen(true)} style={{ ...addBtn, marginTop: 10, width: '100%' }}>+ Add member</button>
-              )}
-              {!isOwner && (
-                <div style={{ fontSize: 10, color: t.color.textMute, marginTop: 10, fontStyle: 'italic' }}>
-                  Read-only · only the lead coach can edit
-                </div>
-              )}
-            </>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            {['members', 'chat', 'activity'].map(v => (
+              <button key={v} onClick={() => setView(v)} style={{
+                padding: '6px 12px', borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                textTransform: 'capitalize', fontFamily: t.font.sans,
+                border: `1px solid ${view === v ? t.color.text : t.color.line2}`,
+                background: view === v ? t.color.text : 'transparent',
+                color: view === v ? t.color.bg : t.color.text,
+              }}>{v}</button>
+            ))}
+          </div>
+
+          {view === 'members' && (
+            loadingMembers ? <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading members…</div> : (
+              <>
+                <div style={subLabel}>Coaches · {groupCoaches.length}</div>
+                {groupCoaches.map(m => (
+                  <MemberRow key={m.user_id} member={m} canEdit={isOwner} onView={onViewAthlete} onRemove={async () => {
+                    await removeGroupMember(group.id, m.user_id); await loadMembers()
+                  }} />
+                ))}
+                <div style={{ ...subLabel, marginTop: 10 }}>Athletes · {groupAthletes.length}</div>
+                {groupAthletes.map(m => (
+                  <MemberRow key={m.user_id} member={m} canEdit={isOwner} onView={onViewAthlete} onRemove={async () => {
+                    await removeGroupMember(group.id, m.user_id); await loadMembers()
+                  }} />
+                ))}
+                {isOwner && (
+                  <button onClick={() => setAddOpen(true)} style={{ ...addBtn, marginTop: 10, width: '100%' }}>+ Add member</button>
+                )}
+                {!isOwner && (
+                  <div style={{ fontSize: 10, color: t.color.textMute, marginTop: 10, fontStyle: 'italic' }}>
+                    Read-only · only the lead coach can edit
+                  </div>
+                )}
+              </>
+            )
+          )}
+
+          {view === 'chat' && (
+            <GroupChat groupId={group.id} user={user} canModerate={isOwner} height="460px" />
+          )}
+
+          {view === 'activity' && (
+            <GroupActivityView groupId={group.id} onViewAthlete={onViewAthlete} />
           )}
         </div>
       )}
@@ -629,9 +655,10 @@ function GroupRow({ group, isOwner, expanded, onToggle, coaches, athletes, onDel
   )
 }
 
-function MemberRow({ member, canEdit, onRemove }) {
+function MemberRow({ member, canEdit, onView, onRemove }) {
   const u = member.user
   const label = u?.full_name || u?.email || member.user_id.slice(0, 8)
+  const clickable = !!onView && member.role_in_group === 'athlete'
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -639,11 +666,56 @@ function MemberRow({ member, canEdit, onRemove }) {
       background: t.color.bg, border: `1px solid ${t.color.line}`,
       borderRadius: 8, fontFamily: t.font.sans,
     }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: t.color.text }}>{label}</div>
+      <button
+        onClick={clickable ? () => onView(member.user_id) : undefined}
+        style={{
+          minWidth: 0, flex: 1, textAlign: 'left', background: 'none', border: 'none',
+          padding: 0, cursor: clickable ? 'pointer' : 'default', fontFamily: 'inherit',
+        }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: t.color.text }}>
+          {label} {clickable && <span style={{ color: t.color.textMute, fontWeight: 400 }}>›</span>}
+        </div>
         <div style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 0.8, marginTop: 1 }}>{u?.email}</div>
-      </div>
+      </button>
       {canEdit && <button onClick={onRemove} style={tinyRemoveBtn}>✕</button>}
+    </div>
+  )
+}
+
+function GroupActivityView({ groupId, onViewAthlete }) {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    (async () => { const { data } = await getGroupActivity(groupId); setEvents(data || []); setLoading(false) })()
+  }, [groupId])
+
+  if (loading) return <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading activity…</div>
+  if (!events.length) return <div style={{ color: t.color.textMute, fontSize: 12, fontStyle: 'italic', padding: '8px 0' }}>No athlete activity yet.</div>
+
+  const KIND = {
+    action_step: ['ACTION', t.color.pitch], checkin: ['CHECK-IN', t.color.ember],
+    voice: ['VOICE', t.color.coral], chat: ['CHAT', t.color.textDim], task_done: ['TASK ✓', t.color.pitch],
+  }
+  return (
+    <div>
+      {events.map(e => {
+        const [badge, color] = KIND[e.kind] || ['EVENT', t.color.textDim]
+        const ago = timeAgo(e.at)
+        return (
+          <button key={e.id} onClick={() => onViewAthlete && onViewAthlete(e.athleteId)} style={{
+            width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 10px', marginBottom: 4, background: t.color.bg,
+            border: `1px solid ${t.color.line}`, borderRadius: 8, cursor: 'pointer', fontFamily: t.font.sans,
+          }}>
+            <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 0.8, color, minWidth: 52 }}>{badge}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.color.text }}>{e.athlete}</div>
+              <div style={{ fontSize: 10, color: t.color.textDim, marginTop: 1 }}>{e.summary}</div>
+            </div>
+            <span style={{ fontSize: 9, color: t.color.textMute, whiteSpace: 'nowrap' }}>{ago}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }

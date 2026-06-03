@@ -44,6 +44,7 @@ const BodyStatsTab  = lazy(() => import('./tabs/BodyStatsTab.jsx'))
 const InboxTab      = lazy(() => import('./tabs/InboxTab.jsx'))
 const CourseTab     = lazy(() => import('./tabs/CourseTab.jsx'))
 const SquadTab      = lazy(() => import('./tabs/SquadTab.jsx'))
+const TeamTab       = lazy(() => import('./tabs/TeamTab.jsx'))
 const CompetitionsTab = lazy(() => import('./tabs/CompetitionsTab.jsx'))
 const SettingsTab     = lazy(() => import('./tabs/SettingsTab.jsx'))
 const LockerRoomTab = lazy(() => import('./tabs/LockerRoomTab.jsx'))
@@ -2268,6 +2269,7 @@ export default function Main({ user }) {
           <div style={C.sub}>Body · habits · check-ins · resources</div>
           {[
             { id: 'tips',      label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
+            { id: 'team',      label: 'Teams',         sub: 'Your coaching groups + group chat' },
             { id: 'compete',   label: 'Compete',       sub: 'Team, league & country leaderboards · monthly cup' },
             { id: 'voice',     label: 'Voice Journal', sub: '30-sec mindset reflection · +60 XP' },
             { id: 'future',    label: 'Future Self',   sub: 'Monthly identity ritual' },
@@ -2305,6 +2307,9 @@ export default function Main({ user }) {
 
       {/* ── SQUAD ── */}
       {tab === 'squad' && <SquadTab user={user} />}
+
+      {/* ── TEAMS (coaching groups + group chat) ── */}
+      {tab === 'team' && <TeamTab user={user} />}
 
       {/* ── COMPETE (team / league / country leaderboards + monthly cup) ── */}
       {tab === 'compete' && <CompetitionsTab user={user} profile={profile} />}

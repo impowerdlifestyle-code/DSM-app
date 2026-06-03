@@ -865,6 +865,75 @@ export async function removeGroupMember(groupId, userId) {
   return { error }
 }
 
+// ─── GROUP CHAT + MEMBER-FACING GROUPS ───────────────────────
+// Groups the signed-in user belongs to (athlete or coach-member).
+export async function getMyGroups(userId) {
+  const { data, error } = await supabase
+    .from('coaching_group_members')
+    .select('role_in_group, group:coaching_groups!coaching_group_members_group_id_fkey(id, name, description, lead_coach_id)')
+    .eq('user_id', userId)
+  const groups = (data || [])
+    .filter(r => r.group)
+    .map(r => ({ ...r.group, role_in_group: r.role_in_group }))
+  return { data: groups, error }
+}
+
+export async function getGroupMessages(groupId, limit = 120) {
+  const { data, error } = await supabase
+    .from('group_messages')
+    .select('id, group_id, user_id, body, created_at, sender:profiles!group_messages_user_id_fkey(full_name, role)')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: (data || []).reverse(), error }
+}
+
+export async function sendGroupMessage(groupId, userId, body) {
+  const clean = (body || '').trim().slice(0, 2000)
+  if (!clean) return { data: null, error: { message: 'empty message' } }
+  const { data, error } = await supabase
+    .from('group_messages')
+    .insert([{ group_id: groupId, user_id: userId, body: clean }])
+    .select('id, created_at')
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function deleteGroupMessage(messageId) {
+  const { error } = await supabase.from('group_messages').delete().eq('id', messageId)
+  return { error }
+}
+
+// Activity feed scoped to one group's athlete members. Mirrors getRecentActivity.
+export async function getGroupActivity(groupId, { limit = 60 } = {}) {
+  const { data: members } = await supabase
+    .from('coaching_group_members')
+    .select('user_id, role_in_group, user:profiles!coaching_group_members_user_id_fkey(id, full_name, email)')
+    .eq('group_id', groupId)
+  const athletes = (members || []).filter(m => m.role_in_group === 'athlete')
+  const ids = athletes.map(m => m.user_id)
+  if (!ids.length) return { data: [], error: null }
+  const nameById = new Map(athletes.map(m => [m.user_id, m.user?.full_name || m.user?.email || 'Athlete']))
+  const nameFor = (id) => nameById.get(id) || 'Athlete'
+
+  const [actions, checkins, voice, chat, tasks] = await Promise.all([
+    supabase.from('action_steps').select('id, user_id, created_at, mental').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
+    supabase.from('weekly_checkins').select('id, user_id, created_at, mood, week_number').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
+    supabase.from('voice_journal').select('id, user_id, created_at, title').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
+    supabase.from('chat_history').select('id, user_id, created_at, role').in('user_id', ids).eq('role', 'user').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('coach_tasks').select('id, athlete_id, created_at, completed_at, status, title').in('athlete_id', ids).order('completed_at', { ascending: false, nullsFirst: false }).limit(limit),
+  ])
+
+  const events = []
+  for (const r of (actions.data  || [])) events.push({ id: `as-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'action_step', summary: `Logged action step · mental ${r.mental ?? '—'}` })
+  for (const r of (checkins.data || [])) events.push({ id: `ck-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'checkin',     summary: `Weekly check-in · mood ${r.mood ?? '—'} · wk ${r.week_number ?? '—'}` })
+  for (const r of (voice.data    || [])) events.push({ id: `vj-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'voice',       summary: `Voice journal · ${r.title || 'untitled'}` })
+  for (const r of (chat.data     || [])) events.push({ id: `ch-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'chat',        summary: 'Messaged Coach V' })
+  for (const r of (tasks.data    || [])) { if (r.completed_at) events.push({ id: `tk-${r.id}`, at: r.completed_at, athleteId: r.athlete_id, athlete: nameFor(r.athlete_id), kind: 'task_done', summary: `Completed task · ${r.title}` }) }
+  events.sort((a, b) => (b.at || '').localeCompare(a.at || ''))
+  return { data: events.slice(0, limit), error: null }
+}
+
 // ─── ADMIN: RECENT ACTIVITY (coached athletes only) ──────────
 export async function getRecentActivity({ limit = 60 } = {}) {
   const { data: coached } = await supabase
