@@ -75,6 +75,9 @@ export default function ParentCoachTab({ user }) {
   return (
     <div style={{ ...C.scroll, display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 132px)', paddingTop: 14, paddingBottom: 0 }}>
       <div style={C.title}>PARENT COACH</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: t.color.pitch, letterSpacing: 0.2, lineHeight: 1.35, marginTop: -2, marginBottom: 3 }}>
+        The operating system for elite soccer parenting.
+      </div>
       <div style={C.sub}>
         {selected ? `Supporting ${selected.full_name?.split(' ')[0] || 'your athlete'}` : 'Your corner'}
       </div>
