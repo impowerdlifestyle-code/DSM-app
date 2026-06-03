@@ -493,20 +493,21 @@ export async function createNudge(userId, { kind, message, signal }) {
   return { data, error }
 }
 
+// M10: prefer the server-clock RPC (migration 024) so timestamps are
+// consistent regardless of device clock. Falls back to a direct client-clock
+// update if the RPC isn't applied yet, so this is safe either way.
 export async function dismissNudge(nudgeId) {
-  const { data, error } = await supabase
-    .from('coach_nudges')
-    .update({ dismissed_at: new Date().toISOString() })
-    .eq('id', nudgeId)
-  return { data, error }
+  const { data, error } = await supabase.rpc('dismiss_nudge', { p_nudge_id: nudgeId, p_acted: false })
+  if (!error) return { data, error: null }
+  return supabase.from('coach_nudges').update({ dismissed_at: new Date().toISOString() }).eq('id', nudgeId)
 }
 
 export async function markNudgeActedOn(nudgeId) {
-  const { data, error } = await supabase
-    .from('coach_nudges')
+  const { data, error } = await supabase.rpc('dismiss_nudge', { p_nudge_id: nudgeId, p_acted: true })
+  if (!error) return { data, error: null }
+  return supabase.from('coach_nudges')
     .update({ acted_on_at: new Date().toISOString(), dismissed_at: new Date().toISOString() })
     .eq('id', nudgeId)
-  return { data, error }
 }
 
 export async function nudgeCreatedToday(userId) {
