@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DSM</string>
+    <string name="title_activity_main">DSM</string>
+    <string name="package_name">com.dilorenzosoccermindset.dsm</string>
+    <string name="custom_url_scheme">com.dilorenzosoccermindset.dsm</string>
+</resources>
