@@ -73,6 +73,41 @@ export function rankFromXp(totalXp = 0) {
   return { rank, next, idx, total: sorted.length, xpInto, xpForNext, pct, xpToNext: next ? ceil - totalXp : 0 }
 }
 
+// ─── WEEKLY MINDSET CHALLENGES ───────────────────────────────────────
+// A pool of consistency challenges. Three rotate in each week, picked
+// deterministically by week number so every athlete sees the same set.
+// Self-attested: athletes tap as they complete each rep. Completion grants
+// challengeComplete XP + the named badge. All reward process, not results.
+export const WEEKLY_CHALLENGE_POOL = [
+  { id: 'pregame-5',    title: 'Pre-game routine ×5',     sub: 'Run your 60-second routine before 5 sessions', target: 5, icon: '🎬', badge: 'challenge-pregame' },
+  { id: 'goldfish',     title: 'Goldfish reset',          sub: 'Reset after every mistake, all week',          target: 7, icon: '🐠', badge: 'challenge-goldfish' },
+  { id: 'leadership',   title: 'Leadership body language', sub: 'Big, calm body language — 5 moments',          target: 5, icon: '⭐', badge: 'challenge-leadership' },
+  { id: 'demand-ball',  title: 'Demand the ball',         sub: 'Call for it under pressure — 10 times',         target: 10, icon: '🦈', badge: 'challenge-demand' },
+  { id: 'selftalk',     title: 'Positive self-talk',      sub: 'Swap one inner-critic line for a cue — 7 times', target: 7, icon: '💬', badge: 'challenge-selftalk' },
+  { id: 'visualize-3',  title: 'Visualize the game',      sub: 'Mental rehearsal before 3 matches/practices',   target: 3, icon: '🧠', badge: 'challenge-visualize' },
+  { id: 'tuneout',      title: 'Tune-out the noise',      sub: 'Filter sideline/crowd noise — 5 moments',        target: 5, icon: '🔇', badge: 'challenge-tuneout' },
+  { id: 'breath-reset', title: 'Box-breath reset',        sub: 'Use the breath to settle nerves — 5 times',     target: 5, icon: '🌬', badge: 'challenge-breath' },
+]
+
+// ISO-style week key, e.g. '2026-W23'. Stable Mon-Sun bucket.
+export function isoWeekKey(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+// Deterministic 3 challenges for the given week.
+export function getActiveChallenges(date = new Date()) {
+  const key = isoWeekKey(date)
+  const weekNum = parseInt(key.slice(-2), 10) || 0
+  const n = WEEKLY_CHALLENGE_POOL.length
+  const start = (weekNum * 3) % n
+  return [0, 1, 2].map(i => WEEKLY_CHALLENGE_POOL[(start + i) % n])
+}
+
 // Daily quests — refresh at midnight
 export const DAILY_QUESTS = [
   {
@@ -132,6 +167,16 @@ export const BADGES = [
   { id: 'elite-mind',       name: 'Elite Mind',       tier: 'Elite',  earned: false, icon: '✦',    desc: 'Reach mental performance score of 95+.' },
   { id: 'iron-streak',      name: 'Iron Streak',      tier: 'Elite',  earned: false, icon: '✦',    desc: 'A full year, no missed days.' },
   { id: 'community-leader', name: 'Community Leader', tier: 'Gold',   earned: false, icon: '★',    desc: 'Post 25 wins or insights to the community.' },
+
+  // Weekly-challenge badges
+  { id: 'challenge-pregame',    name: 'Routine Locked',    tier: 'Silver', earned: false, icon: '🎬', desc: 'Completed the pre-game routine challenge.' },
+  { id: 'challenge-goldfish',   name: 'Short Memory',      tier: 'Silver', earned: false, icon: '🐠', desc: 'Completed the goldfish-reset challenge.' },
+  { id: 'challenge-leadership', name: 'Standard Setter',   tier: 'Silver', earned: false, icon: '⭐', desc: 'Completed the leadership body-language challenge.' },
+  { id: 'challenge-demand',     name: 'Ball Hunter',       tier: 'Gold',   earned: false, icon: '🦈', desc: 'Completed the demand-the-ball challenge.' },
+  { id: 'challenge-selftalk',   name: 'Inner Voice',       tier: 'Silver', earned: false, icon: '💬', desc: 'Completed the positive self-talk challenge.' },
+  { id: 'challenge-visualize',  name: 'Mind Rehearsed',    tier: 'Silver', earned: false, icon: '🧠', desc: 'Completed the visualization challenge.' },
+  { id: 'challenge-tuneout',    name: 'Noise Filter',      tier: 'Silver', earned: false, icon: '🔇', desc: 'Completed the tune-out challenge.' },
+  { id: 'challenge-breath',     name: 'Steady Hand',       tier: 'Silver', earned: false, icon: '🌬', desc: 'Completed the box-breath challenge.' },
 ]
 
 // Squad

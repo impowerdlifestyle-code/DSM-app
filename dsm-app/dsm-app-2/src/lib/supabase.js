@@ -1110,6 +1110,56 @@ export async function bumpQuest(userId, questId, increment = 1) {
   }
 }
 
+// ─── WEEKLY CHALLENGES ───────────────────────────────────────
+// Hydrate this week's challenges, seeding missing rows. `active` is the
+// catalog from getActiveChallenges(): [{ id, target, ... }].
+export async function getOrSeedWeeklyChallenges(userId, weekKey, active) {
+  const { data: existing } = await supabase
+    .from('challenge_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_key', weekKey)
+  const byId = Object.fromEntries((existing || []).map(r => [r.challenge_id, r]))
+  const toSeed = active.filter(c => !byId[c.id])
+  if (toSeed.length) {
+    const rows = toSeed.map(c => ({
+      user_id: userId, challenge_id: c.id, week_key: weekKey,
+      progress: 0, target: c.target, completed: false,
+    }))
+    const { data: inserted } = await supabase.from('challenge_progress').insert(rows).select()
+    ;(inserted || []).forEach(r => { byId[r.challenge_id] = r })
+  }
+  return active.map(c => {
+    const row = byId[c.id] || { progress: 0, target: c.target, completed: false }
+    return { ...c, progress: row.progress, target: row.target, completed: row.completed }
+  })
+}
+
+// Bump a challenge by 1 (capped at target). Self-attested, single-user
+// sequential taps, so a read-then-upsert is safe here. Returns
+// { row, justCompleted, error }.
+export async function bumpChallenge(userId, challengeId, weekKey, target, increment = 1) {
+  const { data: cur } = await supabase
+    .from('challenge_progress')
+    .select('progress, completed')
+    .eq('user_id', userId).eq('challenge_id', challengeId).eq('week_key', weekKey)
+    .maybeSingle()
+  const wasCompleted = !!cur?.completed
+  const progress = Math.min(target, (cur?.progress || 0) + increment)
+  const completed = progress >= target
+  const { data, error } = await supabase
+    .from('challenge_progress')
+    .upsert(
+      { user_id: userId, challenge_id: challengeId, week_key: weekKey, progress, target, completed,
+        completed_at: completed && !wasCompleted ? new Date().toISOString() : (cur?.completed_at ?? null),
+        updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,challenge_id,week_key' }
+    )
+    .select()
+    .maybeSingle()
+  return { row: data, justCompleted: completed && !wasCompleted, error }
+}
+
 // ─── WORKOUTS ────────────────────────────────────────────────
 export async function finishWorkout(userId, workout) {
   const { name, workoutId, block, durationSeconds, sets } = workout

@@ -5,6 +5,7 @@ import QuestCard from '../components/widgets/QuestCard.jsx'
 import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
 import CoachTasksCard from '../components/widgets/CoachTasksCard.jsx'
 import TrialBanner from '../components/widgets/TrialBanner.jsx'
+import WeeklyChallengesCard from '../components/widgets/WeeklyChallengesCard.jsx'
 
 export default function HomeView({
   user, profile, access, streak, quests, activeNudge, badgeNotice,
@@ -85,6 +86,8 @@ export default function HomeView({
         <CoachTasksCard user={user} />
 
         <WeeklyRecapCard user={user} />
+
+        <WeeklyChallengesCard user={user} />
 
         {/* Mindset fuel — athletic pull quote */}
         <TiltCard tiltLimit={10} scale={1.02} style={{ borderRadius: 16, marginBottom: 14 }}>
