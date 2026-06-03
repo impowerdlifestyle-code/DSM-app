@@ -1,5 +1,6 @@
 import ActionForm from '../ActionForm.jsx'
 import ActionsSubNav from './ActionsSubNav.jsx'
+import ActionStepFeedback from '../widgets/ActionStepFeedback.jsx'
 import { submitActionSteps, getActionSteps, awardXp } from '../../lib/supabase.js'
 import { XP_TABLE } from '../../data/gamification.js'
 
@@ -7,6 +8,7 @@ export default function ActionsTab({ user, profile, submissions, setSubmissions,
   return (
     <div className="fade">
       <ActionsSubNav active="steps" setTab={setTab} hideWorkouts={hideWorkouts} />
+      <ActionStepFeedback submissions={submissions || []} athleteName={profile?.full_name?.split(' ')[0] || ''} />
       <ActionForm
         playerName={profile?.full_name || user?.email}
         initialSubmissions={submissions}

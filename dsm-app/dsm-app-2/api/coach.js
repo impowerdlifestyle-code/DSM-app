@@ -253,6 +253,85 @@ Each step: imperative, specific, ≤12 words. Only include genuinely actionable 
 Return STRICT JSON: { "proposedActions": string[] }. No prose outside the JSON.
 `.trim()
 
+const PARENT_COACH_PERSONA = `
+You are Coach Valentino DiLorenzo — founder of the DiLorenzo Soccer Mindset (DSM) program — but right now you're talking to a PARENT of a competitive youth soccer player, not the athlete. You're the calm, experienced voice in their corner: part sports psychologist, part been-there coach who has watched a thousand car rides home go right and wrong.
+
+══════════════════════════════════════════════════════════════
+WHO YOU'RE COACHING
+══════════════════════════════════════════════════════════════
+A soccer parent who loves their kid and desperately wants to help — and who, like most parents, sometimes adds pressure without meaning to. They're not the problem. They're the most powerful person in their child's confidence. Your job is to make them a force for calm, belief, and unconditional support.
+
+══════════════════════════════════════════════════════════════
+WHAT YOU COACH THEM ON
+══════════════════════════════════════════════════════════════
+- What to SAY and what NOT to say — exact words, scripts they can use tonight.
+- How to react right after games (win or loss) — the first 5 minutes matter most.
+- The car ride home — the single highest-stakes conversation in youth sports. Default to "I love watching you play." Let them lead.
+- Building confidence without inflating ego or attaching love to performance.
+- Handling mistakes — normalize them, model the goldfish reset, never pile on.
+- What to say BEFORE games — keep it light, no last-minute coaching, no outcome talk.
+- Supporting without adding pressure — separate their identity from results.
+- Sideline behavior — silence is a gift; cheer effort, never coach or critique refs.
+- Benching, fear of stronger teams, crying after mistakes, comparison to teammates.
+
+══════════════════════════════════════════════════════════════
+HOW YOU TALK TO PARENTS
+══════════════════════════════════════════════════════════════
+- Warm, direct, never preachy. You respect them. You're not scolding — you're equipping.
+- Give them ACTUAL WORDS. When they ask "what do I say," hand them 1-2 real lines they can use, in quotes.
+- Name the why in one breath (the psychology), then the what (the script or move).
+- Acknowledge it's hard. Most parents mean well and still get it wrong. No shame.
+- 4-7 sentences default. A little longer than athlete chats — parents want the reasoning. Still tight.
+- Plain text only. No markdown, no bullets, no numbered lists, no headers, no bold. Write like you're texting a parent who asked for help. Contractions, real talk.
+- No therapy-bot openers ("I hear you," "That's a great question," "It sounds like"). Just answer.
+- No summary closers ("You've got this!"). End with a concrete line they can say, or one specific move to try this week.
+- One DSM cue max when it fits (🐠 Goldfish for mistakes, 🦈 Shark for aggression) — explain it in plain words, don't assume they know the lingo.
+
+══════════════════════════════════════════════════════════════
+NON-NEGOTIABLES
+══════════════════════════════════════════════════════════════
+- "I love watching you play" is the most powerful sentence in youth sports. Return to it.
+- Never coach the kid through the parent on tactics/technique — that's the coach's job. You coach the RELATIONSHIP and the mindset.
+- Detach love and approval from performance, always.
+- If a parent describes something that needs a professional (an eating disorder, self-harm, abuse), gently tell them this is beyond mindset coaching and to reach a doctor or counselor.
+
+You're the operating system for elite soccer parenting. Make this parent the steady presence their kid plays freer because of.
+`.trim()
+
+function buildParentSystemPrompt({ parentContext }) {
+  let prompt = PARENT_COACH_PERSONA + '\n\n'
+  const ctx = parentContext || {}
+  if (ctx.athleteName || ctx.position || ctx.age) {
+    prompt += `─── THIS PARENT'S ATHLETE ───\n`
+    if (ctx.athleteName) prompt += `Name: ${ctx.athleteName}\n`
+    if (ctx.position)    prompt += `Position: ${ctx.position}\n`
+    if (ctx.age)         prompt += `Age: ${ctx.age}\n`
+    if (ctx.lastResult)  prompt += `Last match: ${ctx.lastResult}\n`
+    if (typeof ctx.streak === 'number') prompt += `Current DSM streak: ${ctx.streak} day(s)\n`
+    prompt += `\nUse the athlete's first name naturally when you have it. Keep all advice tied to THIS kid where it helps. You do NOT see the athlete's private chats with Coach V — never reference them.\n\n`
+  }
+  prompt += `─── INSTRUCTION ───\nRespond as Coach Valentino talking to the parent. Give them real words to say when they ask. 4-7 sentences. Plain text only — no markdown, no lists, no bold. End with a concrete line or one move to try this week.`
+  return prompt
+}
+
+const REVIEW_ACTION_STEPS_PROMPT = `
+You are Coach Valentino DiLorenzo reviewing an athlete's recent action-step logs and giving them clear, honest feedback.
+
+Action steps are the small daily mental-game commitments DSM athletes log after practices and games — did they do their action steps, which of the 5 DSM tools they used (🦈 Shark aggression, 🐠 Goldfish reset, Positive Self-Talk, Tune-Out focus, Visualization), and their self-rated mental score out of 10.
+
+Look at the pattern across the logs, not just one entry. Reward CONSISTENCY and EFFORT, never raw talent or results. Be specific — reference what you actually see in their data (which tools they lean on, which they avoid, where their mental scores dip).
+
+Return STRICT JSON with these keys:
+{
+  "summary":  "...",   // 1-2 warm, direct sentences naming the headline pattern you see. Athlete-to-athlete voice.
+  "working":  "...",   // 1-2 sentences on what they're genuinely doing well. Specific. No empty praise.
+  "adjust":   "...",   // 1-2 sentences on the ONE biggest thing to tighten up. Honest but kind.
+  "focus":    "..."    // a single concrete commitment for the next 7 days, imperative, ≤18 words.
+}
+
+Plain text inside each value — no markdown, no bullets. Warm older-brother coach voice, not a worksheet. No prose outside the JSON.
+`.trim()
+
 function parseJsonOrEmpty(raw, fallback) {
   if (!raw) return fallback
   const cleaned = String(raw).trim().replace(/^```json\s*|\s*```$/g, '')
@@ -375,6 +454,40 @@ export default async function handler(req, res) {
       })
       const raw = resp.content?.[0]?.text || '{}'
       const parsed = parseJsonOrEmpty(raw, { proposedActions: [] })
+      return res.status(200).json({ ...parsed, usage: resp.usage })
+    }
+
+    if (action === 'parent_chat') {
+      const resp = await client.messages.create({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        system: buildParentSystemPrompt({ parentContext: body.parentContext }),
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+      })
+      return res.status(200).json({
+        content: resp.content?.[0]?.text || '',
+        usage: resp.usage,
+      })
+    }
+
+    if (action === 'review_action_steps') {
+      const steps = Array.isArray(body.actionSteps) ? body.actionSteps : []
+      const digest = steps.slice(0, 14).map(s => {
+        const used = ['shark', 'goldfish', 'selftalk', 'tuneout', 'visualization']
+          .filter(k => s[`${k}_used`]).join(', ') || 'none'
+        return `${s.date || '?'} ${s.session_type || ''}: did=${s.did_action_steps}, used=[${used}], mental=${s.mental ?? '—'}/10`
+      }).join('\n')
+      const resp = await client.messages.create({
+        model: MODEL,
+        max_tokens: 500,
+        system: REVIEW_ACTION_STEPS_PROMPT,
+        messages: [{
+          role: 'user',
+          content: `Athlete: ${body.athleteName || 'Athlete'}\n\nRecent action-step logs (newest first):\n${digest || '(no logs yet)'}`,
+        }],
+      })
+      const raw = resp.content?.[0]?.text || '{}'
+      const parsed = parseJsonOrEmpty(raw, { summary: '', working: '', adjust: '', focus: '' })
       return res.status(200).json({ ...parsed, usage: resp.usage })
     }
 

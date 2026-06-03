@@ -26,8 +26,27 @@ export const SUGGESTED_QUESTIONS = [
   'Visualization — what do I actually do?',
 ]
 
+// Curated parenting prompts — the highest-stakes moments soccer parents face.
+export const PARENT_PROMPTS = [
+  'What do I say after a bad game?',
+  'My child cries after mistakes',
+  'How do I build confidence without pressure?',
+  'My child fears stronger teams',
+  'How do I stop sideline coaching?',
+  'What to say on the car ride home',
+  'How do I respond after a benching?',
+]
+
 export async function getCoachVResponse({ messages = [], athleteContext = {}, memorySummary = '', memoryThemes = null } = {}) {
   return callProxy({ action: 'chat', messages, athleteContext, memorySummary, memoryThemes })
+}
+
+export async function getParentCoachResponse({ messages = [], parentContext = {} } = {}) {
+  return callProxy({ action: 'parent_chat', messages, parentContext })
+}
+
+export async function reviewActionSteps({ actionSteps = [], athleteName = '' } = {}) {
+  return callProxy({ action: 'review_action_steps', actionSteps, athleteName })
 }
 
 export async function consolidateMemory({ messages = [], memorySummary = '', memoryThemes = null, recentFeedback = [] } = {}) {
@@ -71,14 +90,26 @@ async function callProxy(payload) {
 }
 
 async function callAnthropicDirect(payload) {
-  const { action, messages, athleteContext, memorySummary, memoryThemes, transcript, nudgeContext } = payload
+  const { action, messages, athleteContext, memorySummary, memoryThemes, transcript, nudgeContext, parentContext, actionSteps, athleteName } = payload
   const MODEL = 'claude-sonnet-4-6'
 
   let system = buildCoachPersona({ athleteContext, memorySummary, memoryThemes })
   let body = []
   let maxTokens = 1024
 
-  if (action === 'consolidate') {
+  if (action === 'parent_chat') {
+    system = PARENT_DEV_SYSTEM(parentContext)
+    body = (messages || []).map(m => ({ role: m.role, content: m.content }))
+    maxTokens = 1400
+  } else if (action === 'review_action_steps') {
+    system = REVIEW_ACTIONS_DEV_SYSTEM
+    const digest = (actionSteps || []).slice(0, 14).map(s => {
+      const used = ['shark','goldfish','selftalk','tuneout','visualization'].filter(k => s[`${k}_used`]).join(', ') || 'none'
+      return `${s.date || '?'} ${s.session_type || ''}: did=${s.did_action_steps}, used=[${used}], mental=${s.mental ?? '—'}/10`
+    }).join('\n')
+    body = [{ role: 'user', content: `Athlete: ${athleteName || 'Athlete'}\n\nRecent action-step logs:\n${digest || '(none)'}` }]
+    maxTokens = 500
+  } else if (action === 'consolidate') {
     system = CONSOLIDATION_SYSTEM
     body = [{
       role: 'user',
@@ -158,6 +189,15 @@ async function callAnthropicDirect(payload) {
   if (action === 'extract_actions') {
     const parsed = safeParse(cleaned)
     return { proposedActions: toStringArray(parsed?.proposedActions) }
+  }
+  if (action === 'review_action_steps') {
+    const parsed = safeParse(cleaned)
+    return {
+      summary: toStr(parsed?.summary),
+      working: toStr(parsed?.working),
+      adjust:  toStr(parsed?.adjust),
+      focus:   toStr(parsed?.focus),
+    }
   }
   return { content: text, usage: data.usage }
 }
@@ -250,6 +290,23 @@ You are Coach Valentino deciding whether to send a proactive nudge based on athl
 Send a nudge if: streak at risk, multi-day inactivity, low mood, plateau, or notable win. Stay quiet otherwise.
 
 Return STRICT JSON: { send (bool), kind (missed-workout|low-mood|plateau|streak-risk|win|none), message (1-2 sentences athlete-voice), signal (1 line trigger) }. No prose outside the JSON.
+`.trim()
+
+// Condensed dev-mode mirrors of the server parent + review prompts. Prod uses
+// the full personas in api/coach.js — these keep `vercel dev`-free local testing working.
+function PARENT_DEV_SYSTEM(parentContext) {
+  const ctx = parentContext || {}
+  let extra = ''
+  if (ctx.athleteName || ctx.position) {
+    extra = `\n\nThis parent's athlete: ${[ctx.athleteName, ctx.position, ctx.age && `age ${ctx.age}`, ctx.lastResult && `last match ${ctx.lastResult}`].filter(Boolean).join(', ')}. Use the kid's first name naturally. You do NOT see the athlete's private chats.`
+  }
+  return `You are Coach Valentino DiLorenzo coaching a soccer PARENT on supporting their competitive youth player — what to say and not say, the car ride home ("I love watching you play"), reacting after games, building confidence without pressure, handling mistakes (goldfish reset), pre-game calm, sideline silence, benchings, fear of stronger teams, crying after mistakes. Give them real words to say, in quotes. Detach love from results. 4-7 sentences. Plain text only — no markdown, lists, or bold. No therapy-bot openers, no "you've got this" closers. End with a concrete line or one move to try this week.${extra}`
+}
+
+const REVIEW_ACTIONS_DEV_SYSTEM = `
+You are Coach Valentino reviewing an athlete's recent DSM action-step logs. Reward consistency and effort, never talent or results. Be specific to their data (which of the 5 tools — Shark, Goldfish, Self-Talk, Tune-Out, Visualization — they lean on or avoid; where mental scores dip).
+
+Return STRICT JSON: { "summary": "1-2 sentences naming the pattern", "working": "what they do well, specific", "adjust": "the one biggest thing to tighten", "focus": "one concrete 7-day commitment, imperative, ≤18 words" }. Plain text in each value, warm coach voice. No prose outside the JSON.
 `.trim()
 
 const EXTRACT_ACTIONS_SYSTEM = `
