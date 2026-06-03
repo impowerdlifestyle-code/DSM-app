@@ -18,7 +18,9 @@ export function platformName() {
   return window.Capacitor?.getPlatform?.() || 'web'
 }
 
-// Hosted legal docs (must exist before store submission).
-export const PRIVACY_URL = 'https://dilorenzosoccermindset.com/privacy'
-export const TERMS_URL   = 'https://dilorenzosoccermindset.com/terms'
+// Legal docs are self-hosted as static pages in /public, so they ship with
+// the app and need no external domain. Same-origin relative paths work on
+// web and in the Capacitor webview.
+export const PRIVACY_URL = '/privacy.html'
+export const TERMS_URL   = '/terms.html'
 export const SUPPORT_EMAIL = 'valentino@dilorenzosoccermindset.com'
