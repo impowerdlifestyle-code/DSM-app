@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { tokens as t, C } from '../../styles.js'
-import { getMyGroups, listGroupMembers } from '../../lib/supabase.js'
+import { getMyGroups, listGroupMembers, joinGroupByCode } from '../../lib/supabase.js'
 import GroupChat from '../GroupChat.jsx'
 
 // Athlete-facing view of the coaching groups they belong to, with group chat.
@@ -9,15 +9,28 @@ export default function TeamTab({ user }) {
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState(null)
   const [roster, setRoster] = useState([])
+  const [joinCode, setJoinCode] = useState('')
+  const [joinErr, setJoinErr] = useState('')
+  const [joining, setJoining] = useState(false)
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await getMyGroups(user.id)
-      setGroups(data || [])
-      setLoading(false)
-      if (data?.length === 1) openGroup(data[0])
-    })()
-  }, [user?.id])
+  async function refresh() {
+    const { data } = await getMyGroups(user.id)
+    setGroups(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { refresh() }, [user?.id])
+
+  async function join() {
+    const code = joinCode.trim()
+    if (code.length !== 6) { setJoinErr('Enter the 6-character team code.'); return }
+    setJoining(true); setJoinErr('')
+    const { error } = await joinGroupByCode(code)
+    setJoining(false)
+    if (error) { setJoinErr(error.message?.includes('not found') ? 'Team code not found.' : (error.message || 'Could not join.')); return }
+    setJoinCode('')
+    await refresh()
+  }
 
   async function openGroup(g) {
     setActive(g)
@@ -47,6 +60,23 @@ export default function TeamTab({ user }) {
     <div style={C.scroll} className="fade">
       <div style={C.title}>TEAMS</div>
       <div style={C.sub}>Your coaching groups</div>
+
+      <div style={{ ...C.card, marginTop: 6 }}>
+        <span style={C.lbl}>Join a team</span>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <input
+            value={joinCode}
+            onChange={e => { setJoinCode(e.target.value.toUpperCase().slice(0, 6)); setJoinErr('') }}
+            onKeyDown={e => { if (e.key === 'Enter') join() }}
+            placeholder="6-char code from your coach"
+            style={{ ...C.inp, flex: 1, letterSpacing: 2, textTransform: 'uppercase' }}
+          />
+          <button style={{ ...C.bsm, padding: '0 18px', borderRadius: t.radius.md }} disabled={joining || joinCode.length !== 6} onClick={join}>
+            {joining ? '…' : 'Join'}
+          </button>
+        </div>
+        {joinErr && <div style={{ color: t.color.err, fontSize: 11, marginTop: 6 }}>{joinErr}</div>}
+      </div>
 
       {loading && <div style={{ color: t.color.textDim, fontSize: 13, marginTop: 12 }}>Loading…</div>}
 

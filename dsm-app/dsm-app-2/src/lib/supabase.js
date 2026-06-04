@@ -816,22 +816,87 @@ export async function deleteCoachTask(taskId) {
 export async function listCoachingGroups() {
   const { data, error } = await supabase
     .from('coaching_groups')
-    .select('id, name, description, lead_coach_id, created_at, lead:profiles!coaching_groups_lead_coach_id_fkey(full_name, email)')
+    .select('id, name, description, lead_coach_id, created_at, join_code, lead:profiles!coaching_groups_lead_coach_id_fkey(full_name, email)')
     .order('created_at', { ascending: false })
   return { data: data || [], error }
 }
 
 export async function createCoachingGroup({ name, description, leadCoachId }) {
+  let code = randomInviteCode()
+  for (let i = 0; i < 5; i++) {
+    const { data: hit } = await supabase.from('coaching_groups').select('id').eq('join_code', code).maybeSingle()
+    if (!hit) break
+    code = randomInviteCode()
+  }
   const { data, error } = await supabase
     .from('coaching_groups')
     .insert([{
       name:          (name || '').trim(),
       description:   (description || '').trim() || null,
       lead_coach_id: leadCoachId,
+      join_code:     code,
     }])
     .select()
     .single()
   return { data, error }
+}
+
+// Athlete self-joins a coaching group with the coach's 6-char code.
+export async function joinGroupByCode(code) {
+  const { data, error } = await supabase.rpc('join_coaching_group', { p_code: String(code || '').trim().toUpperCase() })
+  return { data, error }
+}
+
+// Coach assigns one activity to every athlete member of a group (bulk tasks).
+export async function assignActivityToGroup({ groupId, assignedBy, title, description, dueDate, priority }) {
+  const { data: members } = await supabase
+    .from('coaching_group_members')
+    .select('user_id')
+    .eq('group_id', groupId)
+    .eq('role_in_group', 'athlete')
+  const ids = (members || []).map(m => m.user_id)
+  if (!ids.length) return { data: { count: 0 }, error: null }
+  const rows = ids.map(id => ({
+    athlete_id: id, assigned_by: assignedBy,
+    title: (title || '').trim(), description: (description || '').trim() || null,
+    due_date: dueDate || null, priority: priority || 'medium',
+  }))
+  const { error } = await supabase.from('coach_tasks').insert(rows)
+  return { data: { count: ids.length }, error }
+}
+
+// Per-day activity counts for an athlete over the last `days` days.
+// Returns [{ date:'YYYY-MM-DD', count, parts:{action,ball,checkin,voice,coach,task} }] oldest→newest.
+export async function getPlayerDailyActivity(athleteId, days = 28) {
+  const since = new Date(Date.now() - days * 86400000).toISOString()
+  const day = (iso) => (iso || '').slice(0, 10)
+  const [actions, ball, checkins, voice, chat, tasks] = await Promise.all([
+    supabase.from('action_steps').select('created_at').eq('user_id', athleteId).gte('created_at', since),
+    supabase.from('ball_mastery').select('created_at').eq('user_id', athleteId).gte('created_at', since),
+    supabase.from('weekly_checkins').select('created_at').eq('user_id', athleteId).gte('created_at', since),
+    supabase.from('voice_journal').select('created_at').eq('user_id', athleteId).gte('created_at', since),
+    supabase.from('chat_history').select('created_at').eq('user_id', athleteId).eq('role', 'user').gte('created_at', since),
+    supabase.from('coach_tasks').select('completed_at').eq('athlete_id', athleteId).not('completed_at', 'is', null).gte('completed_at', since),
+  ])
+  const map = new Map()
+  const bump = (iso, key) => {
+    const d = day(iso); if (!d) return
+    if (!map.has(d)) map.set(d, { date: d, count: 0, parts: { action: 0, ball: 0, checkin: 0, voice: 0, coach: 0, task: 0 } })
+    const e = map.get(d); e.count++; e.parts[key]++
+  }
+  for (const r of (actions.data  || [])) bump(r.created_at, 'action')
+  for (const r of (ball.data     || [])) bump(r.created_at, 'ball')
+  for (const r of (checkins.data || [])) bump(r.created_at, 'checkin')
+  for (const r of (voice.data    || [])) bump(r.created_at, 'voice')
+  for (const r of (chat.data     || [])) bump(r.created_at, 'coach')
+  for (const r of (tasks.data    || [])) bump(r.completed_at, 'task')
+
+  const out = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)
+    out.push(map.get(d) || { date: d, count: 0, parts: { action: 0, ball: 0, checkin: 0, voice: 0, coach: 0, task: 0 } })
+  }
+  return { data: out, error: null }
 }
 
 export async function deleteCoachingGroup(groupId) {

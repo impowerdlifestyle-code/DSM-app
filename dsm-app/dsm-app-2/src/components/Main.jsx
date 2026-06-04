@@ -2279,7 +2279,6 @@ export default function Main({ user }) {
               { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
             ] },
             { section: 'Community', items: [
-              { id: 'team',    label: 'Teams',   sub: 'Your coaching groups + group chat' },
               { id: 'compete', label: 'Compete', sub: 'Team, league & country leaderboards · monthly cup' },
             ] },
             { section: 'Progress', items: [

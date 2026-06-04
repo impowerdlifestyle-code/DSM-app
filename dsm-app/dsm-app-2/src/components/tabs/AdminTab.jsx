@@ -22,6 +22,7 @@ import {
   removeGroupMember,
   getRecentActivity,
   getGroupActivity,
+  assignActivityToGroup,
 } from '../../lib/supabase.js'
 import LockerRoomTab from './LockerRoomTab.jsx'
 import GroupChat from '../GroupChat.jsx'
@@ -557,6 +558,7 @@ function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes,
   const [members, setMembers] = useState([])
   const [loadingMembers, setLoadingMembers] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
   const [view, setView] = useState('members') // members | chat | activity
 
   async function loadMembers() {
@@ -607,6 +609,22 @@ function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes,
           {view === 'members' && (
             loadingMembers ? <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading members…</div> : (
               <>
+                {group.join_code && (
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '8px 10px', marginBottom: 10, borderRadius: 8,
+                    background: t.color.bg, border: `1px solid ${t.color.line}`,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 1 }}>JOIN CODE — share with players</div>
+                      <div style={{ fontFamily: t.font.athletic, fontSize: 20, letterSpacing: 3, color: t.color.pitch }}>{group.join_code}</div>
+                    </div>
+                    <button onClick={() => navigator.clipboard?.writeText(group.join_code)} style={tinyRemoveBtn}>Copy</button>
+                  </div>
+                )}
+                {isOwner && (
+                  <button onClick={() => setAssignOpen(true)} style={{ ...addBtn, marginBottom: 10, width: '100%' }}>+ Assign activity to group</button>
+                )}
                 <div style={subLabel}>Coaches · {groupCoaches.length}</div>
                 {groupCoaches.map(m => (
                   <MemberRow key={m.user_id} member={m} canEdit={isOwner} onView={onViewAthlete} onRemove={async () => {
@@ -651,6 +669,67 @@ function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes,
           onAdded={async () => { setAddOpen(false); await loadMembers() }}
         />
       )}
+
+      {assignOpen && (
+        <AssignActivityModal
+          groupId={group.id}
+          assignedBy={user?.id}
+          athleteCount={groupAthletes.length}
+          onClose={() => setAssignOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+function AssignActivityModal({ groupId, assignedBy, athleteCount, onClose }) {
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [priority, setPriority] = useState('medium')
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(null)
+
+  async function submit() {
+    if (!title.trim() || busy) return
+    setBusy(true)
+    const { data, error } = await assignActivityToGroup({ groupId, assignedBy, title, description, dueDate, priority })
+    setBusy(false)
+    if (error) { setDone({ err: error.message }); return }
+    setDone({ count: data.count })
+  }
+
+  return (
+    <div style={overlay} onClick={onClose}>
+      <div style={modal} onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily: t.font.athletic, fontSize: 22, color: t.color.text, marginBottom: 4 }}>Assign activity</div>
+        <div style={{ fontSize: 11, color: t.color.textDim, marginBottom: 14 }}>Sends a task to all {athleteCount} athlete{athleteCount === 1 ? '' : 's'} in this group.</div>
+        {done ? (
+          <div>
+            <div style={{ fontSize: 13, color: done.err ? t.color.err : t.color.pitch, marginBottom: 14 }}>
+              {done.err ? `Failed: ${done.err}` : `✓ Assigned to ${done.count} athlete${done.count === 1 ? '' : 's'}.`}
+            </div>
+            <button onClick={onClose} style={{ ...addBtn, width: '100%' }}>Done</button>
+          </div>
+        ) : (
+          <>
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Activity title (e.g. 50 toe taps)" style={{ ...inputStyle(), marginBottom: 8 }} />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Details (optional)" rows={3} style={{ ...inputStyle(), marginBottom: 8, resize: 'vertical' }} />
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ ...inputStyle(), flex: 1 }} />
+              <select value={priority} onChange={e => setPriority(e.target.value)} style={{ ...inputStyle(), flex: 1 }}>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={onClose} style={{ ...tinyRemoveBtn, flex: 1, padding: '10px' }}>Cancel</button>
+              <button onClick={submit} disabled={!title.trim() || busy} style={{ ...addBtn, flex: 1 }}>{busy ? 'Assigning…' : 'Assign'}</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -686,7 +765,11 @@ function GroupActivityView({ groupId, onViewAthlete }) {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    (async () => { const { data } = await getGroupActivity(groupId); setEvents(data || []); setLoading(false) })()
+    let on = true
+    const pull = async () => { const { data } = await getGroupActivity(groupId); if (on) { setEvents(data || []); setLoading(false) } }
+    pull()
+    const iv = setInterval(pull, 10000) // live: refresh as activity comes in
+    return () => { on = false; clearInterval(iv) }
   }, [groupId])
 
   if (loading) return <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading activity…</div>

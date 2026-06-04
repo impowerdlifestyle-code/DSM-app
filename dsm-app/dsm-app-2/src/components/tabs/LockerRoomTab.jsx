@@ -4,6 +4,7 @@ import {
   getLockerRoomData, updateCoachMemoryThemes,
   addLockerRoomNote, deleteLockerRoomNote,
 } from '../../lib/supabase.js'
+import DailyActivityCalendar from '../DailyActivityCalendar.jsx'
 
 /**
  * LockerRoom — unified per-athlete memory bank.
@@ -149,6 +150,9 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
           {profile?.role?.toUpperCase() || 'ATHLETE'} · Week {profile?.program_week || 1} · {profile?.access_level || 'trial'}
         </div>
       </div>
+
+      {/* Day-by-day activity calendar */}
+      <DailyActivityCalendar athleteId={targetId} />
 
       {/* Section tabs */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>

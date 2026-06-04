@@ -3,8 +3,10 @@ import { tokens as t } from '../../styles.js'
 import {
   createSquad, joinSquadByCode, getMySquads, leaveSquad, getSquadLeaderboard,
 } from '../../lib/supabase.js'
+import TeamTab from './TeamTab.jsx'
 
 export default function SquadTab({ user }) {
+  const [section, setSection] = useState('squad') // squad | teams
   const [squads, setSquads] = useState([])
   const [activeSquadId, setActiveSquadId] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
@@ -70,8 +72,25 @@ export default function SquadTab({ user }) {
 
   const activeSquad = squads.find(s => s.id === activeSquadId)
 
+  const sectionToggle = (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+      <button onClick={() => setSection('squad')} style={pill(section === 'squad')}>Squad</button>
+      <button onClick={() => setSection('teams')} style={pill(section === 'teams')}>Teams</button>
+    </div>
+  )
+
+  if (section === 'teams') {
+    return (
+      <div style={{ padding: '20px 22px 0' }}>
+        {sectionToggle}
+        <TeamTab user={user} />
+      </div>
+    )
+  }
+
   return (
     <div style={{ padding: '20px 22px 32px' }}>
+      {sectionToggle}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>Squad</div>
         <h2 style={{
