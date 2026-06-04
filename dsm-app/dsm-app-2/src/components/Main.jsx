@@ -2296,15 +2296,22 @@ export default function Main({ user }) {
             const items = group.items.filter(item => surfaceAllowed(item.id))
             if (!items.length) return null
             return (
-              <div key={group.section} style={{ marginBottom: 18 }}>
-                <div style={{ ...C.lbl, marginBottom: 8 }}>{group.section}</div>
+              <div key={group.section} style={{ marginBottom: 22 }}>
+                <div style={{
+                  fontFamily: "'Bebas Neue', sans-serif", fontSize: 19, fontWeight: 400,
+                  letterSpacing: 1.8, textTransform: 'uppercase', color: t.color.text,
+                  marginBottom: 11, paddingLeft: 2,
+                  textShadow: '0 0 10px rgba(var(--dsm-glow-rgb),0.5), 0 0 24px rgba(var(--dsm-glow-rgb),0.26), 0 0 48px rgba(var(--dsm-glow-rgb),0.12)',
+                }}>{group.section}</div>
                 {items.map(item => (
                   <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
                     width: '100%', textAlign: 'left',
-                    padding: 16, marginBottom: 8,
-                    background: t.color.surface, border: `1px solid ${t.color.line}`,
+                    padding: 16, marginBottom: 9,
+                    background: t.color.surface,
+                    border: '1px solid rgba(var(--dsm-glow-rgb),0.16)',
                     borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
                     color: t.color.text, display: 'flex', alignItems: 'center', gap: 12,
+                    boxShadow: 'inset 0 1px 0 rgba(var(--dsm-glow-rgb),0.08), 0 6px 22px -10px rgba(var(--dsm-glow-rgb),0.22), 0 0 14px -5px rgba(var(--dsm-glow-rgb),0.16)',
                   }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 1, textTransform: 'uppercase' }}>
