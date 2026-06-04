@@ -19,7 +19,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const ALLOWED_ORIGINS = new Set(
-  (process.env.ALLOWED_ORIGINS || 'https://dsm-app-2.vercel.app,http://localhost:5173,http://localhost:3000')
+  (process.env.ALLOWED_ORIGINS || 'https://dsm-app-2.vercel.app,http://localhost:5173,http://localhost:3000,capacitor://localhost,https://localhost,http://localhost')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean)
@@ -37,7 +37,7 @@ function applyCors(req, res) {
     res.setHeader('Vary', 'Origin')
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-DSM-Native')
 }
 
 // Mirror of src/lib/supabase.js evaluateAccess() — keep in sync.
@@ -115,7 +115,11 @@ export async function authGuard(req, res, opts = {}) {
       return { ok: false, handled: true }
     }
     profile = data
-    if (opts.requirePaidAccess) {
+    // Native apps ship free (no IAP per Apple 3.1.1) — skip the paywall when
+    // the request comes from the native shell. The header is best-effort; the
+    // web paywall isn't a hard revenue gate today, so the spoof risk is low.
+    const isNative = (req.headers['x-dsm-native'] || req.headers['X-DSM-Native']) === '1'
+    if (opts.requirePaidAccess && !isNative) {
       const access = evaluateAccess(profile)
       if (!access.ok) {
         res.status(403).json({ error: 'Subscription required', reason: access.reason })

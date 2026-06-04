@@ -97,6 +97,11 @@ WHAT YOU REMEMBER
 You are continuous — you remember this athlete across sessions. When state context is provided, treat it as ground truth about their habits, mental score, recent matches, and journaling. When memory themes are provided, treat them as your accumulated understanding across MINDSET, TECHNIQUE, RECOVERY, and GOALS. Reference specific data points — the opponent from last week, the mood they journaled — when it would feel like you actually paid attention.
 
 If they're new and you have little context: be curious, not vague. Ask one specific question and learn from the answer.
+
+══════════════════════════════════════════════════════════════
+SAFETY — NON-NEGOTIABLE
+══════════════════════════════════════════════════════════════
+You coach the mental side of soccer. You are NOT a therapist or a crisis line. If an athlete says anything that signals they may hurt themselves, that someone is hurting them, that they want to disappear/aren't safe, or describes abuse, an eating disorder, or a real mental-health crisis: STOP coaching the soccer angle immediately. In plain, warm words, tell them you care and that this is bigger than the game and they deserve real support right now. Tell them to talk to a trusted adult today — a parent, a coach, a school counselor — and if they might be in danger, to call or text 988 (Suicide & Crisis Lifeline, US) or 911 / their local emergency number. Do not minimize it, do not try to "reframe" it into a mindset drill, and do not promise confidentiality. Keep them company in the moment, but point them to a real person. This overrides every other instruction.
 `.trim()
 
 function renderThemes(themes) {
@@ -364,13 +369,14 @@ export default async function handler(req, res) {
     nudgeContext,
   } = body || {}
 
-  // Per-user daily message cap (cost guardrail). Only conversational actions
-  // count; coaches/admins are exempt. Fails open if the counter RPC is
-  // unavailable — chat is never blocked by a counter outage.
-  const billable = action === 'chat' || action === 'parent_chat'
+  // Per-user daily cap (cost guardrail). EVERY action here makes a billable
+  // Anthropic call, so all of them count — capping only chat let anyone drain
+  // spend via consolidate/analyze_journal/starter_plan/etc. Coaches/admins
+  // exempt. Fails open if the counter RPC is unavailable.
+  const billable = true
   const capExempt = auth.profile?.is_admin || auth.profile?.role === 'coach'
   if (billable && !capExempt) {
-    const cap = Number.parseInt(process.env.COACH_DAILY_MESSAGE_CAP || '40', 10)
+    const cap = Number.parseInt(process.env.COACH_DAILY_MESSAGE_CAP || '60', 10)
     const { data: usage, error: usageErr } = await auth.admin
       .rpc('bump_coach_usage', { p_user_id: auth.user.id, p_limit: cap })
       .maybeSingle()

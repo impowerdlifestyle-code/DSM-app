@@ -18,6 +18,17 @@ export function platformName() {
   return window.Capacitor?.getPlatform?.() || 'web'
 }
 
+// In the native shell the webview origin is capacitor://localhost, so a bare
+// `/api/*` fetch 404s. Point native API calls at the deployed backend. On web
+// this stays same-origin (''). Update the host when the branded domain lands.
+const NATIVE_API_HOST = 'https://dsm-app-2.vercel.app'
+export function apiUrl(path) {
+  if (typeof path === 'string' && path.startsWith('/api/') && isNativeApp()) {
+    return NATIVE_API_HOST + path
+  }
+  return path
+}
+
 // Legal docs are self-hosted as static pages in /public, so they ship with
 // the app and need no external domain. Same-origin relative paths work on
 // web and in the Capacitor webview.

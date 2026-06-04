@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isNativeApp } from './platform'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -20,6 +21,9 @@ export async function signUp(email, password, fullName) {
 //   reason ∈ 'paid' | 'elite' | 'trial' | 'coach' | 'parent' | 'admin'
 //          | 'trial-expired' | 'locked' | 'unknown'
 export function evaluateAccess(profile) {
+  // Native iOS/Android apps ship free — no paywall, no purchase (per Apple
+  // 3.1.1; we don't sell digital access in the native build).
+  if (isNativeApp()) return { ok: true, reason: 'native' }
   if (!profile) return { ok: false, reason: 'unknown' }
   if (profile.role === 'coach' || profile.role === 'parent' || profile.is_admin) {
     return { ok: true, reason: profile.is_admin ? 'admin' : profile.role }

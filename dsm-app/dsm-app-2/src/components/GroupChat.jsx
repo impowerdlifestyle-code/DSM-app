@@ -62,8 +62,10 @@ export default function GroupChat({ groupId, user, canModerate = false, height =
   }
 
   async function remove(id) {
+    const prev = messages
     setMessages(p => p.filter(m => m.id !== id))
-    await deleteGroupMessage(id)
+    const { error } = await deleteGroupMessage(id)
+    if (error) { setMessages(prev) } // RLS denied / failed — restore instead of a confusing reappear
   }
 
   return (
