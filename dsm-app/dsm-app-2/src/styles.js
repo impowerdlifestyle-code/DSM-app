@@ -105,8 +105,8 @@ export const C = {
     borderRadius: t.radius.lg,
     padding: 18,
     marginBottom: 12,
-    border: `1px solid ${t.color.line}`,
-    boxShadow: t.shadow.card,
+    border: '1px solid rgba(var(--dsm-glow-rgb),0.16)',
+    boxShadow: 'inset 0 1px 0 rgba(var(--dsm-glow-rgb),0.08), 0 6px 22px -10px rgba(var(--dsm-glow-rgb),0.22), 0 0 14px -5px rgba(var(--dsm-glow-rgb),0.16)',
   },
 
   // Hero callout (previously the ember tint) — now a flat raised surface
@@ -148,8 +148,8 @@ export const C = {
     lineHeight: 0.95,
     marginBottom: 4,
     textTransform: 'uppercase',
-    color: t.color.text,
-    textShadow: '0 0 14px rgba(var(--dsm-glow-rgb),0.55), 0 0 28px rgba(var(--dsm-glow-rgb),0.3), 0 0 56px rgba(var(--dsm-glow-rgb),0.15)',
+    color: t.color.pitch,
+    textShadow: '0 0 14px rgba(74,222,128,0.5), 0 0 30px rgba(74,222,128,0.28), 0 0 60px rgba(74,222,128,0.14)',
     animation: 'dsmGlow 3.2s ease-in-out infinite',
   },
   sub: {

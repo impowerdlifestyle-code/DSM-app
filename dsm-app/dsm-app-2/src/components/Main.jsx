@@ -2299,9 +2299,9 @@ export default function Main({ user }) {
               <div key={group.section} style={{ marginBottom: 22 }}>
                 <div style={{
                   fontFamily: "'Bebas Neue', sans-serif", fontSize: 19, fontWeight: 400,
-                  letterSpacing: 1.8, textTransform: 'uppercase', color: t.color.text,
+                  letterSpacing: 1.8, textTransform: 'uppercase', color: t.color.pitch,
                   marginBottom: 11, paddingLeft: 2,
-                  textShadow: '0 0 10px rgba(var(--dsm-glow-rgb),0.5), 0 0 24px rgba(var(--dsm-glow-rgb),0.26), 0 0 48px rgba(var(--dsm-glow-rgb),0.12)',
+                  textShadow: '0 0 10px rgba(74,222,128,0.45), 0 0 24px rgba(74,222,128,0.22)',
                 }}>{group.section}</div>
                 {items.map(item => (
                   <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
