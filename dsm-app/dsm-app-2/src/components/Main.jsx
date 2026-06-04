@@ -2266,39 +2266,60 @@ export default function Main({ user }) {
       {tab === 'more' && (
         <div className="fade" style={C.scroll}>
           <div style={C.title}>MORE</div>
-          <div style={C.sub}>Body · habits · check-ins · resources</div>
+          <div style={C.sub}>Everything else — organized</div>
           {[
-            { id: 'tips',      label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
-            { id: 'team',      label: 'Teams',         sub: 'Your coaching groups + group chat' },
-            { id: 'compete',   label: 'Compete',       sub: 'Team, league & country leaderboards · monthly cup' },
-            { id: 'voice',     label: 'Voice Journal', sub: '30-sec mindset reflection · +60 XP' },
-            { id: 'future',    label: 'Future Self',   sub: 'Monthly identity ritual' },
-            { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },
-            { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
-            { id: 'tracker',   label: 'Habit Tracker', sub: 'Weekly habits + day streak' },
-            { id: 'weekly',    label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
-            { id: 'course',    label: 'Course',        sub: 'Modules + resources' },
-            { id: 'parents',   label: 'Parent Guide',  sub: 'For the people in your corner' },
-            { id: 'settings',  label: 'Settings',      sub: 'Account · privacy · delete · export' },
-          ].filter(item => surfaceAllowed(item.id)).map(item => (
-            <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
-              width: '100%', textAlign: 'left',
-              padding: 16, marginBottom: 10,
-              background: t.color.surface, border: `1px solid ${t.color.line}`,
-              borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
-              color: t.color.text, display: 'flex', alignItems: 'center', gap: 12,
-            }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 1, textTransform: 'uppercase' }}>
-                  {item.label}
-                </div>
-                <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3, letterSpacing: 0.6 }}>
-                  {item.sub}
-                </div>
+            { section: 'Mind', items: [
+              { id: 'voice',   label: 'Voice Journal',   sub: '30-sec mindset reflection · +60 XP' },
+              { id: 'future',  label: 'Future Self',     sub: 'Monthly identity ritual' },
+              { id: 'weekly',  label: 'Weekly Check-in', sub: `Mental score · ${currentWeek}` },
+            ] },
+            { section: 'Body & Training', items: [
+              { id: 'tracker',   label: 'Habit Tracker', sub: 'Weekly habits + day streak' },
+              { id: 'nutrition', label: 'Nutrition',     sub: 'Food log + macros' },
+              { id: 'body',      label: 'Body Stats',    sub: 'Weight + measurements' },
+            ] },
+            { section: 'Community', items: [
+              { id: 'team',    label: 'Teams',   sub: 'Your coaching groups + group chat' },
+              { id: 'compete', label: 'Compete', sub: 'Team, league & country leaderboards · monthly cup' },
+            ] },
+            { section: 'Progress', items: [
+              { id: 'tips', label: 'XP & Badge Tips', sub: 'How to level up faster', _action: () => setShowBadgeHints(true) },
+            ] },
+            { section: 'Learn', items: [
+              { id: 'course',  label: 'Course',       sub: 'Modules + resources' },
+              { id: 'parents', label: 'Parent Guide', sub: 'For the people in your corner' },
+            ] },
+            { section: 'Account', items: [
+              { id: 'settings', label: 'Settings', sub: 'Account · privacy · delete · export' },
+            ] },
+          ].map(group => {
+            const items = group.items.filter(item => surfaceAllowed(item.id))
+            if (!items.length) return null
+            return (
+              <div key={group.section} style={{ marginBottom: 18 }}>
+                <div style={{ ...C.lbl, marginBottom: 8 }}>{group.section}</div>
+                {items.map(item => (
+                  <button key={item.id} onClick={() => item._action ? item._action() : setTab(item.id)} style={{
+                    width: '100%', textAlign: 'left',
+                    padding: 16, marginBottom: 8,
+                    background: t.color.surface, border: `1px solid ${t.color.line}`,
+                    borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+                    color: t.color.text, display: 'flex', alignItems: 'center', gap: 12,
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 1, textTransform: 'uppercase' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3, letterSpacing: 0.6 }}>
+                        {item.sub}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 18, color: t.color.textMute }}>→</div>
+                  </button>
+                ))}
               </div>
-              <div style={{ fontSize: 18, color: t.color.textMute }}>→</div>
-            </button>
-          ))}
+            )
+          })}
         </div>
       )}
 
