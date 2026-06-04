@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { signIn, signUp, redeemParentInvite, sendPasswordReset, supabase } from '../lib/supabase.js'
+import { signIn, signUp, redeemParentInvite, sendPasswordReset, supabase, acceptTerms } from '../lib/supabase.js'
+import { TERMS_URL, PRIVACY_URL } from '../lib/platform.js'
 import { tokens as t } from '../styles.js'
 import TiltCard from './widgets/TiltCard.jsx'
 import PasswordInput from './widgets/PasswordInput.jsx'
@@ -211,6 +212,7 @@ export default function Auth() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [invitedBy, setInvitedBy] = useState(null)
+  const [agreedTerms, setAgreedTerms] = useState(false)
 
   // Read invite + prefill params from the URL once. New signed-token flow:
   //   /?invite=<base64url(payload).base64url(hmac)>&email=x&name=Y
@@ -256,6 +258,7 @@ export default function Auth() {
   const handleSubmit = async () => {
     if (!email || !password) return setError('Please fill in all fields.')
     if ((mode === 'signup' || mode === 'parent') && !name) return setError('Please enter your name.')
+    if ((mode === 'signup' || mode === 'parent') && !agreedTerms) return setError('Please agree to the Terms to continue.')
     if (mode === 'parent' && parentCode.length !== 6) return setError('Enter the 6-char invite code from your athlete.')
     setLoading(true)
     setError('')
@@ -264,15 +267,19 @@ export default function Auth() {
       const { error } = await signIn(email, password)
       if (error) setError(error.message)
     } else if (mode === 'signup') {
-      const { error } = await signUp(email, password, name)
+      const { data, error } = await signUp(email, password, name)
       if (error) setError(error.message)
-      else setMessage('Check your email to confirm your account, then sign in.')
+      else {
+        if (data?.user) acceptTerms(data.user.id).catch(() => {})
+        setMessage('Check your email to confirm your account, then sign in.')
+      }
     } else if (mode === 'parent') {
       // Stash the code so App.jsx can auto-redeem after sign-in completes
       // (covers both email-confirm-on and email-confirm-off flows).
       sessionStorage.setItem('dsm_pending_parent_code', parentCode)
 
       const { data: signUpData, error } = await signUp(email, password, name)
+      if (!error && signUpData?.user) acceptTerms(signUpData.user.id).catch(() => {})
       if (error) {
         // existing account? fall through to sign-in attempt (parent adding 2nd athlete)
         if (!/already registered|exists/i.test(error.message)) {
@@ -412,6 +419,23 @@ export default function Auth() {
             inputStyle={s.inp}
             style={{ marginBottom: s.inp?.marginBottom || 14 }}
           />
+
+          {(mode === 'signup' || mode === 'parent') && (
+            <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', margin: '2px 0 14px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={agreedTerms}
+                onChange={(e) => setAgreedTerms(e.target.checked)}
+                style={{ marginTop: 2, width: 16, height: 16, accentColor: t.color.pitch, flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 11, color: t.color.textDim, lineHeight: 1.45 }}>
+                I agree to the{' '}
+                <a href={TERMS_URL} target="_blank" rel="noreferrer" style={{ color: t.color.text, textDecoration: 'underline' }}>Terms</a>{' '}and{' '}
+                <a href={PRIVACY_URL} target="_blank" rel="noreferrer" style={{ color: t.color.text, textDecoration: 'underline' }}>Privacy Policy</a>, and understand there is{' '}
+                <b style={{ color: t.color.text }}>zero tolerance</b> for abusive content or behavior — it can be reported and will be removed.
+              </span>
+            </label>
+          )}
 
           <button
             style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}

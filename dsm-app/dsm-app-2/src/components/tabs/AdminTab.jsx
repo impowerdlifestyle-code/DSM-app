@@ -23,6 +23,9 @@ import {
   getRecentActivity,
   getGroupActivity,
   assignActivityToGroup,
+  getGroupReports,
+  resolveReport,
+  deleteGroupMessage,
 } from '../../lib/supabase.js'
 import LockerRoomTab from './LockerRoomTab.jsx'
 import GroupChat from '../GroupChat.jsx'
@@ -594,8 +597,8 @@ function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes,
 
       {expanded && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.color.line}` }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            {['members', 'chat', 'activity'].map(v => (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+            {['members', 'chat', 'activity', 'reports'].map(v => (
               <button key={v} onClick={() => setView(v)} style={{
                 padding: '6px 12px', borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 textTransform: 'capitalize', fontFamily: t.font.sans,
@@ -655,6 +658,10 @@ function GroupRow({ group, user, isOwner, expanded, onToggle, coaches, athletes,
 
           {view === 'activity' && (
             <GroupActivityView groupId={group.id} onViewAthlete={onViewAthlete} />
+          )}
+
+          {view === 'reports' && (
+            <GroupReportsView groupId={group.id} reviewerId={user?.id} />
           )}
         </div>
       )}
@@ -757,6 +764,48 @@ function MemberRow({ member, canEdit, onView, onRemove }) {
         <div style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 0.8, marginTop: 1 }}>{u?.email}</div>
       </button>
       {canEdit && <button onClick={onRemove} style={tinyRemoveBtn}>✕</button>}
+    </div>
+  )
+}
+
+function GroupReportsView({ groupId, reviewerId }) {
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  async function load() {
+    const { data } = await getGroupReports(groupId)
+    setReports(data || []); setLoading(false)
+  }
+  useEffect(() => { load() }, [groupId])
+
+  async function act(r, action) {
+    if (action === 'delete' && r.message_id) await deleteGroupMessage(r.message_id)
+    await resolveReport(r.id, action === 'delete' ? 'actioned' : 'dismissed', reviewerId)
+    setReports(p => p.filter(x => x.id !== r.id))
+  }
+
+  if (loading) return <div style={{ color: t.color.textDim, fontSize: 12 }}>Loading reports…</div>
+  if (!reports.length) return <div style={{ color: t.color.textMute, fontSize: 12, fontStyle: 'italic', padding: '8px 0' }}>No open reports. 👍</div>
+
+  return (
+    <div>
+      {reports.map(r => (
+        <div key={r.id} style={{ padding: 10, marginBottom: 8, background: t.color.bg, border: `1px solid ${t.color.err}`, borderRadius: 8 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.8, color: t.color.err, marginBottom: 4 }}>
+            {(r.reason || 'REPORTED').toUpperCase()}
+          </div>
+          <div style={{ fontSize: 13, color: t.color.text, lineHeight: 1.4, marginBottom: 4, fontStyle: 'italic' }}>
+            "{r.message_text || '(message unavailable)'}"
+          </div>
+          <div style={{ fontSize: 10, color: t.color.textMute, marginBottom: 8 }}>
+            from {r.reported?.full_name || 'member'} · reported by {r.reporter?.full_name || 'member'} · {timeAgo(r.created_at)}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => act(r, 'delete')} style={{ ...demoteBtn, flex: 1 }}>Delete message</button>
+            <button onClick={() => act(r, 'dismiss')} style={{ ...tinyRemoveBtn, flex: 1, padding: '8px' }}>Dismiss</button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

@@ -973,6 +973,55 @@ export async function deleteGroupMessage(messageId) {
   return { error }
 }
 
+// ─── UGC MODERATION (report / block / EULA) ──────────────────
+export async function reportMessage(reporterId, { messageId, groupId, reportedUserId, messageText, reason }) {
+  const { error } = await supabase.from('message_reports').insert([{
+    message_id: messageId, group_id: groupId, reporter_id: reporterId,
+    reported_user_id: reportedUserId || null, message_text: (messageText || '').slice(0, 2000),
+    reason: reason || null,
+  }])
+  return { error }
+}
+
+export async function blockUser(blockerId, blockedId) {
+  const { error } = await supabase.from('user_blocks')
+    .upsert({ blocker_id: blockerId, blocked_id: blockedId }, { onConflict: 'blocker_id,blocked_id' })
+  return { error }
+}
+
+export async function unblockUser(blockerId, blockedId) {
+  const { error } = await supabase.from('user_blocks').delete().eq('blocker_id', blockerId).eq('blocked_id', blockedId)
+  return { error }
+}
+
+export async function getMyBlocks(userId) {
+  const { data } = await supabase.from('user_blocks').select('blocked_id').eq('blocker_id', userId)
+  return new Set((data || []).map(r => r.blocked_id))
+}
+
+export async function getGroupReports(groupId) {
+  const { data, error } = await supabase.from('message_reports')
+    .select('id, message_id, reported_user_id, message_text, reason, status, created_at, reporter:profiles!message_reports_reporter_id_fkey(full_name), reported:profiles!message_reports_reported_user_id_fkey(full_name)')
+    .eq('group_id', groupId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function resolveReport(reportId, status, reviewerId) {
+  const { error } = await supabase.from('message_reports')
+    .update({ status, reviewed_by: reviewerId, reviewed_at: new Date().toISOString() })
+    .eq('id', reportId)
+  return { error }
+}
+
+export async function acceptTerms(userId) {
+  const { error } = await supabase.from('profiles')
+    .update({ terms_accepted_at: new Date().toISOString() })
+    .eq('id', userId)
+  return { error }
+}
+
 // Activity feed scoped to one group's athlete members. Mirrors getRecentActivity.
 export async function getGroupActivity(groupId, { limit = 60 } = {}) {
   const { data: members } = await supabase
