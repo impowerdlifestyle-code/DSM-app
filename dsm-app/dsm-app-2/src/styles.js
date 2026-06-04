@@ -167,7 +167,7 @@ export const C = {
   // injected at module scope, so this remains a plain style object.
   btn: {
     background: `linear-gradient(180deg, #5eea8f 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
-    border: `1px solid ${t.color.pitchEdge}`,
+    border: '1px solid rgba(255,255,255,0.26)',
     borderRadius: t.radius.md,
     padding: '15px 20px',
     fontSize: 13,
@@ -180,13 +180,15 @@ export const C = {
     fontFamily: t.font.sans,
     marginBottom: 8,
     textTransform: 'uppercase',
-    boxShadow: t.shadow.pitch,
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    boxShadow: 'inset 2px 2px 1.5px -2px rgba(255,255,255,0.95), inset -2px -2px 1.5px -2px rgba(255,255,255,0.6), inset 0 1px 1px -0.5px rgba(255,255,255,0.65), inset 0 0 10px 4px rgba(255,255,255,0.10), 0 6px 18px -8px rgba(74,222,128,0.7), 0 0 18px -4px rgba(74,222,128,0.5), 0 2px 0 rgba(0,0,0,0.35)',
     transition: `transform ${t.motion.fast}, filter ${t.motion.fast}, box-shadow ${t.motion.fast}`,
     position: 'relative',
   },
   bsm: {
     background: `linear-gradient(180deg, #5eea8f 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
-    border: `1px solid ${t.color.pitchEdge}`,
+    border: '1px solid rgba(255,255,255,0.26)',
     borderRadius: t.radius.sm,
     padding: '7px 13px',
     fontSize: 10,
@@ -197,8 +199,10 @@ export const C = {
     cursor: 'pointer',
     fontFamily: t.font.sans,
     textTransform: 'uppercase',
+    backdropFilter: 'blur(5px)',
+    WebkitBackdropFilter: 'blur(5px)',
     transition: `transform ${t.motion.fast}, filter ${t.motion.fast}, box-shadow ${t.motion.fast}`,
-    boxShadow: '0 1px 0 rgba(255,255,255,0.4) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px -4px rgba(74,222,128,0.55), 0 8px 20px -8px rgba(74,222,128,0.4)',
+    boxShadow: 'inset 1.5px 1.5px 1px -1.5px rgba(255,255,255,0.95), inset -1.5px -1.5px 1px -1.5px rgba(255,255,255,0.55), inset 0 1px 1px -0.5px rgba(255,255,255,0.6), inset 0 0 6px 3px rgba(255,255,255,0.10), 0 4px 12px -5px rgba(74,222,128,0.6), 0 0 12px -3px rgba(74,222,128,0.45), 0 1px 0 rgba(0,0,0,0.3)',
   },
 
   inp: {
