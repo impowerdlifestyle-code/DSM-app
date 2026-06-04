@@ -157,12 +157,14 @@ const MENU_CSS = `
 
 .dsm-menu__item.is-active {
   color: var(--component-active-color);
-  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 100%);
-  border-color: rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(74,222,128,0.16) 0%, rgba(74,222,128,0.05) 100%);
+  border-color: rgba(74,222,128,0.30);
   box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,0.18),
-    inset 0 -1px 0 rgba(0,0,0,0.35),
-    0 6px 18px -8px rgba(0,0,0,0.7),
+    inset 1.5px 1.5px 1px -1.5px rgba(255,255,255,0.9),
+    inset -1.5px -1.5px 1px -1.5px rgba(255,255,255,0.5),
+    inset 0 1px 1px -0.5px rgba(255,255,255,0.5),
+    0 4px 14px -6px rgba(74,222,128,0.6),
+    0 0 12px -2px rgba(74,222,128,0.4),
     0 1px 0 rgba(0,0,0,0.4);
 }
 

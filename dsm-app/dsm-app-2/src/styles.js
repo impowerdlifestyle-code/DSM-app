@@ -205,6 +205,29 @@ export const C = {
     boxShadow: 'inset 1.5px 1.5px 1px -1.5px rgba(255,255,255,0.95), inset -1.5px -1.5px 1px -1.5px rgba(255,255,255,0.55), inset 0 1px 1px -0.5px rgba(255,255,255,0.6), inset 0 0 6px 3px rgba(255,255,255,0.10), 0 4px 12px -5px rgba(74,222,128,0.6), 0 0 12px -3px rgba(74,222,128,0.45), 0 1px 0 rgba(0,0,0,0.3)',
   },
 
+  // Secondary / ghost CTA — neutral liquid glass (theme-aware via glow var).
+  // Same glass-edge rim as the primary, no green halo. For Cancel/Dismiss/
+  // secondary actions. Drop-in: style={C.bghost}.
+  bghost: {
+    background: 'rgba(var(--dsm-glow-rgb),0.06)',
+    border: '1px solid rgba(var(--dsm-glow-rgb),0.20)',
+    borderRadius: t.radius.md,
+    padding: '15px 20px',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: 1.4,
+    color: t.color.text,
+    cursor: 'pointer',
+    width: '100%',
+    fontFamily: t.font.sans,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    boxShadow: 'inset 1.5px 1.5px 1px -1.5px rgba(var(--dsm-glow-rgb),0.6), inset -1.5px -1.5px 1px -1.5px rgba(var(--dsm-glow-rgb),0.4), inset 0 1px 1px -0.5px rgba(var(--dsm-glow-rgb),0.4), inset 0 0 7px 3px rgba(var(--dsm-glow-rgb),0.04), 0 4px 14px -8px rgba(0,0,0,0.45)',
+    transition: `transform ${t.motion.fast}, filter ${t.motion.fast}, box-shadow ${t.motion.fast}`,
+  },
+
   inp: {
     width: '100%',
     background: t.color.bg,

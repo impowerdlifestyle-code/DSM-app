@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { tokens as t } from '../../styles.js'
+import { tokens as t, C } from '../../styles.js'
 import { authFetch } from '../../lib/authFetch.js'
 import {
   getAdminAthleteList,
@@ -724,7 +724,7 @@ function AssignActivityModal({ groupId, assignedBy, athleteCount, onClose }) {
               </select>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onClose} style={{ ...tinyRemoveBtn, flex: 1, padding: '10px' }}>Cancel</button>
+              <button onClick={onClose} style={{ ...C.bghost, flex: 1, marginBottom: 0 }}>Cancel</button>
               <button onClick={submit} disabled={!title.trim() || busy} style={{ ...addBtn, flex: 1 }}>{busy ? 'Assigning…' : 'Assign'}</button>
             </div>
           </>
