@@ -915,7 +915,7 @@ function AssignCoachModal({ athlete, coaches, athletes = [], onClose, onAssigned
         </div>
 
         {athlete.assigned_coach && (
-          <button onClick={onUnassign} style={unassignBtn}>Unassign current coach</button>
+          <button onClick={onUnassign} style={C.bghost}>Unassign current coach</button>
         )}
       </div>
     </div>
@@ -1506,14 +1506,6 @@ const miniTab = (active) => ({
   fontFamily: t.font.sans, fontSize: 10, fontWeight: 700,
   letterSpacing: 1.2, textTransform: 'uppercase',
 })
-
-const unassignBtn = {
-  width: '100%', marginTop: 8,
-  background: 'transparent', border: `1px solid ${t.color.line2}`,
-  color: t.color.textDim, borderRadius: 10, padding: '10px 12px',
-  fontSize: 11, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase',
-  cursor: 'pointer', fontFamily: t.font.sans,
-}
 
 const sendBtn = {
   width: '100%', marginTop: 12,

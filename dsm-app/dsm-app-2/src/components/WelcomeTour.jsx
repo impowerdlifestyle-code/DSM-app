@@ -11,7 +11,7 @@
  * Manually re-openable later from More → Tips (BadgeHints).
  */
 import { useEffect, useState } from 'react'
-import { tokens as t } from '../styles.js'
+import { tokens as t, C } from '../styles.js'
 
 const FLAG_KEY = 'dsm_tour_seen_v1'
 
@@ -149,7 +149,7 @@ export default function WelcomeTour({ open, onClose }) {
       <div style={s.shell}>
         <div style={s.topRow}>
           <div style={s.step}>{idx + 1} of {STEPS.length}</div>
-          <button style={s.skip} onClick={finish}>Skip tour</button>
+          <button style={{ ...C.bghost, width: 'auto', marginBottom: 0, padding: 4, fontSize: 10 }} onClick={finish}>Skip tour</button>
         </div>
 
         <div style={s.glyph}>{step.glyph}</div>
@@ -163,7 +163,7 @@ export default function WelcomeTour({ open, onClose }) {
 
         <div style={s.nav}>
           {!isFirst && (
-            <button style={s.back} onClick={() => setIdx(i => i - 1)}>Back</button>
+            <button style={{ ...C.bghost, flex: 1, marginBottom: 0 }} onClick={() => setIdx(i => i - 1)}>Back</button>
           )}
           <button
             style={s.next}

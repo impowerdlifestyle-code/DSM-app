@@ -117,12 +117,7 @@ export default function SettingsTab({ user, profile }) {
                 fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
                 cursor: confirmText.trim().toUpperCase() === 'DELETE' ? 'pointer' : 'not-allowed', fontFamily: t.font.sans,
               }}>{deleting ? 'Deleting…' : 'Permanently delete'}</button>
-            <button onClick={() => { setConfirm(false); setConfirmText('') }} style={{
-              width: '100%', padding: 12, background: 'transparent',
-              border: `1px solid ${t.color.line2}`, borderRadius: 12,
-              color: t.color.textDim, fontSize: 12, fontWeight: 700, letterSpacing: 1.2,
-              textTransform: 'uppercase', cursor: 'pointer', fontFamily: t.font.sans,
-            }}>Cancel</button>
+            <button onClick={() => { setConfirm(false); setConfirmText('') }} style={C.bghost}>Cancel</button>
           </div>
         )}
       </div>

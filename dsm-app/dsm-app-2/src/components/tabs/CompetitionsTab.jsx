@@ -74,7 +74,7 @@ export default function CompetitionsTab({ user, profile }) {
               {[me.league, me.country].filter(Boolean).join(' · ') || 'Add your league & country'}
             </div>
           </div>
-          <button style={{ ...C.bsm, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, boxShadow: 'none' }}
+          <button style={{ ...C.bghost, width: 'auto', marginBottom: 0, padding: '8px 14px', fontSize: 12 }}
             onClick={() => setEditing(true)}>Edit</button>
         </div>
       )}
@@ -257,8 +257,7 @@ function TeamEditor({ user, initial, onSaved, onCancel }) {
 
       {err && <div style={{ color: t.color.err, fontSize: 12, marginBottom: 10 }}>{err}</div>}
       <button style={C.btn} disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
-      <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}`, boxShadow: 'none' }}
-        onClick={onCancel}>Cancel</button>
+      <button style={C.bghost} onClick={onCancel}>Cancel</button>
     </div>
   )
 }

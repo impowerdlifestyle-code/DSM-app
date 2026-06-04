@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { tokens as t } from '../../styles.js'
+import { tokens as t, C } from '../../styles.js'
 import { FOODS, NUTRITION_TARGETS as DEFAULT_TARGETS } from '../../data/foods.js'
 import {
   getFoodLogToday, logFood, removeFood, getFoodLogRange,
@@ -241,9 +241,8 @@ export default function NutritionTab({ user }) {
                 color: t.color.text, letterSpacing: -0.4,
               }}>Add to {picking}</h3>
               <button onClick={() => setPicking(null)} style={{
-                background: 'transparent', border: 'none', color: t.color.textMute,
-                fontSize: 13, cursor: 'pointer', fontFamily: t.font.sans, fontWeight: 600,
-                letterSpacing: 1.4, textTransform: 'uppercase',
+                ...C.bghost, width: 'auto', marginBottom: 0,
+                padding: '8px 14px', fontSize: 13,
               }}>Done</button>
             </div>
 
@@ -360,12 +359,7 @@ function TargetsEditor({ user, targets, onSaved }) {
         ))}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <button onClick={() => setOpen(false)} style={{
-          flex: 1, padding: '11px 14px',
-          background: 'transparent', border: `1px solid ${t.color.line2}`,
-          borderRadius: 10, color: t.color.textDim,
-          fontSize: 11, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', cursor: 'pointer', fontFamily: t.font.sans,
-        }}>Cancel</button>
+        <button onClick={() => setOpen(false)} style={{ ...C.bghost, flex: 1, marginBottom: 0 }}>Cancel</button>
         <button onClick={save} disabled={saving} style={{
           flex: 1, padding: '11px 14px',
           background: t.color.text, border: 'none',

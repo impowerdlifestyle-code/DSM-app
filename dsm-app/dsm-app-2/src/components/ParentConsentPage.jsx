@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { tokens as t } from '../styles.js'
+import { tokens as t, C } from '../styles.js'
 
 const COLLECTED = [
   ['Action steps', 'What they tried after a game, mental score 1-10'],
@@ -150,7 +150,7 @@ export default function ParentConsentPage({ token }) {
         )}
 
         <div style={btnRow}>
-          <button onClick={() => submit('declined')} disabled={submitting} style={btnGhost}>
+          <button onClick={() => submit('declined')} disabled={submitting} style={{ ...C.bghost, flex: 1, marginBottom: 0 }}>
             Decline
           </button>
           <button onClick={() => submit('granted')} disabled={submitting} style={btnPrimary}>
@@ -217,12 +217,6 @@ const btnPrimary = {
   flex: 1, background: t.color.text, color: t.color.bg,
   border: 'none', borderRadius: 12, padding: '14px 18px',
   fontSize: 13, fontWeight: 800, letterSpacing: 1.6,
-  textTransform: 'uppercase', cursor: 'pointer', fontFamily: t.font.sans,
-}
-const btnGhost = {
-  flex: 1, background: 'transparent', color: t.color.textDim,
-  border: `1px solid ${t.color.line2}`, borderRadius: 12, padding: '14px 18px',
-  fontSize: 13, fontWeight: 700, letterSpacing: 1.6,
   textTransform: 'uppercase', cursor: 'pointer', fontFamily: t.font.sans,
 }
 const errBox = {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { tokens as t } from '../../styles.js'
+import { tokens as t, C } from '../../styles.js'
 import { CURRENT_MEASUREMENTS } from '../../data/foods.js'
 import { getBodyStatsHistory, logBodyStats, getProgressPhotos, uploadProgressPhoto } from '../../lib/supabase.js'
 import LineChart from '../widgets/LineChart.jsx'
@@ -338,9 +338,8 @@ function LogSheet({ user, previous, onClose, onSaved }) {
             Today&rsquo;s measurements
           </h3>
           <button onClick={onClose} style={{
-            background: 'transparent', border: 'none', color: t.color.textMute,
-            fontSize: 13, cursor: 'pointer', fontFamily: t.font.sans, fontWeight: 600,
-            letterSpacing: 1.4, textTransform: 'uppercase',
+            ...C.bghost, width: 'auto', marginBottom: 0,
+            padding: '8px 14px', fontSize: 13,
           }}>Cancel</button>
         </div>
 

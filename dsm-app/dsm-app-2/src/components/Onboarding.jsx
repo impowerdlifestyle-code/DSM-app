@@ -356,7 +356,7 @@ export default function Onboarding({ user, profile, onDone }) {
 
         <div style={s.nav}>
           {step > 0 && (
-            <button style={s.back} onClick={() => setStep(s => s - 1)}>Back</button>
+            <button style={{ ...C.bghost, flex: 1, marginBottom: 0 }} onClick={() => setStep(s => s - 1)}>Back</button>
           )}
           {step < STEPS.length - 1 && (
             <button

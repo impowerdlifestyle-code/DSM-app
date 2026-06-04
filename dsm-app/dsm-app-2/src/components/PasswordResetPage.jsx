@@ -4,7 +4,7 @@
 // new password and call supabase.auth.updateUser({ password }).
 
 import { useState } from 'react'
-import { tokens as t } from '../styles.js'
+import { tokens as t, C } from '../styles.js'
 import { supabase, signOut } from '../lib/supabase.js'
 import PasswordInput from './widgets/PasswordInput.jsx'
 
@@ -84,7 +84,7 @@ export default function PasswordResetPage() {
             await signOut()
             window.location.replace(window.location.origin + '/')
           }}
-          style={ghostBtn}
+          style={C.bghost}
         >
           Cancel · back to sign in
         </button>
@@ -150,17 +150,6 @@ const btn = {
   cursor: 'pointer', fontFamily: t.font.sans,
   textTransform: 'uppercase',
   boxShadow: t.shadow.pitch,
-}
-const ghostBtn = {
-  width: '100%', marginTop: 8,
-  background: 'transparent',
-  border: `1px solid ${t.color.line2}`,
-  color: t.color.textDim,
-  borderRadius: t.radius.md,
-  padding: '12px 16px',
-  fontSize: 12, fontWeight: 700, letterSpacing: 1.4,
-  cursor: 'pointer', fontFamily: t.font.sans,
-  textTransform: 'uppercase',
 }
 const errBox = {
   marginTop: 12, padding: 12,

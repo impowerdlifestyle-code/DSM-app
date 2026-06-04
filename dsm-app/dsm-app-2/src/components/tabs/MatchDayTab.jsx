@@ -315,7 +315,7 @@ export default function MatchDayTab({ user, profile }) {
         {err && <div style={s.err}>{err}</div>}
 
         <button style={{ ...C.btn, marginTop: 4 }} onClick={submitPre}>Lock it in</button>
-        <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}` }} onClick={() => setMode('home')}>
+        <button style={C.bghost} onClick={() => setMode('home')}>
           Cancel
         </button>
       </div>
@@ -351,7 +351,7 @@ export default function MatchDayTab({ user, profile }) {
         </div>
 
         <button style={C.btn} onClick={() => setMode('post')}>Final whistle → log it</button>
-        <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}` }} onClick={() => setMode('home')}>
+        <button style={C.bghost} onClick={() => setMode('home')}>
           Back
         </button>
       </div>
@@ -432,7 +432,7 @@ export default function MatchDayTab({ user, profile }) {
         {ok && <div style={s.ok}>{ok}</div>}
 
         <button style={C.btn} onClick={submitPost}>Save match</button>
-        <button style={{ ...C.btn, background: 'transparent', color: t.color.textDim, border: `1px solid ${t.color.line2}` }} onClick={() => setMode('live')}>
+        <button style={C.bghost} onClick={() => setMode('live')}>
           Back
         </button>
       </div>

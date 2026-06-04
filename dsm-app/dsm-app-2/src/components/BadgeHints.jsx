@@ -10,7 +10,7 @@
  *     how close the athlete already is
  */
 import { useEffect, useState } from 'react'
-import { tokens as t } from '../styles.js'
+import { tokens as t, C } from '../styles.js'
 import { BADGES, XP_TABLE } from '../data/gamification.js'
 import { getEarnedBadges } from '../lib/supabase.js'
 
@@ -215,7 +215,7 @@ export default function BadgeHints({ open, onClose, onJumpTo, user }) {
           </>
         )}
 
-        <button style={s.closeBtn} onClick={onClose}>Got it — let's go</button>
+        <button style={{ ...C.bghost, marginBottom: 0, marginTop: 12 }} onClick={onClose}>Got it — let's go</button>
       </div>
     </div>
   )

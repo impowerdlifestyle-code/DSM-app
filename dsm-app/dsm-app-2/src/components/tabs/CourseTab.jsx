@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { tokens as t } from '../../styles.js'
+import { tokens as t, C } from '../../styles.js'
 import TiltCard from '../widgets/TiltCard.jsx'
 
 const driveEmbed = (id) => `https://drive.google.com/file/d/${id}/preview`
@@ -172,11 +172,8 @@ function VideoModal({ lesson, onClose }) {
             </div>
           </div>
           <button onClick={onClose} style={{
-            background: 'transparent', border: `1px solid ${t.color.line2}`,
-            borderRadius: 999, padding: '8px 14px',
-            color: t.color.text, fontSize: 11, fontWeight: 700,
-            letterSpacing: 1.6, textTransform: 'uppercase',
-            cursor: 'pointer', fontFamily: t.font.sans,
+            ...C.bghost, width: 'auto', marginBottom: 0,
+            borderRadius: 999, padding: '8px 14px', fontSize: 11,
           }}>Close ✕</button>
         </div>
 
