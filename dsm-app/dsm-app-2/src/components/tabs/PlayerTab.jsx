@@ -98,7 +98,7 @@ export default function PlayerTab({ profile, user }) {
                 {xpTotal.toLocaleString()} / {lvl.xpToNext.toLocaleString()} XP
               </span>
             </div>
-            <ProgressBar pct={xpPct} height={6} duration={800} />
+            <ProgressBar pct={xpPct} height={7} duration={800} color="#ff8c00" />
           </div>
 
           {/* Quick stats row */}

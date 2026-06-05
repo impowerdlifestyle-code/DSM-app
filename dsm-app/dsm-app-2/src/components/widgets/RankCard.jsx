@@ -59,7 +59,7 @@ export default function RankCard({ xpTotal = 0, compact = false }) {
             {r.next ? `${r.xpToNext.toLocaleString()} XP to go` : `${xpTotal.toLocaleString()} XP`}
           </span>
         </div>
-        <ProgressBar pct={r.pct} height={6} duration={800} />
+        <ProgressBar pct={r.pct} height={7} duration={800} color="#ff8c00" />
       </div>
 
       <button onClick={() => setOpen(o => !o)} style={{
