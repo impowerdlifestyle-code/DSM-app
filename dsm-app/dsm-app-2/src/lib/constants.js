@@ -18,8 +18,8 @@ const DRILL_VIDEO = 'https://voxsrncpxfuzcspkkzkn.supabase.co/storage/v1/object/
 export const BALL_MASTERY_SKILLS = [
   { id: "diamond_ball_mastery",        label: "Diamond Ball Mastery",        icon: "🔷", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/diamond-ball-mastery.mp4` }] },
   { id: "ball_mastery_drills",         label: "Ball Mastery Drills",         icon: "⚽", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/ball-mastery-drills.mp4` }] },
-  { id: "three_cone_ball_mastery",     label: "Three Cone Ball Mastery",     icon: "🔺", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/three-cone-ball-mastery.mp4` }] },
-  { id: "one_cone_ball_mastery_drill", label: "One Cone Ball Mastery Drill", icon: "🔻", videos: [] },
+  { id: "three_cone_ball_mastery",     label: "Three Cone Ball Mastery",     icon: "🔺", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/three-cone-ball-mastery.mp4?v=2` }] },
+  { id: "one_cone_ball_mastery_drill", label: "One Cone Ball Mastery Drill", icon: "🔻", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/one-cone-ball-mastery-drill.mp4` }] },
 ]
 
 export const PARENT_GUIDE = [
