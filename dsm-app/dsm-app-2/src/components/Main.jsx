@@ -997,10 +997,10 @@ export default function Main({ user }) {
           ) : <>
             <div style={C.orange}>
               <span style={C.olbl}>LOG TODAY'S TRAINING</span>
-              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Tap each skill you trained. Set your reps. Be honest -- this is YOUR progress. 🦈</div>
+              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Tap each drill you trained. Set your reps. Be honest -- this is YOUR progress. 🦈</div>
             </div>
             <div style={C.card}>
-              <span style={C.lbl}>SKILLS PRACTICED</span>
+              <span style={C.lbl}>BALL MASTERY &amp; DRIBBLING</span>
               <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
                 {BALL_MASTERY_SKILLS.map(skill => (
                   <div key={skill.id} style={{ display:'flex',alignItems:'center',gap:12 }}>

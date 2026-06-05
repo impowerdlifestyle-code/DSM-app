@@ -11,17 +11,14 @@ export const HABITS_LIST = ["Morning visualization", "Pre-match mental routine",
 export const DAYS = ["M", "T", "W", "T", "F", "S", "S"]
 export const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+// Ball Mastery & Dribbling drills. Each can carry a video — fill the `videos`
+// url once Valentino's clips are uploaded (YouTube watch URL or a Drive
+// "anyone with link" share URL), e.g. videos: [{ label: "Watch", url: "..." }].
 export const BALL_MASTERY_SKILLS = [
-  { id: "toe_taps", label: "Toe Taps", icon: "⚽", videos: [{ label: "Toe Taps", url: "https://www.youtube.com/watch?v=dRAXOXBhoJk" }] },
-  { id: "inside_outside", label: "Inside/Outside", icon: "🦶", videos: [{ label: "Inside/Outside", url: "https://www.youtube.com/watch?v=cJZChBCkpL4" }] },
-  { id: "pullbacks", label: "Pull Backs", icon: "↩️", videos: [{ label: "Pull Backs", url: "https://www.youtube.com/watch?v=FzEkGHFCXTk" }] },
-  { id: "scissors", label: "Scissors", icon: "✂️", videos: [{ label: "Scissors", url: "https://www.youtube.com/watch?v=4L3H3p-QO2I" }] },
-  { id: "v_moves", label: "V Moves", icon: "✌️", videos: [{ label: "V Moves", url: "https://www.youtube.com/watch?v=ZbNDD73dBiI" }] },
-  { id: "dribbling", label: "Dribbling", icon: "🏃", videos: [{ label: "Dribbling", url: "https://www.youtube.com/watch?v=U3N_qXaqrtI" }] },
-  { id: "passing", label: "Passing", icon: "➡️", videos: [{ label: "Passing Basics", url: "https://www.youtube.com/watch?v=aBMqR7L2BgA" }, { label: "Passing & First Touch", url: "https://www.youtube.com/watch?v=NH4ZxxBnFW8" }] },
-  { id: "shooting", label: "Shooting", icon: "🥅", videos: [{ label: "Shooting Technique", url: "https://www.youtube.com/watch?v=aJwWT54fvmQ" }, { label: "Power Shot", url: "https://www.youtube.com/watch?v=uTCLJ4_i8o0" }] },
-  { id: "first_touch", label: "First Touch", icon: "🎯", videos: [{ label: "First Touch Basics", url: "https://www.youtube.com/watch?v=rFbNVGvJHMI" }, { label: "Passing & First Touch", url: "https://www.youtube.com/watch?v=NH4ZxxBnFW8" }] },
-  { id: "juggling", label: "Juggling", icon: "🔄", videos: [{ label: "Juggling", url: "https://www.youtube.com/watch?v=MHpFzCQMoGE" }] },
+  { id: "diamond_ball_mastery",        label: "Diamond Ball Mastery",        icon: "🔷", videos: [] },
+  { id: "ball_mastery_drills",         label: "Ball Mastery Drills",         icon: "⚽", videos: [] },
+  { id: "three_cone_ball_mastery",     label: "Three Cone Ball Mastery",     icon: "🔺", videos: [] },
+  { id: "one_cone_ball_mastery_drill", label: "One Cone Ball Mastery Drill", icon: "🔻", videos: [] },
 ]
 
 export const PARENT_GUIDE = [
