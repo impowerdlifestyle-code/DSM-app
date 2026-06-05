@@ -99,6 +99,7 @@ export default function Main({ user }) {
   const [ballMastery, setBallMastery] = useState({})
   const [ballHistory, setBallHistory] = useState([])
   const [savingBall, setSavingBall] = useState(false)
+  const [drillVideo, setDrillVideo] = useState(null)
   const [checkin, setCheckin] = useState(emptyCheckin)
   const [checkinHistory, setCheckinHistory] = useState([])
   const [checkinDone, setCheckinDone] = useState(false)
@@ -1012,10 +1013,10 @@ export default function Main({ user }) {
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
                         {(skill.videos||[]).map((v,vi)=>(
-                          <a key={vi} href={v.url} target="_blank" rel="noreferrer"
-                            style={{ fontSize:9, color: t.color.text, fontWeight:800, letterSpacing:1, textDecoration:'none', background:t.color.surface2, borderRadius:6, padding:'2px 6px' }}>
+                          <button key={vi} onClick={() => setDrillVideo({ url: v.url, label: skill.label })}
+                            style={{ fontSize:9, color: t.color.text, fontWeight:800, letterSpacing:1, border:'none', cursor:'pointer', background:t.color.surface2, borderRadius:6, padding:'3px 7px' }}>
                             ▶ {v.label}
-                          </a>
+                          </button>
                         ))}
                       </div>
                       {(ballMastery[skill.id]?.reps||0)>0 && (
@@ -1064,6 +1065,17 @@ export default function Main({ user }) {
             ))}
           </>}
         </div>
+        {drillVideo && (
+          <div onClick={() => setDrillVideo(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', zIndex:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:520, display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontFamily:t.font.athletic, fontSize:22, color:t.color.text, textTransform:'uppercase', letterSpacing:1 }}>{drillVideo.label}</span>
+                <button onClick={() => setDrillVideo(null)} style={{ background:'none', border:'none', color:t.color.textMute, fontSize:22, cursor:'pointer', lineHeight:1 }}>✕</button>
+              </div>
+              <video src={drillVideo.url} controls autoPlay playsInline style={{ width:'100%', borderRadius:14, background:'#000', maxHeight:'78vh' }} />
+            </div>
+          </div>
+        )}
         </div>
       )}
 
