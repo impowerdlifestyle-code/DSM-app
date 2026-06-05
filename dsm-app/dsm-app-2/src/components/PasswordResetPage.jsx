@@ -140,7 +140,7 @@ const input = {
 }
 const btn = {
   width: '100%', marginTop: 18,
-  background: `linear-gradient(180deg, #5eea8f 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
+  background: `linear-gradient(180deg, ${t.color.pitch} 0%, ${t.color.pitch} 45%, ${t.color.pitchDeep} 100%)`,
   border: `1px solid ${t.color.pitchEdge}`,
   borderRadius: t.radius.md,
   padding: '15px 20px',

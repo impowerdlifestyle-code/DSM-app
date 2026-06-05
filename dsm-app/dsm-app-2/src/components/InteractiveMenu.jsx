@@ -98,7 +98,7 @@ export default function InteractiveMenu({
 // so theme switching just swaps the colors.
 const MENU_CSS = `
 .dsm-menu {
-  --component-active-color-default: #4ade80;
+  --component-active-color-default: var(--color-pitch, #4ade80);
   position: fixed;
   bottom: max(14px, env(safe-area-inset-bottom));
   left: 50%;

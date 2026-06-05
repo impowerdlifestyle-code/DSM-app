@@ -876,7 +876,7 @@ export default function Main({ user }) {
               position: 'absolute', bottom: -3, right: -5,
               minWidth: 18, height: 18, borderRadius: '50%',
               background: t.color.text, color: t.color.bg,
-              border: '2px solid #000', padding: '0 4px',
+              border: `2px solid ${t.color.bg}`, padding: '0 4px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 0.5, fontWeight: 400,
             }}>{PLAYER.level}</div>
@@ -990,7 +990,7 @@ export default function Main({ user }) {
           <div style={C.title}>Ball Mastery</div>
           <div style={C.sub}>DAILY SKILLS LOG</div>
           {todayBMLogged ? (
-            <div style={{ ...C.card, borderColor:'#1a4a1a', textAlign:'center', padding:36 }}>
+            <div style={{ ...C.card, borderColor:t.color.pitchEdge, textAlign:'center', padding:36 }}>
               <div style={{ fontSize:44,marginBottom:10 }}>✅</div>
               <div style={{ fontSize:18,fontWeight:800,marginBottom:6 }}>TODAY LOGGED!</div>
               <div style={{ fontSize:13,color:t.color.textMute }}>Ball mastery done. Come back tomorrow! 🔥</div>
@@ -1127,7 +1127,7 @@ export default function Main({ user }) {
           <div style={C.sub}>{currentWeek} -- REFLECT & LOCK IN</div>
           {checkinDone ? (
             <div>
-              <div style={{ ...C.card,borderColor:'#1a4a1a',textAlign:'center',padding:36,marginBottom:16 }}>
+              <div style={{ ...C.card,borderColor:t.color.pitchEdge,textAlign:'center',padding:36,marginBottom:16 }}>
                 <div style={{ fontSize:44,marginBottom:10 }}>✅</div>
                 <div style={{ fontSize:18,fontWeight:800,marginBottom:6 }}>THIS WEEK SUBMITTED!</div>
                 <div style={{ fontSize:13,color:t.color.textMute,marginBottom:16 }}>Coach Valentino has your check-in. See you next week. 🔥</div>
@@ -1348,7 +1348,7 @@ export default function Main({ user }) {
                 {pct>=70?'🔥 ELITE':pct>=40?'⚡ GOOD':'📈 GROW'}
               </div>
             </div>
-            <ProgressBar pct={pct} height={4} background="#1e1e1e" style={{ marginTop: 10 }} />
+            <ProgressBar pct={pct} height={4} style={{ marginTop: 10 }} />
           </div>
         </div>
       )}
@@ -1458,7 +1458,7 @@ export default function Main({ user }) {
                       const eUp = latest.energy_level >= prev.energy_level
                       const cUp = latest.confidence_level >= prev.confidence_level
                       return (
-                        <div style={{ ...C.card, borderColor: eUp&&cUp?'#1a4a1a':t.color.surface2, marginBottom:14 }}>
+                        <div style={{ ...C.card, borderColor: eUp&&cUp?t.color.pitchEdge:t.color.surface2, marginBottom:14 }}>
                           <span style={C.lbl}>WEEK OVER WEEK TREND</span>
                           <div style={{ display:'flex', gap:16 }}>
                             <div><div style={{ fontSize:13,fontWeight:800 }}>{eUp?'⬆️':'⬇️'} Energy {eUp?'+':''}{latest.energy_level-prev.energy_level}</div><div style={{ fontSize:10,color:t.color.textMute }}>vs last week</div></div>
@@ -1482,7 +1482,7 @@ export default function Main({ user }) {
                               <span style={{ fontSize:12, fontWeight:700 }}>{icon} {lbl}</span>
                               <span style={{ fontSize:12, fontWeight:900, color:t.color.text }}>{pct}% <span style={{ fontSize:9,color:t.color.textMute }}>({cnt}/{submissions.length})</span></span>
                             </div>
-                            <ProgressBar pct={pct} height={5} background="#1e1e1e" />
+                            <ProgressBar pct={pct} height={5} />
                           </div>
                         )
                       })}
@@ -1763,7 +1763,6 @@ export default function Main({ user }) {
                   <ProgressBar
                     pct={(['shark','goldfish','breath','selftalk','visualize','declaration'].filter(id => gameDayChecked[id]).length/drills.length)*100}
                     height={6}
-                    background="#1e1e1e"
                   />
                 </div>
               </>
@@ -1791,7 +1790,7 @@ export default function Main({ user }) {
                 </div>
                 {steps.map(step => (
                   <div key={step.id} onClick={() => setGameDayChecked(p => ({...p, ['gd_'+step.id]: !p['gd_'+step.id]}))}
-                    style={{ ...C.card, borderColor: gameDayChecked['gd_'+step.id] ? '#1a4a1a' : t.color.surface2, cursor:'pointer', marginBottom:8 }}>
+                    style={{ ...C.card, borderColor: gameDayChecked['gd_'+step.id] ? t.color.pitchEdge : t.color.surface2, cursor:'pointer', marginBottom:8 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                       <div style={{ width:28, height:28, borderRadius:'50%', background: gameDayChecked['gd_'+step.id] ? '#00aa44' : t.color.surface2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
                         {gameDayChecked['gd_'+step.id] ? '✓' : step.icon}
@@ -1803,7 +1802,7 @@ export default function Main({ user }) {
                   </div>
                 ))}
                 {allDone && (
-                  <div style={{ ...C.card, borderColor:'#1a4a1a', textAlign:'center', padding:24 }}>
+                  <div style={{ ...C.card, borderColor:t.color.pitchEdge, textAlign:'center', padding:24 }}>
                     <div style={{ fontSize:40, marginBottom:8 }}>🦈</div>
                     <div style={{ fontSize:18, fontWeight:900, marginBottom:6 }}>YOU ARE READY.</div>
                     <div style={{ fontSize:13, color:t.color.textMute }}>Go compete. Trust your preparation. Lock in from the first whistle.</div>
@@ -1914,7 +1913,7 @@ export default function Main({ user }) {
                 }}>💾 SAVE MY MAP</button>
               </div>
               {mapSaved && (
-                <div style={{ ...C.card, borderColor:'#1a4a1a' }}>
+                <div style={{ ...C.card, borderColor:t.color.pitchEdge }}>
                   <span style={C.lbl}>THIS WEEK'S MAP</span>
                   {map.goal && <div style={{ fontSize:13, marginBottom:8 }}>🎯 <strong>Goal:</strong> {map.goal}</div>}
                   {map.focusArea && <div style={{ fontSize:13, marginBottom:8 }}>🔍 <strong>Focus:</strong> {map.focusArea}</div>}
@@ -2049,14 +2048,14 @@ export default function Main({ user }) {
                 const completed = ch.challenge_completions?.some(c => c.user_id === user.id)
                 const completedCount = ch.challenge_completions?.length || 0
                 return (
-                  <div key={i} style={{ ...C.card, borderColor: completed?'#1a4a1a':t.color.surface2, marginBottom:10 }}>
+                  <div key={i} style={{ ...C.card, borderColor: completed?t.color.pitchEdge:t.color.surface2, marginBottom:10 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                       <div style={{ flex:1 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                          <div style={{ fontSize:9, background: ch.type==='weekly'?t.color.text:ch.type==='team'?t.color.line2:ch.type==='h2h'?'#252528':t.color.surface2, borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?t.color.bg:t.color.text, letterSpacing:1 }}>
+                          <div style={{ fontSize:9, background: ch.type==='weekly'?t.color.text:ch.type==='team'?t.color.line2:ch.type==='h2h'?t.color.line:t.color.surface2, borderRadius:20, padding:'2px 8px', fontWeight:800, color:ch.type==='weekly'?t.color.bg:t.color.text, letterSpacing:1 }}>
                             {ch.type==='weekly'?'⚡ WEEKLY':ch.type==='team'?'👥 TEAM':ch.type==='h2h'?'⚔️ H2H':'🤖 AUTO'}
                           </div>
-                          {completed && <div style={{ fontSize:9, background:'#1a4a1a', borderRadius:20, padding:'2px 8px', fontWeight:800, color:t.color.pitch, letterSpacing:1 }}>✅ DONE</div>}
+                          {completed && <div style={{ fontSize:9, background:t.color.pitchSoft, borderRadius:20, padding:'2px 8px', fontWeight:800, color:t.color.pitch, letterSpacing:1 }}>✅ DONE</div>}
                         </div>
                         <div style={{ fontSize:15, fontWeight:900, marginBottom:4 }}>{ch.title}</div>
                         <div style={{ fontSize:12, color:t.color.textDim, lineHeight:1.5 }}>{ch.description}</div>
@@ -2094,7 +2093,6 @@ export default function Main({ user }) {
                 <ProgressBar
                   pct={Math.min((leaderboard.reduce((a,b)=>a+b.bmCount,0)/100)*100, 100)}
                   height={8}
-                  background="#1e1e1e"
                   style={{ marginBottom: 8 }}
                 />
                 <div style={{ fontSize:10, color:t.color.textMute }}>Goal: 100 team sessions 🎯</div>
@@ -2105,7 +2103,6 @@ export default function Main({ user }) {
                 <ProgressBar
                   pct={Math.min((leaderboard.reduce((a,b)=>a+b.asCount,0)/50)*100, 100)}
                   height={8}
-                  background="#1e1e1e"
                   style={{ marginBottom: 8 }}
                 />
                 <div style={{ fontSize:10, color:t.color.textMute }}>Goal: 50 team action steps 🎯</div>
@@ -2189,7 +2186,7 @@ export default function Main({ user }) {
                     <div style={{ fontSize:13, fontWeight:800 }}>{post.profiles?.full_name||post.profiles?.email}</div>
                     <div style={{ fontSize:9, color:t.color.textMute, marginTop:1 }}>{new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div style={{ background: post.type==='win'?'#1a3a0a':post.type==='milestone'?'#0a1a3a':'#2a1a0a', borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?t.color.pitch:post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
+                  <div style={{ background: t.color.surface2, borderRadius:20, padding:'3px 10px', fontSize:9, fontWeight:800, color: post.type==='win'?t.color.pitch:post.type==='milestone'?'#4a9fff':'#ffaa4a' }}>
                     {post.type==='win'?'🏆 WIN':post.type==='milestone'?'📈 MILESTONE':'❓ QUESTION'}
                   </div>
                 </div>
@@ -2634,7 +2631,7 @@ export default function Main({ user }) {
                         <span style={{ fontSize:11,fontWeight:700 }}>{label}</span>
                         <span style={{ fontSize:11,color:t.color.text,fontWeight:800 }}>{pct}% ({used}/{athleteActionSteps.length})</span>
                       </div>
-                      <ProgressBar pct={pct} height={6} background="#1e1e1e" />
+                      <ProgressBar pct={pct} height={6} />
                     </div>
                   )
                 })}
@@ -2663,7 +2660,7 @@ export default function Main({ user }) {
 
             {/* LATEST MESSAGE */}
             {athleteCheckins[0]?.message_to_coach && (
-              <div style={{ ...C.card,borderColor:'#1a3a2a' }}>
+              <div style={{ ...C.card,borderColor:t.color.pitchEdge }}>
                 <span style={C.lbl}>💬 LATEST MESSAGE TO COACH</span>
                 <div style={{ fontSize:13,color:t.color.textDim,fontStyle:'italic',lineHeight:1.6 }}>"{athleteCheckins[0].message_to_coach}"</div>
                 <div style={{ fontSize:9,color:t.color.textMute,marginTop:6 }}>{athleteCheckins[0].week}</div>
@@ -2696,7 +2693,7 @@ export default function Main({ user }) {
                   { week:4, label:'Week 4', items:['+ Goal Setting'], color:t.color.emberDeep, unlocked: (selectedAthlete.program_week||1) >= 4 },
                   { week:5, label:'Week 5', items:['+ Visualization','+ Morning Routine'], color:'#ffaa00', unlocked: (selectedAthlete.program_week||1) >= 5 },
                 ].map((phase,i)=>(
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?'#111':t.color.surface, borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:t.color.surface2}` }}>
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', background: phase.unlocked?t.color.surface2:t.color.surface, borderRadius:8, border:`1px solid ${phase.unlocked?phase.color:t.color.surface2}` }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:phase.unlocked?phase.color:t.color.line2, flexShrink:0 }} />
                     <div>
                       <div style={{ fontSize:11, fontWeight:800, color:phase.unlocked?t.color.text:t.color.line2 }}>{phase.label}</div>
@@ -2743,7 +2740,7 @@ export default function Main({ user }) {
                 {athleteCheckins.filter(c=>c.goal_next_week).length === 0 ? (
                   <div style={{ fontSize:12,color:t.color.textMute,textAlign:'center',padding:12 }}>No goals set yet</div>
                 ) : athleteCheckins.filter(c=>c.goal_next_week).slice(0,5).map((c,i)=>(
-                  <div key={i} style={{ borderLeft:'2px solid #fafafa', paddingLeft:10, marginBottom:10 }}>
+                  <div key={i} style={{ borderLeft:`2px solid ${t.color.text}`, paddingLeft:10, marginBottom:10 }}>
                     <div style={{ fontSize:9,color:t.color.text,fontWeight:700,marginBottom:2 }}>{c.week}</div>
                     <div style={{ fontSize:12,color:t.color.text,fontWeight:700 }}>🎯 {c.goal_next_week}</div>
                     {c.biggest_win && <div style={{ fontSize:11,color:t.color.pitch,marginTop:3 }}>✓ Win: {c.biggest_win}</div>}
@@ -2801,7 +2798,7 @@ export default function Main({ user }) {
                 )}
               </div>
               {selectedAthlete.assigned_coach && (
-                <div style={{ background:'#1a3a0a', borderRadius:10, padding:'10px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div style={{ background:t.color.pitchSoft, borderRadius:10, padding:'10px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                   <div style={{ fontSize:13, fontWeight:800, color:t.color.pitch }}>✓ Assigned to {selectedAthlete.assigned_coach}</div>
                   <button onClick={async()=>{
                     await supabase.from('profiles').update({ assigned_coach: null }).eq('id', selectedAthlete.id)

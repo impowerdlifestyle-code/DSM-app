@@ -80,7 +80,7 @@ export default function WeeklyChallengesCard({ user, onXp }) {
                     style={{
                       flexShrink: 0, width: 38, height: 38, borderRadius: 12,
                       border: `1px solid ${t.color.pitchEdge}`,
-                      background: `linear-gradient(180deg, #5eea8f, ${t.color.pitchDeep})`,
+                      background: `linear-gradient(180deg, ${t.color.pitch}, ${t.color.pitchDeep})`,
                       color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       boxShadow: t.shadow.pitch,
