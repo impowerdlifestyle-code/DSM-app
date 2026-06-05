@@ -665,10 +665,14 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
 
 // ─── ADMIN: list all athletes with quick stats ───────────────
 export async function getAdminAthleteList() {
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier, program_track, age, parent_consent_required, parent_consent_status, parent_consent_email, parent_consent_token')
-    .order('created_at', { ascending: false })
+  const FULL = 'id, email, full_name, role, access_level, streak, last_logged, program_week, created_at, assigned_coach, coach_tier, program_track, age, archived_at, parent_consent_required, parent_consent_status, parent_consent_email, parent_consent_token'
+  let { data: profiles, error: selErr } = await supabase
+    .from('profiles').select(FULL).order('created_at', { ascending: false })
+  if (selErr) {
+    // archived_at column not migrated yet — retry without it so the list still loads
+    ;({ data: profiles } = await supabase
+      .from('profiles').select(FULL.replace(', archived_at', '')).order('created_at', { ascending: false }))
+  }
   if (!profiles) return { data: [], error: null }
 
   const enriched = await Promise.all(profiles.map(async (p) => {
@@ -1024,6 +1028,22 @@ export async function adminCreateAthlete({ email, name, password, age, assignedC
   const json = await res.json().catch(() => ({}))
   if (!res.ok) return { data: null, error: new Error(json.error || `Failed (${res.status})`) }
   return { data: json, error: null }
+}
+
+// Soft-archive an athlete (hidden from the active roster, data retained).
+export async function adminArchiveAthlete(athleteId, archived = true) {
+  const { error } = await supabase.from('profiles')
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq('id', athleteId)
+  return { error }
+}
+
+// Permanently delete an athlete account + all their data (admin/coach only).
+export async function adminDeleteAthlete(athleteId) {
+  const res = await authFetch('/api/admin-delete-athlete', { method: 'POST', body: JSON.stringify({ athleteId }) })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) return { error: new Error(json.error || `Failed (${res.status})`) }
+  return { error: null }
 }
 
 export async function acceptTerms(userId) {

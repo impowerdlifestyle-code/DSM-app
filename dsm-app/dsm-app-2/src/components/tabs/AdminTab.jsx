@@ -27,6 +27,8 @@ import {
   resolveReport,
   deleteGroupMessage,
   adminCreateAthlete,
+  adminArchiveAthlete,
+  adminDeleteAthlete,
 } from '../../lib/supabase.js'
 import LockerRoomTab from './LockerRoomTab.jsx'
 import GroupChat from '../GroupChat.jsx'
@@ -104,6 +106,18 @@ export default function AdminTab({ user }) {
           onChangeTrack={async (a, track) => {
             const { error } = await setProgramTrack(a.id, track)
             if (error) { alert(error.message || 'Failed to set track'); return }
+            await load()
+          }}
+          onArchive={async (a, archived) => {
+            const { error } = await adminArchiveAthlete(a.id, archived)
+            if (error) { alert(error.message || 'Failed'); return }
+            await load()
+          }}
+          onDelete={async (a) => {
+            const label = a.full_name || a.email
+            if (!confirm(`Permanently delete ${label} and ALL their data?\n\nThis cannot be undone. To keep their data but hide them, use Archive instead.`)) return
+            const { error } = await adminDeleteAthlete(a.id)
+            if (error) { alert(error.message || 'Failed to delete'); return }
             await load()
           }}
           onManualGrantConsent={async (a) => {
@@ -231,10 +245,23 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onManualGrantConsent, onCopyConsentLink }) {
+function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onArchive, onDelete, onManualGrantConsent, onCopyConsentLink }) {
   const [addOpen, setAddOpen] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [minting, setMinting] = useState(false)
+
+  async function copyInvite() {
+    if (minting) return
+    setMinting(true)
+    const { url, error } = await mintInviteUrl('Coach Valentino')
+    setMinting(false)
+    if (error) { alert('Could not generate invite: ' + error); return }
+    await copyToClipboard(url)
+    setCopied(true); setTimeout(() => setCopied(false), 1800)
+  }
   const [trackFilter, setTrackFilter] = useState('all')
-  let visible = athletes
+  let visible = athletes.filter(a => showArchived ? a.archived_at : !a.archived_at)
   if (trackFilter !== 'all') {
     visible = visible.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === trackFilter)
   }
@@ -268,9 +295,14 @@ function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter,
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 11, color: t.color.textDim, letterSpacing: 1, fontWeight: 600, textTransform: 'uppercase' }}>Athletes</div>
-        <button onClick={() => setAddOpen(true)} style={addBtn}>+ Add player</button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button onClick={copyInvite} style={addBtn} disabled={minting}>
+            {copied ? '✓ Copied' : minting ? 'Generating…' : '🔗 Copy invite link'}
+          </button>
+          <button onClick={() => setAddOpen(true)} style={addBtn}>+ Add player</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 18 }}>
@@ -308,6 +340,9 @@ function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter,
           <option value="stale">Most stale</option>
           <option value="unassigned">Unassigned first</option>
         </select>
+        <button onClick={() => setShowArchived(s => !s)} style={{ ...(showArchived ? promoteBtn : tinyRemoveBtn), padding: '0 12px', flex: 'none' }}>
+          {showArchived ? '← Active' : 'Archived'}
+        </button>
       </div>
 
       {loading && <div style={{ color: t.color.textDim, fontSize: 13 }}>Loading athletes…</div>}
@@ -363,6 +398,10 @@ function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter,
               </button>
               <button onClick={() => onAssignTask(a)} style={taskBtn}>+ Task</button>
               <button onClick={() => onPromote(a)} style={promoteBtn} title="Make this athlete a coach">⇧ Coach</button>
+              <button onClick={() => onArchive(a, !a.archived_at)} style={tinyRemoveBtn} title={a.archived_at ? 'Restore to active roster' : 'Hide from roster, keep data'}>
+                {a.archived_at ? '↩ Unarchive' : '🗄 Archive'}
+              </button>
+              <button onClick={() => onDelete(a)} style={demoteBtn} title="Permanently delete account + data">🗑 Delete</button>
             </div>
           </div>
 
