@@ -1015,6 +1015,17 @@ export async function resolveReport(reportId, status, reviewerId) {
   return { error }
 }
 
+// Admin/coach manually creates an athlete account. Returns { data, error }.
+export async function adminCreateAthlete({ email, name, password, age, assignedCoach }) {
+  const res = await authFetch('/api/admin-create-athlete', {
+    method: 'POST',
+    body: JSON.stringify({ email, name, password, age, assignedCoach }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) return { data: null, error: new Error(json.error || `Failed (${res.status})`) }
+  return { data: json, error: null }
+}
+
 export async function acceptTerms(userId) {
   const { error } = await supabase.from('profiles')
     .update({ terms_accepted_at: new Date().toISOString() })

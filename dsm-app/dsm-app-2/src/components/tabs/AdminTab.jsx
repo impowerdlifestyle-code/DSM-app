@@ -26,6 +26,7 @@ import {
   getGroupReports,
   resolveReport,
   deleteGroupMessage,
+  adminCreateAthlete,
 } from '../../lib/supabase.js'
 import LockerRoomTab from './LockerRoomTab.jsx'
 import GroupChat from '../GroupChat.jsx'
@@ -86,6 +87,8 @@ export default function AdminTab({ user }) {
         <AthletesView
           loading={loading}
           athletes={athletes}
+          coaches={coaches}
+          onReload={load}
           filter={filter} setFilter={setFilter}
           sortBy={sortBy} setSortBy={setSortBy}
           onSelectAthlete={setSelectedId}
@@ -228,7 +231,8 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onManualGrantConsent, onCopyConsentLink }) {
+function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onManualGrantConsent, onCopyConsentLink }) {
+  const [addOpen, setAddOpen] = useState(false)
   const [trackFilter, setTrackFilter] = useState('all')
   let visible = athletes
   if (trackFilter !== 'all') {
@@ -264,12 +268,25 @@ function AthletesView({ loading, athletes, filter, setFilter, sortBy, setSortBy,
 
   return (
     <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10 }}>
+        <div style={{ fontSize: 11, color: t.color.textDim, letterSpacing: 1, fontWeight: 600, textTransform: 'uppercase' }}>Athletes</div>
+        <button onClick={() => setAddOpen(true)} style={addBtn}>+ Add player</button>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 18 }}>
         <Stat label="Athletes" value={totals.athletes} />
         <Stat label="Youth"    value={totals.youth} />
         <Stat label="Teen"     value={totals.teen} />
         <Stat label="Active 7d" value={totals.active7d} />
       </div>
+
+      {addOpen && (
+        <AddPlayerModal
+          coaches={coaches}
+          onClose={() => setAddOpen(false)}
+          onAdded={async () => { await onReload?.() }}
+        />
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         <input
@@ -764,6 +781,70 @@ function MemberRow({ member, canEdit, onView, onRemove }) {
         <div style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 0.8, marginTop: 1 }}>{u?.email}</div>
       </button>
       {canEdit && <button onClick={onRemove} style={tinyRemoveBtn}>✕</button>}
+    </div>
+  )
+}
+
+function AddPlayerModal({ coaches, onClose, onAdded }) {
+  const genPass = () => 'DSM-' + Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState(genPass)
+  const [age, setAge] = useState('')
+  const [coach, setCoach] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [done, setDone] = useState(null)
+
+  async function submit() {
+    if (busy) return
+    if (!email.trim()) { setErr('Email is required.'); return }
+    setBusy(true); setErr('')
+    const { error } = await adminCreateAthlete({ email: email.trim(), name: name.trim(), password, age: age || null, assignedCoach: coach || null })
+    setBusy(false)
+    if (error) { setErr(error.message); return }
+    setDone({ email: email.trim(), password })
+    onAdded?.()
+  }
+
+  return (
+    <div style={overlay} onClick={onClose}>
+      <div style={modal} onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily: t.font.athletic, fontSize: 22, color: t.color.text, marginBottom: 4 }}>Add player</div>
+        {done ? (
+          <>
+            <div style={{ fontSize: 12, color: t.color.pitch, marginBottom: 10 }}>✓ Player added. Share these so they can sign in:</div>
+            <div style={{ background: t.color.bg, border: `1px solid ${t.color.line}`, borderRadius: 10, padding: 12, marginBottom: 14, fontFamily: t.font.mono, fontSize: 13, lineHeight: 1.6 }}>
+              <div>Email: {done.email}</div>
+              <div>Password: {done.password}</div>
+            </div>
+            <button onClick={() => navigator.clipboard?.writeText(`DSM login\nEmail: ${done.email}\nPassword: ${done.password}\nhttps://dsm-app-2.vercel.app`)} style={{ ...C.bghost, marginBottom: 8 }}>Copy login details</button>
+            <button onClick={onClose} style={{ ...addBtn, width: '100%' }}>Done</button>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 11, color: t.color.textDim, marginBottom: 12 }}>Creates the account now. They sign in with the temp password and can change it later.</div>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={{ ...inputStyle(), marginBottom: 8 }} />
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" style={{ ...inputStyle(), marginBottom: 8 }} />
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Temp password" style={{ ...inputStyle(), flex: 1 }} />
+              <button onClick={() => setPassword(genPass())} title="Regenerate" style={{ ...tinyRemoveBtn, padding: '0 12px' }}>↻</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <input value={age} onChange={e => setAge(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Age (optional)" style={{ ...inputStyle(), flex: 1 }} />
+              <select value={coach} onChange={e => setCoach(e.target.value)} style={{ ...inputStyle(), flex: 1 }}>
+                <option value="">No coach</option>
+                {(coaches || []).map(c => <option key={c.id} value={c.full_name || c.email}>{c.full_name || c.email}</option>)}
+              </select>
+            </div>
+            {err && <div style={{ color: t.color.err, fontSize: 12, marginBottom: 10 }}>{err}</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={onClose} style={{ ...C.bghost, flex: 1, marginBottom: 0 }}>Cancel</button>
+              <button onClick={submit} disabled={busy || !email.trim()} style={{ ...addBtn, flex: 1 }}>{busy ? 'Creating…' : 'Create'}</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
