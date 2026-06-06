@@ -67,15 +67,16 @@ export default async function handler(req, res) {
 
     // 2. Build reflection digest
     const monthStart = `${month}-01`
-    const [identityRes, memoryRes, actionRes, matchRes, profileRes] = await Promise.all([
-      admin.from('voice_identity').select('identity_statement').eq('user_id', userId).maybeSingle(),
+    const [memoryRes, actionRes, matchRes, profileRes] = await Promise.all([
       admin.from('coach_memory').select('athlete_summary, themes').eq('user_id', userId).maybeSingle(),
       admin.from('action_steps').select('date, mental, did_action_steps').eq('user_id', userId).gte('date', monthStart).order('date', { ascending: false }).limit(30),
       admin.from('match_log').select('match_date, opponent, result, performance, went_well, to_fix').eq('user_id', userId).gte('match_date', monthStart).order('match_date', { ascending: false }).limit(10),
       admin.from('profiles').select('full_name, identity_goal, position').eq('id', userId).maybeSingle(),
     ])
 
-    const identityLine = identityRes.data?.identity_statement || profileRes.data?.identity_goal || '(no stated identity on file)'
+    // Identity comes from profiles.identity_goal — the deprecated voice_identity
+    // table is intentionally not a dependency of the monthly ritual.
+    const identityLine = profileRes.data?.identity_goal || '(no stated identity on file)'
     const themes = memoryRes.data?.themes || {}
     const actions = actionRes.data || []
     const matches = matchRes.data || []
@@ -116,17 +117,17 @@ export default async function handler(req, res) {
         .eq('id', inserted.id)
     }
 
-    // 5. Award XP
+    // 5. Award XP (best-effort — never fail the check-in over the log)
     await admin.from('xp_log').insert([{
       user_id: userId, source: 'future_self_checkin', xp: XP_AMOUNT,
       ref_id: inserted.id, note: month,
-    }])
+    }]).then(({ error }) => { if (error) console.error('[save-checkin] xp_log:', error.message) })
 
-    // 6. Audit
+    // 6. Audit (best-effort — optional table)
     await admin.from('voice_audit_log').insert([{
       user_id: userId, actor_id: userId, event: 'checkin_completed', ref_id: inserted.id,
       metadata: { month, xp_awarded: XP_AMOUNT, reflection_generated: !!aiReflection },
-    }])
+    }]).then(({ error }) => { if (error) console.error('[save-checkin] audit:', error.message) })
 
     return res.status(200).json({
       id: inserted.id, month, ai_reflection: aiReflection, xp_awarded: XP_AMOUNT,

@@ -20,7 +20,7 @@ import { authGuard } from '../_auth.js'
 import { buildScriptPrompt } from '../../src/features/future-self/lib/scriptPrompt.js'
 
 const MODEL = 'claude-sonnet-4-6'
-const TTS_MODEL = 'eleven_monolingual_v1'
+const TTS_MODEL = 'eleven_multilingual_v2'
 const SIGNED_URL_TTL_SEC = 3600
 const STORAGE_BUCKET = 'future-self-audio'
 
@@ -125,16 +125,19 @@ export default async function handler(req, res) {
     if (upErr) return err(res, 500, 'storage', 'Failed to upload clip', { detail: upErr.message })
 
     // 5. Insert clip row (audio_url stores the storage PATH; signed URL returned separately)
-    const { data: clipRow, error: insErr } = await admin.from('future_self_clips').insert([{
+    // Persisting the clip is best-effort: the audio is already uploaded and a
+    // signed URL is returned below, so Coach V plays even if the history table
+    // isn't present. Don't fail the whole ritual over clip history.
+    const { error: insErr } = await admin.from('future_self_clips').insert([{
       id: clipId, user_id: userId, context, script, audio_url: path, match_id: matchId,
-    }]).select().single()
-    if (insErr) return err(res, 500, 'db', 'Failed to record clip', { detail: insErr.message })
+    }])
+    if (insErr) console.error('[generate-clip] clip persist skipped:', insErr.message)
 
-    // 6. Audit
+    // 6. Audit (best-effort — optional table, never fail the clip over the log)
     await admin.from('voice_audit_log').insert([{
       user_id: userId, actor_id: null, event: 'clip_generated', ref_id: clipId,
       metadata: { context, match_id: matchId, model: MODEL, tts_model: TTS_MODEL, tokens: resp.usage },
-    }])
+    }]).then(({ error }) => { if (error) console.error('[generate-clip] audit:', error.message) })
 
     // 7. Signed URL for immediate playback
     const { data: signed } = await admin.storage.from(STORAGE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SEC)
@@ -143,7 +146,7 @@ export default async function handler(req, res) {
       clipId,
       script,
       audioUrl: signed?.signedUrl || null,
-      context: clipRow.context,
+      context,
     })
   } catch (e) {
     console.error('[api/future-self/generate-clip] error:', e)
