@@ -21,6 +21,7 @@ export const BALL_MASTERY_SKILLS = [
   { id: "three_cone_ball_mastery",     label: "Three Cone Ball Mastery",     icon: "🔺", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/three-cone-ball-mastery.mp4?v=2` }] },
   { id: "one_cone_ball_mastery_drill", label: "One Cone Ball Mastery Drill", icon: "🔻", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/one-cone-ball-mastery-drill.mp4` }] },
   { id: "juggling",                    label: "Juggling",                    icon: "🤹", videos: [{ label: "Watch", url: `${DRILL_VIDEO}/juggling.mp4` }] },
+  { id: "shooting",                    label: "Improve Your Shooting",       icon: "🥅", videos: [{ label: "Watch", url: "https://www.youtube.com/embed/aJwWT54fvmQ", youtube: true }] },
 ]
 
 export const PARENT_GUIDE = [

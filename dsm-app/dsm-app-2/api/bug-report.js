@@ -15,6 +15,7 @@
 //     stack, errorMessage, timestamp }
 
 import Anthropic from '@anthropic-ai/sdk'
+import { authGuard } from './_auth.js'
 
 const TRIAGE_PROMPT = `
 You are a senior engineer triaging a bug report from a user of a React + Vite + Supabase app called DSM (DiLorenzo Soccer Mindset). The repo is at impowerdlifestyle-code/DSM-app, source lives in dsm-app/dsm-app-2/. Stack: React 18, Supabase, Vercel functions, Anthropic SDK for AI features (Coach V).
@@ -170,13 +171,11 @@ async function pingSlack(payload, triage, issueUrl) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    return res.status(200).end()
-  }
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  // JWT-gated: only authenticated users can file reports — closes the open
+  // spam/cost vector (every POST ran a Claude triage + opened a GitHub issue).
+  // Tradeoff: a crash that breaks auth itself won't auto-report; acceptable.
+  const auth = await authGuard(req, res, {})
+  if (!auth.ok) return
 
   let payload
   try {
@@ -185,9 +184,8 @@ export default async function handler(req, res) {
 
   if (!payload?.url) return res.status(400).json({ error: 'url required' })
 
-  // This endpoint is intentionally unauthenticated (bug reports must fire even
-  // when auth is broken), so require actual report content before spending a
-  // Claude triage call + filing a GitHub issue. Blocks empty/junk spam.
+  // Require actual report content before spending a Claude triage call + filing
+  // a GitHub issue. Blocks empty/junk submissions.
   const hasContent = !!(payload.userMessage || payload.errorMessage || payload.stack)
   if (!hasContent) return res.status(400).json({ error: 'empty report', code: 'empty_report' })
 

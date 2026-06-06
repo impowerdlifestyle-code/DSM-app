@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { tokens as t } from '../styles.js'
+import { authFetch } from '../lib/authFetch.js'
 
 const CONSOLE_BUFFER_MAX = 30
 
@@ -128,9 +129,8 @@ export default function BugReporter({ user, profile }) {
       timestamp: new Date().toISOString(),
     }
     try {
-      const res = await fetch('/api/bug-report', {
+      const res = await authFetch('/api/bug-report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const json = await res.json().catch(() => ({}))
