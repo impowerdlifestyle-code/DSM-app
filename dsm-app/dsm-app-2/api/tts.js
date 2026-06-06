@@ -10,7 +10,7 @@
 
 import { authGuard } from './_auth.js'
 
-const DEFAULT_MODEL = 'eleven_monolingual_v1'
+const DEFAULT_MODEL = 'eleven_multilingual_v2'
 const DEFAULT_SETTINGS = {
   stability: 0.5,
   similarity_boost: 0.85,
