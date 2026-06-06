@@ -23,6 +23,44 @@ export async function speakText(text, voiceId) {
   }
 }
 
+// Like speakText, but resolves only when playback finishes — for the hands-free
+// call loop, which must wait for Coach to stop talking before listening again.
+// onStart(audio|null) hands back the Audio element so the caller can pause it on
+// hang-up. Always resolves (never rejects); falls back to SpeechSynthesis.
+export function speakAndWait(text, voiceId, { onStart } = {}) {
+  return new Promise((resolve) => {
+    const fallback = () => {
+      try {
+        const u = new SpeechSynthesisUtterance(text)
+        u.rate = 1.05
+        u.pitch = 0.95
+        u.onend = () => resolve(null)
+        u.onerror = () => resolve(null)
+        onStart?.(null)
+        window.speechSynthesis.speak(u)
+      } catch { resolve(null) }
+    }
+    authFetch('/api/tts', {
+      method: 'POST',
+      body: JSON.stringify(voiceId ? { text, voiceId } : { text }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`TTS proxy ${res.status}`)
+        return res.blob()
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        const done = () => { URL.revokeObjectURL(url); resolve(audio) }
+        audio.onended = done
+        audio.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+        onStart?.(audio)
+        audio.play().catch(() => { URL.revokeObjectURL(url); resolve(null) })
+      })
+      .catch(fallback)
+  })
+}
+
 export async function fetchTtsBlob(text, voiceId) {
   const res = await fetch('/api/tts', {
     method: 'POST',

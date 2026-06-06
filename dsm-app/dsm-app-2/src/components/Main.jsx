@@ -19,7 +19,8 @@ import { getWeekKey } from '../lib/dates.js'
 import { isNativeApp } from '../lib/platform.js'
 import { startDictation, speechSupported } from '../lib/speech.js'
 import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate, checkForNudge } from '../lib/coachV.js'
-import { speakText as elevenSpeak } from '../lib/elevenlabs.js'
+import { speakText as elevenSpeak, speakAndWait } from '../lib/elevenlabs.js'
+import CoachCall from './CoachCall.jsx'
 import { downloadReport } from '../lib/reports.js'
 import ActionForm from './ActionForm.jsx'
 import { C, tokens as t } from '../styles.js'
@@ -93,6 +94,15 @@ export default function Main({ user }) {
   const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [callActive, setCallActive] = useState(false)
+  const [callPhase, setCallPhase] = useState('listening')
+  const [callTranscript, setCallTranscript] = useState('')
+  const [callReply, setCallReply] = useState('')
+  const [callError, setCallError] = useState('')
+  const callActiveRef = useRef(false)
+  const callRecRef = useRef(null)
+  const callAudioRef = useRef(null)
+  const callThreadRef = useRef([])
   const [selectedAthlete, setSelectedAthlete] = useState(null)
   const [allAthletes, setAllAthletes] = useState([])
   const [allSubmissions, setAllSubmissions] = useState([])
@@ -576,6 +586,92 @@ export default function Main({ user }) {
       onError: () => setIsRecording(false),
       onEnd: () => setIsRecording(false),
     })
+  }
+
+  // ── Hands-free call with Coach V ──────────────────────────────────────────
+  // One spoken turn = listen (one-shot STT) → Coach reply (persisted to chat
+  // history, same as typing) → speak in Valentino's voice → listen again.
+  const coachExchange = async (text) => {
+    callThreadRef.current = [...callThreadRef.current, { role: 'user', content: text }].slice(-12)
+    setMessages(p => [...p, { role: 'user', content: text }])
+    saveChatMessage(user.id, 'user', text).then(({ data }) => {
+      if (data?.id) setMessages(p => p.map((m, i) =>
+        i === p.length - 1 && m.role === 'user' && m.content === text ? { ...m, id: data.id } : m))
+    })
+    const [stateDigest, memRes] = await Promise.all([getAthleteStateDigest(user.id), getCoachMemory(user.id)])
+    const { content: reply } = await getCoachVResponse({
+      messages: callThreadRef.current,
+      athleteContext: stateDigest,
+      memorySummary: memRes?.data?.athlete_summary || '',
+      memoryThemes: memRes?.data?.themes || null,
+    })
+    callThreadRef.current = [...callThreadRef.current, { role: 'assistant', content: reply }].slice(-12)
+    setMessages(p => [...p, { role: 'assistant', content: reply }])
+    saveChatMessage(user.id, 'assistant', reply)
+    bumpQuestAndRefresh('quest-coach', 1)
+    bumpMessagesSinceConsolidation(user.id).catch(() => {})
+    return reply
+  }
+
+  const runCallTurn = async () => {
+    if (!callActiveRef.current) return
+    setCallPhase('listening'); setCallTranscript(''); setCallReply('')
+    let heard = ''
+    let handled = false
+    const finish = () => { if (handled) return; handled = true; processCallTurn(heard) }
+    callRecRef.current = await startDictation({
+      continuous: false,
+      onText: (txt) => { heard = txt; setCallTranscript(txt) },
+      onError: (code) => {
+        // Hard stops (mic blocked / unsupported): halt the loop but keep the
+        // overlay up so the user sees why — the End button becomes "Close".
+        if (code === 'not-allowed' || code === 'unsupported') {
+          callActiveRef.current = false
+          setCallError(code)
+          setCallPhase('idle')
+        }
+      },
+      onEnd: finish,
+    })
+  }
+
+  const processCallTurn = async (text) => {
+    if (!callActiveRef.current) return
+    const clean = (text || '').trim()
+    if (!clean) { setCallPhase('idle'); return }
+    setCallPhase('thinking')
+    let reply, capped = false
+    try {
+      reply = await coachExchange(clean)
+    } catch (err) {
+      if (err?.code === 'daily_message_cap') { reply = err.message; capped = true }
+      else reply = "Coach V dropped for a sec — let's pick it back up."
+    }
+    if (!callActiveRef.current) return
+    setCallReply(reply); setCallPhase('speaking')
+    await speakAndWait(reply, undefined, { onStart: (a) => { callAudioRef.current = a } })
+    callAudioRef.current = null
+    if (!callActiveRef.current) return
+    if (capped) { endCall(); return }
+    runCallTurn()
+  }
+
+  const startCall = () => {
+    if (!speechSupported()) return alert('Voice calls need a browser with speech support (Safari or Chrome).')
+    setCallError(''); setCallReply(''); setCallTranscript('')
+    callThreadRef.current = messages.slice(-12).map(m => ({ role: m.role, content: m.content }))
+    callActiveRef.current = true
+    setCallActive(true)
+    runCallTurn()
+  }
+
+  const endCall = () => {
+    callActiveRef.current = false
+    setCallActive(false)
+    setCallPhase('idle')
+    try { callRecRef.current?.stop() } catch { /* ignore */ }
+    try { window.speechSynthesis?.cancel() } catch { /* ignore */ }
+    if (callAudioRef.current) { try { callAudioRef.current.pause() } catch { /* ignore */ } callAudioRef.current = null }
   }
 
   // PAYWALL CHECK — see lib/supabase.js → evaluateAccess
@@ -1065,6 +1161,16 @@ export default function Main({ user }) {
             ))}
           </>}
         </div>
+        {callActive && (
+          <CoachCall
+            phase={callPhase}
+            transcript={callTranscript}
+            reply={callReply}
+            error={callError}
+            onEnd={endCall}
+            onTapTalk={runCallTurn}
+          />
+        )}
         {drillVideo && (
           <div onClick={() => setDrillVideo(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', zIndex:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
             <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:520, display:'flex', flexDirection:'column', gap:10 }}>
@@ -1942,6 +2048,7 @@ export default function Main({ user }) {
             isRecording={isRecording}
             sendChat={sendChat}
             startVoice={startVoice}
+            onStartCall={startCall}
             rateCoachMessage={rateCoachMessage}
           />
         </div>

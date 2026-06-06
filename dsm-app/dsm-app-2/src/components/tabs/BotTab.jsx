@@ -3,7 +3,7 @@ import { SUGGESTED_QUESTIONS } from '../../lib/coachV.js'
 
 export default function BotTab({
   messages, typingMsg, chatLoading, chatEnd, chatInputRef,
-  voiceMode, setVoiceMode, isRecording, sendChat, startVoice,
+  voiceMode, setVoiceMode, isRecording, sendChat, startVoice, onStartCall,
   rateCoachMessage,
 }) {
   return (
@@ -13,10 +13,16 @@ export default function BotTab({
           <div style={C.title}>Coach Valentino</div>
           <div style={C.sub}>Your AI mindset coach</div>
         </div>
-        <button onClick={() => setVoiceMode(p => !p)}
-          style={{ background: voiceMode?t.color.text:t.color.surface, border:`1px solid ${voiceMode?t.color.text:t.color.line2}`, borderRadius:20, padding:'7px 12px', fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:voiceMode?t.color.bg:t.color.textDim, cursor:'pointer', fontFamily:'inherit' }}>
-          {voiceMode ? '🎙️ ON' : '🎙️ OFF'}
-        </button>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <button onClick={onStartCall}
+            style={{ background:t.color.pitch, border:'none', borderRadius:20, padding:'7px 14px', fontSize:10, fontWeight:800, letterSpacing:1.4, textTransform:'uppercase', color:'#fff', cursor:'pointer', fontFamily:'inherit', boxShadow:t.shadow?.pitch }}>
+            📞 Call
+          </button>
+          <button onClick={() => setVoiceMode(p => !p)}
+            style={{ background: voiceMode?t.color.text:t.color.surface, border:`1px solid ${voiceMode?t.color.text:t.color.line2}`, borderRadius:20, padding:'7px 12px', fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:voiceMode?t.color.bg:t.color.textDim, cursor:'pointer', fontFamily:'inherit' }}>
+            {voiceMode ? '🎙️ ON' : '🎙️ OFF'}
+          </button>
+        </div>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:'12px 20px' }}>
         {messages.length === 1 && (
