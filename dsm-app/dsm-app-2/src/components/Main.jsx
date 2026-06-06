@@ -103,6 +103,7 @@ export default function Main({ user }) {
   const callRecRef = useRef(null)
   const callAudioRef = useRef(null)
   const callThreadRef = useRef([])
+  const callGenRef = useRef(0)
   const [selectedAthlete, setSelectedAthlete] = useState(null)
   const [allAthletes, setAllAthletes] = useState([])
   const [allSubmissions, setAllSubmissions] = useState([])
@@ -648,10 +649,18 @@ export default function Main({ user }) {
       else reply = "Coach V dropped for a sec — let's pick it back up."
     }
     if (!callActiveRef.current) return
+    const gen = callGenRef.current
     setCallReply(reply); setCallPhase('speaking')
-    await speakAndWait(reply, undefined, { onStart: (a) => { callAudioRef.current = a } })
+    await speakAndWait(reply, undefined, {
+      onStart: (a) => {
+        callAudioRef.current = a
+        // If the call was ended while TTS was in flight, kill the audio the
+        // instant it tries to start — otherwise Coach keeps talking after hang-up.
+        if (a && callGenRef.current !== gen) { try { a.pause() } catch { /* ignore */ } }
+      },
+    })
     callAudioRef.current = null
-    if (!callActiveRef.current) return
+    if (callGenRef.current !== gen || !callActiveRef.current) return
     if (capped) { endCall(); return }
     runCallTurn()
   }
@@ -660,12 +669,14 @@ export default function Main({ user }) {
     if (!speechSupported()) return alert('Voice calls need a browser with speech support (Safari or Chrome).')
     setCallError(''); setCallReply(''); setCallTranscript('')
     callThreadRef.current = messages.slice(-12).map(m => ({ role: m.role, content: m.content }))
+    callGenRef.current++
     callActiveRef.current = true
     setCallActive(true)
     runCallTurn()
   }
 
   const endCall = () => {
+    callGenRef.current++
     callActiveRef.current = false
     setCallActive(false)
     setCallPhase('idle')

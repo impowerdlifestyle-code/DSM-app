@@ -9,7 +9,7 @@
 // buttons that "do nothing" because the cached index.html points at
 // bundle hashes that 404 on the new deploy.
 
-const CACHE = 'dsm-shell-v3'
+const CACHE = 'dsm-shell-v4'
 const SHELL = ['/', '/index.html', '/dsm-logo.png', '/manifest.json']
 
 self.addEventListener('install', (e) => {

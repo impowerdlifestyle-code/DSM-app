@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { tokens as t } from '../styles.js'
 
 // Full-screen hands-free call with Coach Valentino. Presentational only — the
@@ -17,6 +18,13 @@ const ERROR_COPY = {
 
 export default function CoachCall({ phase = 'listening', transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk }) {
   const active = phase === 'listening' || phase === 'speaking'
+
+  // Escape always hangs up — a guaranteed exit even if a tap is missed.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onEnd?.() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onEnd])
   return (
     <div style={S.overlay} className="dsm-call">
       <style>{CALL_CSS}</style>
@@ -57,12 +65,11 @@ export default function CoachCall({ phase = 'listening', transcript = '', reply 
 
       <div style={S.controls}>
         {phase === 'idle' && !error && (
-          <button onClick={onTapTalk} style={S.talkBtn} aria-label="Tap to talk">🎙️</button>
+          <button onClick={onTapTalk} style={S.talkBtn} aria-label="Tap to talk">🎙️ Tap to talk</button>
         )}
-        <button onClick={onEnd} style={S.endBtn} aria-label="End call">
-          <span style={{ transform: 'rotate(135deg)', display: 'inline-block', fontSize: 26, lineHeight: 1 }}>📞</span>
+        <button onClick={onEnd} style={S.endBtn} aria-label={error ? 'Close' : 'End call'}>
+          {error ? 'Close' : '✕  End call'}
         </button>
-        <div style={S.endLabel}>{error ? 'Close' : 'End call'}</div>
       </div>
     </div>
   )
@@ -93,19 +100,18 @@ const S = {
   orbGlyph: { fontSize: 46 },
   status: { fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: t.color.pitch },
   bubble: { minHeight: 60, textAlign: 'center', fontSize: 16, lineHeight: 1.5, padding: '0 6px', maxWidth: 380 },
-  controls: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  controls: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%', maxWidth: 320 },
   talkBtn: {
-    width: 64, height: 64, borderRadius: '50%', border: `1px solid ${t.color.line2}`,
-    background: t.color.surface, color: t.color.text, fontSize: 26, cursor: 'pointer',
-    marginBottom: 6, fontFamily: 'inherit',
+    width: '100%', borderRadius: 999, border: `1px solid ${t.color.line2}`,
+    background: t.color.surface, color: t.color.text, fontSize: 15, fontWeight: 700,
+    padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit',
   },
   endBtn: {
-    width: 72, height: 72, borderRadius: '50%', border: 'none',
+    width: '100%', borderRadius: 999, border: 'none',
     background: t.color.err, color: '#fff', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 15, fontWeight: 800, letterSpacing: 1, padding: '16px 18px',
     boxShadow: '0 10px 28px -8px rgba(0,0,0,0.6)', fontFamily: 'inherit',
   },
-  endLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: t.color.textDim, fontWeight: 700 },
 }
 
 const CALL_CSS = `
