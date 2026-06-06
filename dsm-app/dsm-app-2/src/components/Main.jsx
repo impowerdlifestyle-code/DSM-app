@@ -1120,7 +1120,7 @@ export default function Main({ user }) {
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
                         {(skill.videos||[]).map((v,vi)=>(
-                          <button key={vi} onClick={() => setDrillVideo({ url: v.url, label: skill.label, youtube: !!v.youtube })}
+                          <button key={vi} onClick={() => setDrillVideo({ url: v.url, label: skill.label })}
                             style={{ fontSize:9, color: t.color.text, fontWeight:800, letterSpacing:1, border:'none', cursor:'pointer', background:t.color.surface2, borderRadius:6, padding:'3px 7px' }}>
                             ▶ {v.label}
                           </button>
@@ -1189,13 +1189,7 @@ export default function Main({ user }) {
                 <span style={{ fontFamily:t.font.athletic, fontSize:22, color:t.color.text, textTransform:'uppercase', letterSpacing:1 }}>{drillVideo.label}</span>
                 <button onClick={() => setDrillVideo(null)} style={{ background:'none', border:'none', color:t.color.textMute, fontSize:22, cursor:'pointer', lineHeight:1 }}>✕</button>
               </div>
-              {drillVideo.youtube
-                ? <div style={{ position:'relative', width:'100%', paddingBottom:'56.25%', borderRadius:14, overflow:'hidden', background:'#000' }}>
-                    <iframe src={`${drillVideo.url}?autoplay=1&rel=0&modestbranding=1`} title={drillVideo.label}
-                      style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }}
-                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-                  </div>
-                : <video src={drillVideo.url} controls autoPlay playsInline style={{ width:'100%', borderRadius:14, background:'#000', maxHeight:'78vh' }} />}
+              <video src={drillVideo.url} controls autoPlay playsInline style={{ width:'100%', borderRadius:14, background:'#000', maxHeight:'78vh' }} />
             </div>
           </div>
         )}
