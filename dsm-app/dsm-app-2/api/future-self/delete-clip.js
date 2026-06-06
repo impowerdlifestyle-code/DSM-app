@@ -22,6 +22,9 @@ export default async function handler(req, res) {
 
   const { clipId } = body || {}
   if (!clipId) return err(res, 400, 'missing_field', 'clipId required')
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clipId)) {
+    return err(res, 400, 'bad_id', 'clipId must be a UUID')
+  }
 
   try {
     const { data: clip, error: readErr } = await admin

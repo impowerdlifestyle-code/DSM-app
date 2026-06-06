@@ -185,6 +185,12 @@ export default async function handler(req, res) {
 
   if (!payload?.url) return res.status(400).json({ error: 'url required' })
 
+  // This endpoint is intentionally unauthenticated (bug reports must fire even
+  // when auth is broken), so require actual report content before spending a
+  // Claude triage call + filing a GitHub issue. Blocks empty/junk spam.
+  const hasContent = !!(payload.userMessage || payload.errorMessage || payload.stack)
+  if (!hasContent) return res.status(400).json({ error: 'empty report', code: 'empty_report' })
+
   // Tier B — Claude triage (parallel with issue creation skipped; we want triage IN the issue)
   const triage = await triageWithClaude(payload)
 

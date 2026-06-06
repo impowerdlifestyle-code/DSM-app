@@ -604,7 +604,7 @@ export async function getLockerRoomData(athleteId, { isAdmin = false } = {}) {
     safe('coach_nudges',    supabase.from('coach_nudges').select('*').eq('user_id', athleteId).order('created_at', { ascending: false }).limit(15)),
     safe('squad_members',   supabase.from('squad_members').select('squad_id, joined_at, squads(*)').eq('user_id', athleteId)),
     isAdmin ? safe('locker_room_notes', supabase.from('locker_room_notes').select('*, profiles!locker_room_notes_author_id_fkey(full_name, email)').eq('athlete_id', athleteId).order('pinned', { ascending: false }).order('created_at', { ascending: false })) : Promise.resolve({ data: [] }),
-    safe('daily_quests',    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('quest_date', { ascending: false }).limit(30)),
+    safe('daily_quests',    supabase.from('daily_quests').select('*').eq('user_id', athleteId).order('date', { ascending: false }).limit(30)),
     safe('match_log',       supabase.from('match_log').select('*').eq('user_id', athleteId).order('match_date', { ascending: false }).limit(20)),
     safe('habits',          supabase.from('habits').select('*').eq('user_id', athleteId).maybeSingle()),
     safe('future_self_checkins', supabase.from('future_self_checkins').select('*').eq('user_id', athleteId).order('month', { ascending: false }).limit(12)),

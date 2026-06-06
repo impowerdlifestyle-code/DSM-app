@@ -369,6 +369,13 @@ export default async function handler(req, res) {
     nudgeContext,
   } = body || {}
 
+  // Chat-style actions need a non-empty thread — otherwise the Anthropic call
+  // throws on an empty messages array and surfaces as a confusing 500.
+  if ((action === 'chat' || action === 'parent_chat') &&
+      (!Array.isArray(messages) || messages.length === 0)) {
+    return res.status(400).json({ error: 'messages required', code: 'missing_messages' })
+  }
+
   // Per-user daily cap (cost guardrail). EVERY action here makes a billable
   // Anthropic call, so all of them count — capping only chat let anyone drain
   // spend via consolidate/analyze_journal/starter_plan/etc. Coaches/admins
