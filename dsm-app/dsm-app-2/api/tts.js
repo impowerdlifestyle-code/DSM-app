@@ -11,10 +11,14 @@
 import { authGuard } from './_auth.js'
 
 const DEFAULT_MODEL = 'eleven_multilingual_v2'
+// Tuned for clarity over expressiveness. High `style` + a very high
+// `similarity_boost` is the usual cause of slurred/mumbled cloned-voice output:
+// style adds instability, and over-boosted similarity drags in artifacts from
+// the source clip. Higher stability + style 0 = crisper, clearer speech.
 const DEFAULT_SETTINGS = {
-  stability: 0.5,
-  similarity_boost: 0.85,
-  style: 0.3,
+  stability: 0.6,
+  similarity_boost: 0.75,
+  style: 0,
   use_speaker_boost: true,
 }
 
