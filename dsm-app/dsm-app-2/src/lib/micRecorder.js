@@ -35,8 +35,9 @@ export async function recordUtterance({
   onError,
   onLevel,
   silenceMs = 1400,
-  maxMs = 20000,
+  maxMs = 15000,
   speakThreshold = 0.04,
+  audioCtx = null,
 } = {}) {
   let stream
   try {
@@ -62,7 +63,8 @@ export async function recordUtterance({
   const chunks = []
   mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data) }
 
-  let audioCtx, analyser, levelTimer
+  let ctx, srcNode, analyser, levelTimer
+  const ownCtx = !audioCtx
   let stopped = false
   let heardSpeech = false
   let silenceStart = 0
@@ -70,7 +72,11 @@ export async function recordUtterance({
 
   const cleanup = () => {
     if (levelTimer) clearInterval(levelTimer)
-    try { audioCtx?.close() } catch { /* ignore */ }
+    try { srcNode?.disconnect() } catch { /* ignore */ }
+    try { analyser?.disconnect() } catch { /* ignore */ }
+    // Only close a context we created — a shared one (unlocked in the call's tap
+    // gesture) must stay open and resumed for the next turn.
+    if (ownCtx) { try { ctx?.close() } catch { /* ignore */ } }
     stream.getTracks().forEach(t => t.stop())
   }
 
@@ -84,14 +90,15 @@ export async function recordUtterance({
   // AudioContext can't be created.
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext
-    audioCtx = new Ctx()
-    // iOS can hand back a suspended context on turns after the first; without a
-    // resume the analyser reads silence and the auto-stop never fires.
-    if (audioCtx.state === 'suspended') { audioCtx.resume().catch(() => {}) }
-    const src = audioCtx.createMediaStreamSource(stream)
-    analyser = audioCtx.createAnalyser()
+    ctx = audioCtx || new Ctx()
+    // iOS hands back a suspended context unless it was resumed inside a user
+    // gesture; without a running context the analyser reads silence and the
+    // auto-stop never fires. The caller resumes the shared context on tap.
+    if (ctx.state === 'suspended') { ctx.resume().catch(() => {}) }
+    srcNode = ctx.createMediaStreamSource(stream)
+    analyser = ctx.createAnalyser()
     analyser.fftSize = 512
-    src.connect(analyser)
+    srcNode.connect(analyser)
     const buf = new Uint8Array(analyser.frequencyBinCount)
     levelTimer = setInterval(() => {
       if (stopped) return

@@ -66,6 +66,10 @@ import { Home as IconHome, Activity as IconActivity, MessageCircle as IconCoach,
 const NavIcon = { Home: IconHome, Activity: IconActivity, MessageCircle: IconCoach, Users: IconUsers, Menu: IconMenu, LayoutDashboard: IconDashboard, Shield: IconShield }
 import { PLAYER, DAILY_QUESTS, XP_TABLE } from '../data/gamification.js'
 
+// Tiny silent WAV used to "bless" the call's audio element inside the tap
+// gesture so iOS lets Coach's voice play later from async code.
+const SILENT_AUDIO = 'data:audio/wav;base64,UklGRqQCAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYACAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA'
+
 
 export default function Main({ user }) {
   const navHist = useTabHistory('home')
@@ -103,6 +107,8 @@ export default function Main({ user }) {
   const callActiveRef = useRef(false)
   const callRecRef = useRef(null)
   const callAudioRef = useRef(null)
+  const callAudioCtxRef = useRef(null)
+  const callAudioElRef = useRef(null)
   const callThreadRef = useRef([])
   const callGenRef = useRef(0)
   const [selectedAthlete, setSelectedAthlete] = useState(null)
@@ -609,6 +615,7 @@ export default function Main({ user }) {
     setCallPhase('listening'); setCallTranscript(''); setCallReply(''); setCallError(''); setCallLevel(0)
     const gen = callGenRef.current
     const rec = await recordUtterance({
+      audioCtx: callAudioCtxRef.current,
       onLevel: (rms) => setCallLevel(rms),
       onError: (code) => {
         // Hard stops (mic blocked / unsupported): halt the loop but keep the
@@ -647,6 +654,7 @@ export default function Main({ user }) {
     const gen = callGenRef.current
     setCallReply(reply); setCallPhase('speaking')
     await speakAndWait(reply, undefined, {
+      audioEl: callAudioElRef.current,
       onStart: (a) => {
         callAudioRef.current = a
         // If the call was ended while TTS was in flight, kill the audio the
@@ -662,6 +670,29 @@ export default function Main({ user }) {
 
   const startCall = () => {
     if (!micSupported()) return alert('Voice calls need microphone access in this browser.')
+    // iOS only lets audio + the AudioContext start from a user gesture. Unlock
+    // both here, in the tap, and reuse them every turn — otherwise Coach's voice
+    // is blocked and the listening meter (analyser) stays suspended.
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext
+      if (Ctx) {
+        if (!callAudioCtxRef.current) callAudioCtxRef.current = new Ctx()
+        if (callAudioCtxRef.current.state === 'suspended') callAudioCtxRef.current.resume().catch(() => {})
+      }
+    } catch { /* ignore */ }
+    try {
+      if (!callAudioElRef.current) {
+        const a = new Audio()
+        a.playsInline = true
+        a.setAttribute('playsinline', '')
+        callAudioElRef.current = a
+      }
+      const a = callAudioElRef.current
+      a.muted = true
+      a.src = SILENT_AUDIO
+      const p = a.play()
+      if (p && p.then) p.then(() => { try { a.pause(); a.currentTime = 0 } catch { /* ignore */ } a.muted = false }).catch(() => { a.muted = false })
+    } catch { /* ignore */ }
     setCallError(''); setCallReply(''); setCallTranscript(''); setCallLevel(0)
     callThreadRef.current = messages.slice(-12).map(m => ({ role: m.role, content: m.content }))
     callGenRef.current++

@@ -19,10 +19,6 @@ export default function BotTab({
             style={{ background: voiceMode?t.color.text:t.color.surface, border:`1px solid ${voiceMode?t.color.text:t.color.line2}`, borderRadius:20, padding:'7px 12px', fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:voiceMode?t.color.bg:t.color.textDim, cursor:'pointer', fontFamily:'inherit' }}>
             {voiceMode ? '🔊 Aloud' : '🔇 Aloud'}
           </button>
-          <button onClick={onStartCall}
-            style={{ background:t.color.pitch, border:'none', borderRadius:20, padding:'8px 16px', fontSize:11, fontWeight:800, letterSpacing:0.8, textTransform:'uppercase', color:'#fff', cursor:'pointer', fontFamily:'inherit', boxShadow:t.shadow?.pitch, whiteSpace:'nowrap' }}>
-            🎙️ Talk to Coach Valentino
-          </button>
         </div>
       </div>
       <div style={{ flex:1, overflowY:'auto', padding:'12px 20px' }}>
@@ -131,6 +127,10 @@ export default function BotTab({
           <button onClick={() => { const v = chatInputRef.current?.value || ''; if (chatInputRef.current) chatInputRef.current.value = ''; sendChat(v) }}
             style={{ background:t.color.text, border:'none', borderRadius:10, padding:'0 17px', fontSize:17, fontWeight:700, color:t.color.bg, cursor:'pointer' }}>→</button>
         </div>
+        <button onClick={onStartCall}
+          style={{ width:'100%', marginTop:8, background:t.color.pitch, border:'none', borderRadius:12, padding:'12px 16px', fontSize:13, fontWeight:800, letterSpacing:0.8, textTransform:'uppercase', color:'#fff', cursor:'pointer', fontFamily:'inherit', boxShadow:t.shadow?.pitch }}>
+          🎙️ Talk to Coach Valentino
+        </button>
       </div>
     </div>
   )

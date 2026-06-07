@@ -27,7 +27,11 @@ export async function speakText(text, voiceId) {
 // call loop, which must wait for Coach to stop talking before listening again.
 // onStart(audio|null) hands back the Audio element so the caller can pause it on
 // hang-up. Always resolves (never rejects); falls back to SpeechSynthesis.
-export function speakAndWait(text, voiceId, { onStart } = {}) {
+// `audioEl` lets the caller pass a single HTMLAudioElement that was already
+// unlocked inside a user gesture (required on iOS — a fresh `new Audio()` played
+// from an async continuation is blocked). When given, we swap its src instead of
+// creating a new element so playback survives the autoplay policy.
+export function speakAndWait(text, voiceId, { onStart, audioEl } = {}) {
   return new Promise((resolve) => {
     const fallback = () => {
       try {
@@ -50,12 +54,16 @@ export function speakAndWait(text, voiceId, { onStart } = {}) {
       })
       .then((blob) => {
         const url = URL.createObjectURL(blob)
-        const audio = new Audio(url)
+        const audio = audioEl || new Audio()
+        audio.muted = false
+        audio.playsInline = true
+        audio.src = url
         const done = () => { URL.revokeObjectURL(url); resolve(audio) }
         audio.onended = done
         audio.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
         onStart?.(audio)
-        audio.play().catch(() => { URL.revokeObjectURL(url); resolve(null) })
+        const p = audio.play()
+        if (p && p.catch) p.catch(() => { URL.revokeObjectURL(url); fallback() })
       })
       .catch(fallback)
   })
