@@ -16,7 +16,7 @@ const ERROR_COPY = {
   unsupported:   'Voice calls aren’t supported on this device’s browser.',
 }
 
-export default function CoachCall({ phase = 'listening', level = 0, transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk }) {
+export default function CoachCall({ phase = 'listening', level = 0, transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk, onStopListening }) {
   const active = phase === 'listening' || phase === 'speaking'
   // Live mic level drives the orb scale while listening so it's obvious the AI
   // is hearing you. Clamped so a loud room can't blow it up.
@@ -69,6 +69,9 @@ export default function CoachCall({ phase = 'listening', level = 0, transcript =
       </div>
 
       <div style={S.controls}>
+        {phase === 'listening' && !error && (
+          <button onClick={onStopListening} style={S.talkBtn} aria-label="Done talking">✓ Done talking</button>
+        )}
         {phase === 'idle' && !error && (
           <button onClick={onTapTalk} style={S.talkBtn} aria-label="Tap to talk">🎙️ Tap to talk</button>
         )}

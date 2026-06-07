@@ -63,7 +63,7 @@ export async function recordUtterance({
   const chunks = []
   mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data) }
 
-  let ctx, srcNode, analyser, levelTimer
+  let ctx, srcNode, analyser, sinkNode, levelTimer
   const ownCtx = !audioCtx
   let stopped = false
   let heardSpeech = false
@@ -74,6 +74,7 @@ export async function recordUtterance({
     if (levelTimer) clearInterval(levelTimer)
     try { srcNode?.disconnect() } catch { /* ignore */ }
     try { analyser?.disconnect() } catch { /* ignore */ }
+    try { sinkNode?.disconnect() } catch { /* ignore */ }
     // Only close a context we created — a shared one (unlocked in the call's tap
     // gesture) must stay open and resumed for the next turn.
     if (ownCtx) { try { ctx?.close() } catch { /* ignore */ } }
@@ -99,6 +100,15 @@ export async function recordUtterance({
     analyser = ctx.createAnalyser()
     analyser.fftSize = 512
     srcNode.connect(analyser)
+    // iOS/Safari won't actually run the analyser unless the graph reaches the
+    // destination. Route through a zero-gain node so it processes silently (no
+    // feedback) — without this the level reads flat and auto-stop never fires.
+    try {
+      sinkNode = ctx.createGain()
+      sinkNode.gain.value = 0
+      analyser.connect(sinkNode)
+      sinkNode.connect(ctx.destination)
+    } catch { /* ignore — Chrome runs the analyser without it */ }
     const buf = new Uint8Array(analyser.frequencyBinCount)
     levelTimer = setInterval(() => {
       if (stopped) return

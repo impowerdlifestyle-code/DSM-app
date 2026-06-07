@@ -1208,6 +1208,7 @@ export default function Main({ user }) {
             error={callError}
             onEnd={endCall}
             onTapTalk={runCallTurn}
+            onStopListening={() => { try { callRecRef.current?.stop() } catch { /* ignore */ } }}
           />
         )}
         {drillVideo && (
