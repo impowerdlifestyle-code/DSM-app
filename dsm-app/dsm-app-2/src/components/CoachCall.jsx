@@ -5,7 +5,7 @@ import { tokens as t } from '../styles.js'
 // listen→reply→speak loop lives in Main.jsx and drives `phase`:
 //   listening | thinking | speaking | idle
 const PHASE_COPY = {
-  listening: 'Listening…',
+  listening: '● Listening',
   thinking:  'Thinking…',
   speaking:  'Coach is talking…',
   idle:      'Tap to talk',
@@ -16,8 +16,11 @@ const ERROR_COPY = {
   unsupported:   'Voice calls aren’t supported on this device’s browser.',
 }
 
-export default function CoachCall({ phase = 'listening', transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk }) {
+export default function CoachCall({ phase = 'listening', level = 0, transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk }) {
   const active = phase === 'listening' || phase === 'speaking'
+  // Live mic level drives the orb scale while listening so it's obvious the AI
+  // is hearing you. Clamped so a loud room can't blow it up.
+  const listenScale = phase === 'listening' ? 1 + Math.min(level * 2.2, 0.32) : 1
 
   // Escape always hangs up — a guaranteed exit even if a tap is missed.
   useEffect(() => {
@@ -40,6 +43,8 @@ export default function CoachCall({ phase = 'listening', transcript = '', reply 
           style={{
             ...S.orb,
             borderColor: phase === 'thinking' ? t.color.line2 : t.color.pitchEdge,
+            transform: `scale(${listenScale})`,
+            transition: 'transform 90ms ease-out, border-color 240ms ease',
           }}
         >
           <div style={S.orbInner}>

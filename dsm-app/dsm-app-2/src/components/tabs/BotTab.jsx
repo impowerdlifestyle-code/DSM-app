@@ -3,7 +3,7 @@ import { SUGGESTED_QUESTIONS } from '../../lib/coachV.js'
 
 export default function BotTab({
   messages, typingMsg, chatLoading, chatEnd, chatInputRef,
-  voiceMode, setVoiceMode, isRecording, sendChat, startVoice, onStartCall,
+  voiceMode, setVoiceMode, sendChat, onStartCall,
   rateCoachMessage,
 }) {
   return (
@@ -14,13 +14,14 @@ export default function BotTab({
           <div style={C.sub}>Your AI mindset coach</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={onStartCall}
-            style={{ background:t.color.pitch, border:'none', borderRadius:20, padding:'7px 14px', fontSize:10, fontWeight:800, letterSpacing:1.4, textTransform:'uppercase', color:'#fff', cursor:'pointer', fontFamily:'inherit', boxShadow:t.shadow?.pitch }}>
-            📞 Call
-          </button>
           <button onClick={() => setVoiceMode(p => !p)}
+            title="Read Coach's replies aloud"
             style={{ background: voiceMode?t.color.text:t.color.surface, border:`1px solid ${voiceMode?t.color.text:t.color.line2}`, borderRadius:20, padding:'7px 12px', fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:voiceMode?t.color.bg:t.color.textDim, cursor:'pointer', fontFamily:'inherit' }}>
-            {voiceMode ? '🎙️ ON' : '🎙️ OFF'}
+            {voiceMode ? '🔊 Aloud' : '🔇 Aloud'}
+          </button>
+          <button onClick={onStartCall}
+            style={{ background:t.color.pitch, border:'none', borderRadius:20, padding:'8px 16px', fontSize:11, fontWeight:800, letterSpacing:0.8, textTransform:'uppercase', color:'#fff', cursor:'pointer', fontFamily:'inherit', boxShadow:t.shadow?.pitch, whiteSpace:'nowrap' }}>
+            🎙️ Talk to Coach Valentino
           </button>
         </div>
       </div>
@@ -121,21 +122,12 @@ export default function BotTab({
         <div ref={chatEnd} />
       </div>
       <div style={{ padding:'10px 20px 12px', borderTop:`1px solid ${t.color.line}` }}>
-        {voiceMode && (
-          <div style={{ textAlign:'center', marginBottom:10 }}>
-            <button onClick={startVoice} style={{ width:62, height:62, borderRadius:'50%', background: isRecording?t.color.text:t.color.surface, border:`2px solid ${isRecording?t.color.text:t.color.line2}`, fontSize:22, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', boxShadow: isRecording?'0 0 24px rgba(255,255,255,0.25)':'none', transition:'all 200ms' }}>
-              {isRecording ? '⏹️' : '🎙️'}
-            </button>
-            <div style={{ fontSize:9, color: isRecording?t.color.text:t.color.textMute, fontWeight:700, letterSpacing:2.4, marginTop:8, textTransform:'uppercase' }}>{isRecording ? '● Recording…' : 'Tap to speak'}</div>
-          </div>
-        )}
         <div style={{ display:'flex', gap:8 }}>
           <input style={{ ...C.inp, flex:1 }} placeholder="Ask Coach Valentino…"
             defaultValue=""
             autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
             ref={el => { if (el) chatInputRef.current = el }}
             onKeyDown={e => { if (e.key === 'Enter') { const v = e.target.value; e.target.value = ''; sendChat(v) } }} />
-          {!voiceMode && <button onClick={startVoice} style={{ background:t.color.surface, border:`1px solid ${t.color.line2}`, borderRadius:10, padding:'0 14px', fontSize:17, cursor:'pointer', color:t.color.text }}>🎙️</button>}
           <button onClick={() => { const v = chatInputRef.current?.value || ''; if (chatInputRef.current) chatInputRef.current.value = ''; sendChat(v) }}
             style={{ background:t.color.text, border:'none', borderRadius:10, padding:'0 17px', fontSize:17, fontWeight:700, color:t.color.bg, cursor:'pointer' }}>→</button>
         </div>

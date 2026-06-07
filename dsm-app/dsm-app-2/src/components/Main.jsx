@@ -17,7 +17,8 @@ import {
 } from '../lib/constants.js'
 import { getWeekKey } from '../lib/dates.js'
 import { isNativeApp } from '../lib/platform.js'
-import { startDictation, speechSupported } from '../lib/speech.js'
+import { recordUtterance, micSupported } from '../lib/micRecorder.js'
+import { transcribe } from '../lib/stt.js'
 import { SUGGESTED_QUESTIONS, getCoachVResponse, consolidateMemory, shouldConsolidate, checkForNudge } from '../lib/coachV.js'
 import { speakText as elevenSpeak, speakAndWait } from '../lib/elevenlabs.js'
 import CoachCall from './CoachCall.jsx'
@@ -93,9 +94,9 @@ export default function Main({ user }) {
   const nudgeCheckedRef = useRef(false)
   const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
   const [callActive, setCallActive] = useState(false)
   const [callPhase, setCallPhase] = useState('listening')
+  const [callLevel, setCallLevel] = useState(0)
   const [callTranscript, setCallTranscript] = useState('')
   const [callReply, setCallReply] = useState('')
   const [callError, setCallError] = useState('')
@@ -578,17 +579,6 @@ export default function Main({ user }) {
   }
 
 
-  const startVoice = async () => {
-    if (!speechSupported()) return alert('Voice input not available on this device.')
-    setIsRecording(true)
-    await startDictation({
-      continuous: false,
-      onText: (txt) => { if (txt) sendChat(txt) },
-      onError: () => setIsRecording(false),
-      onEnd: () => setIsRecording(false),
-    })
-  }
-
   // ── Hands-free call with Coach V ──────────────────────────────────────────
   // One spoken turn = listen (one-shot STT) → Coach reply (persisted to chat
   // history, same as typing) → speak in Valentino's voice → listen again.
@@ -616,24 +606,29 @@ export default function Main({ user }) {
 
   const runCallTurn = async () => {
     if (!callActiveRef.current) return
-    setCallPhase('listening'); setCallTranscript(''); setCallReply('')
-    let heard = ''
-    let handled = false
-    const finish = () => { if (handled) return; handled = true; processCallTurn(heard) }
-    callRecRef.current = await startDictation({
-      continuous: false,
-      onText: (txt) => { heard = txt; setCallTranscript(txt) },
+    setCallPhase('listening'); setCallTranscript(''); setCallReply(''); setCallError(''); setCallLevel(0)
+    const gen = callGenRef.current
+    const rec = await recordUtterance({
+      onLevel: (rms) => setCallLevel(rms),
       onError: (code) => {
         // Hard stops (mic blocked / unsupported): halt the loop but keep the
         // overlay up so the user sees why — the End button becomes "Close".
-        if (code === 'not-allowed' || code === 'unsupported') {
-          callActiveRef.current = false
-          setCallError(code)
-          setCallPhase('idle')
-        }
+        callActiveRef.current = false
+        setCallError(code === 'not-allowed' ? 'not-allowed' : 'unsupported')
+        setCallPhase('idle')
       },
-      onEnd: finish,
     })
+    callRecRef.current = rec
+    const captured = await rec.promise
+    setCallLevel(0)
+    if (!callActiveRef.current || callGenRef.current !== gen) return
+    if (!captured) { setCallPhase('idle'); return }
+    setCallPhase('thinking')
+    let heard = ''
+    try { heard = await transcribe(captured.blob, captured.mimeType) } catch { heard = '' }
+    if (!callActiveRef.current || callGenRef.current !== gen) return
+    setCallTranscript(heard)
+    processCallTurn(heard)
   }
 
   const processCallTurn = async (text) => {
@@ -666,8 +661,8 @@ export default function Main({ user }) {
   }
 
   const startCall = () => {
-    if (!speechSupported()) return alert('Voice calls need a browser with speech support (Safari or Chrome).')
-    setCallError(''); setCallReply(''); setCallTranscript('')
+    if (!micSupported()) return alert('Voice calls need microphone access in this browser.')
+    setCallError(''); setCallReply(''); setCallTranscript(''); setCallLevel(0)
     callThreadRef.current = messages.slice(-12).map(m => ({ role: m.role, content: m.content }))
     callGenRef.current++
     callActiveRef.current = true
@@ -680,6 +675,7 @@ export default function Main({ user }) {
     callActiveRef.current = false
     setCallActive(false)
     setCallPhase('idle')
+    setCallLevel(0)
     try { callRecRef.current?.stop() } catch { /* ignore */ }
     try { window.speechSynthesis?.cancel() } catch { /* ignore */ }
     if (callAudioRef.current) { try { callAudioRef.current.pause() } catch { /* ignore */ } callAudioRef.current = null }
@@ -1175,6 +1171,7 @@ export default function Main({ user }) {
         {callActive && (
           <CoachCall
             phase={callPhase}
+            level={callLevel}
             transcript={callTranscript}
             reply={callReply}
             error={callError}
@@ -2056,9 +2053,7 @@ export default function Main({ user }) {
             chatInputRef={chatInputRef}
             voiceMode={voiceMode}
             setVoiceMode={setVoiceMode}
-            isRecording={isRecording}
             sendChat={sendChat}
-            startVoice={startVoice}
             onStartCall={startCall}
             rateCoachMessage={rateCoachMessage}
           />
