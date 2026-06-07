@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useDeferredValue } from 'react'
 import { tokens as t, C } from '../../styles.js'
 import { authFetch } from '../../lib/authFetch.js'
 import {
@@ -39,7 +39,6 @@ const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' }
 export default function AdminTab({ user }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('')
   const [sortBy, setSortBy] = useState('recent')
   const [selectedId, setSelectedId] = useState(null)
   const [section, setSection] = useState('athletes')
@@ -91,7 +90,6 @@ export default function AdminTab({ user }) {
           athletes={athletes}
           coaches={coaches}
           onReload={load}
-          filter={filter} setFilter={setFilter}
           sortBy={sortBy} setSortBy={setSortBy}
           onSelectAthlete={setSelectedId}
           onAssign={(a) => setAssignFor(a)}
@@ -245,11 +243,16 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   )
 }
 
-function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onArchive, onDelete, onManualGrantConsent, onCopyConsentLink }) {
+function AthletesView({ loading, athletes, coaches, onReload, sortBy, setSortBy, onSelectAthlete, onAssign, onAssignTask, onPromote, onChangeTrack, onArchive, onDelete, onManualGrantConsent, onCopyConsentLink }) {
   const [addOpen, setAddOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [copied, setCopied] = useState(false)
   const [minting, setMinting] = useState(false)
+  // Search state is local + deferred: the input updates instantly on every
+  // keystroke, while the expensive list filter/sort runs at lower priority so
+  // typing stays smooth on mobile (was re-rendering the whole grid per char).
+  const [filter, setFilter] = useState('')
+  const deferredFilter = useDeferredValue(filter)
 
   async function copyInvite() {
     if (minting) return
@@ -261,26 +264,28 @@ function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter,
     setCopied(true); setTimeout(() => setCopied(false), 1800)
   }
   const [trackFilter, setTrackFilter] = useState('all')
-  let visible = athletes.filter(a => showArchived ? a.archived_at : !a.archived_at)
-  if (trackFilter !== 'all') {
-    visible = visible.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === trackFilter)
-  }
-  if (filter) {
-    const q = filter.toLowerCase()
-    visible = visible.filter(a =>
-      (a.full_name || '').toLowerCase().includes(q) ||
-      (a.email || '').toLowerCase().includes(q) ||
-      (a.assigned_coach || '').toLowerCase().includes(q)
-    )
-  }
-  visible = [...visible].sort((a, b) => {
-    if (sortBy === 'xp')         return (b.totalXp || 0) - (a.totalXp || 0)
-    if (sortBy === 'streak')     return (b.streak || 0) - (a.streak || 0)
-    if (sortBy === 'active')     return (a.lastChatAt || '0').localeCompare(b.lastChatAt || '0') * -1
-    if (sortBy === 'stale')      return (a.lastChatAt || '9').localeCompare(b.lastChatAt || '9')
-    if (sortBy === 'unassigned') return (a.assigned_coach ? 1 : 0) - (b.assigned_coach ? 1 : 0)
-    return (b.created_at || '').localeCompare(a.created_at || '')
-  })
+  const visible = useMemo(() => {
+    let list = athletes.filter(a => showArchived ? a.archived_at : !a.archived_at)
+    if (trackFilter !== 'all') {
+      list = list.filter(a => (a.program_track || (a.age >= 13 ? 'teen' : 'youth')) === trackFilter)
+    }
+    const q = deferredFilter.trim().toLowerCase()
+    if (q) {
+      list = list.filter(a =>
+        (a.full_name || '').toLowerCase().includes(q) ||
+        (a.email || '').toLowerCase().includes(q) ||
+        (a.assigned_coach || '').toLowerCase().includes(q)
+      )
+    }
+    return [...list].sort((a, b) => {
+      if (sortBy === 'xp')         return (b.totalXp || 0) - (a.totalXp || 0)
+      if (sortBy === 'streak')     return (b.streak || 0) - (a.streak || 0)
+      if (sortBy === 'active')     return (a.lastChatAt || '0').localeCompare(b.lastChatAt || '0') * -1
+      if (sortBy === 'stale')      return (a.lastChatAt || '9').localeCompare(b.lastChatAt || '9')
+      if (sortBy === 'unassigned') return (a.assigned_coach ? 1 : 0) - (b.assigned_coach ? 1 : 0)
+      return (b.created_at || '').localeCompare(a.created_at || '')
+    })
+  }, [athletes, showArchived, trackFilter, deferredFilter, sortBy])
 
   const totals = {
     athletes: athletes.length,
@@ -325,6 +330,13 @@ function AthletesView({ loading, athletes, coaches, onReload, filter, setFilter,
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Search name, email, or coach…"
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
           style={inputStyle()}
         />
         <select value={trackFilter} onChange={e => setTrackFilter(e.target.value)} style={{ ...inputStyle(), width: 130, flex: 'none' }}>
@@ -1057,6 +1069,8 @@ function AssignCoachModal({ athlete, coaches, athletes = [], onClose, onAssigned
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Search name or email…"
+          type="search" inputMode="search" enterKeyHint="search"
+          autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false}
           style={inputStyle()}
         />
 
@@ -1335,7 +1349,7 @@ function AddMemberModal({ groupId, coaches, athletes, existingIds, onClose, onAd
           <button onClick={() => setTab('coaches')}  style={miniTab(tab === 'coaches')}>Coaches</button>
         </div>
 
-        <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Search…" style={inputStyle()} />
+        <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Search…" type="search" inputMode="search" enterKeyHint="search" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} style={inputStyle()} />
 
         <div style={{ maxHeight: 320, overflowY: 'auto', marginTop: 10 }}>
           {visible.map(p => (
