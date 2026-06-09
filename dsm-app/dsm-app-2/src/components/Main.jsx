@@ -856,6 +856,10 @@ export default function Main({ user }) {
 
   // Edge-swipe back: track touchstart on left edge, fire back if user drags right ≥80px
   const swipeRef = useRef({ x: 0, y: 0, active: false })
+  // Keep latest navHist in a ref so the touch listeners bind ONCE instead of
+  // rebinding on every render (navHist is a fresh object each render).
+  const navHistRef = useRef(navHist)
+  navHistRef.current = navHist
   useEffect(() => {
     function onStart(e) {
       const t0 = e.touches?.[0]
@@ -873,7 +877,7 @@ export default function Main({ user }) {
       // mostly horizontal, ≥80px right swipe from edge
       if (dx >= 80 && dy < 50) {
         swipeRef.current.active = false
-        if (navHist.canBack) navHist.back()
+        if (navHistRef.current.canBack) navHistRef.current.back()
       }
     }
     function onEnd() { swipeRef.current.active = false }
@@ -885,7 +889,7 @@ export default function Main({ user }) {
       window.removeEventListener('touchmove', onMove)
       window.removeEventListener('touchend', onEnd)
     }
-  }, [navHist])
+  }, [])
 
   const [showBadgeHints, setShowBadgeHints] = useState(false)
   const [showTour, setShowTour] = useState(false)

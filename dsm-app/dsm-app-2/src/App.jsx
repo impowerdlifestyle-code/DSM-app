@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase, redeemParentInvite } from './lib/supabase.js'
 import { authFetch } from './lib/authFetch.js'
 import Auth from './components/Auth.jsx'
@@ -35,8 +35,10 @@ export default function App() {
   // "first login" heuristic was also wrong on incognito / cleared-data
   // returning users — flagged them as new every session.
 
+  const userIdRef = useRef(null)
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      userIdRef.current = session?.user?.id ?? null
       setUser(session?.user ?? null)
       setLoading(false)
     })
@@ -47,6 +49,11 @@ export default function App() {
       // them straight into Main with a temporary session.
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
       if (event === 'SIGNED_OUT')        setPasswordRecovery(false)
+      // TOKEN_REFRESHED (hourly) fires with the same user — skip it, otherwise a
+      // new user object identity + role reset re-renders all of Main for nothing.
+      const nextId = session?.user?.id ?? null
+      if (nextId === userIdRef.current) return
+      userIdRef.current = nextId
       setUser(session?.user ?? null)
       setRole(null)
     })

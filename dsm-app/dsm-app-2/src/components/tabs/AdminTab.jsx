@@ -39,6 +39,7 @@ const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' }
 export default function AdminTab({ user }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadErr, setLoadErr] = useState('')
   const [sortBy, setSortBy] = useState('recent')
   const [selectedId, setSelectedId] = useState(null)
   const [section, setSection] = useState('athletes')
@@ -51,7 +52,8 @@ export default function AdminTab({ user }) {
 
   async function load() {
     setLoading(true)
-    const { data } = await getAdminAthleteList()
+    const { data, error } = await getAdminAthleteList()
+    setLoadErr(error ? (error.message || 'Could not load athletes') : '')
     setRows(data)
     setLoading(false)
   }
@@ -83,6 +85,13 @@ export default function AdminTab({ user }) {
       </div>
 
       <SectionToggle section={section} setSection={setSection} athleteCount={athletes.length} coachCount={coaches.length} />
+
+      {loadErr && (
+        <div style={{ margin: '12px 0', padding: '10px 14px', borderRadius: 10, background: 'rgba(248,113,113,0.12)', border: `1px solid ${t.color.err}`, color: t.color.err, fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+          <span>Couldn’t load athletes: {loadErr}</span>
+          <button onClick={load} style={{ background: 'transparent', border: `1px solid ${t.color.err}`, color: t.color.err, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Retry</button>
+        </div>
+      )}
 
       {section === 'athletes' && (
         <AthletesView

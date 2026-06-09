@@ -672,8 +672,12 @@ export async function getAdminAthleteList() {
     .from('profiles').select(FULL).order('created_at', { ascending: false })
   if (selErr) {
     // archived_at column not migrated yet — retry without it so the list still loads
-    ;({ data: profiles } = await supabase
-      .from('profiles').select(FULL.replace(', archived_at', '')).order('created_at', { ascending: false }))
+    const retry = await supabase
+      .from('profiles').select(FULL.replace(', archived_at', '')).order('created_at', { ascending: false })
+    profiles = retry.data
+    // If the retry also failed, surface it — otherwise the admin sees an empty
+    // roster ("No athletes match") that's indistinguishable from a real outage.
+    if (retry.error) return { data: [], error: retry.error }
   }
   if (!profiles) return { data: [], error: null }
 
