@@ -82,9 +82,9 @@ export const C = {
   },
   hdr: {
     paddingTop: 'max(18px, env(safe-area-inset-top))',
-    paddingRight: 22,
+    paddingRight: 16,
     paddingBottom: 14,
-    paddingLeft: 22,
+    paddingLeft: 16,
     borderBottom: `1px solid ${t.color.line}`,
     display: 'flex',
     alignItems: 'center',
