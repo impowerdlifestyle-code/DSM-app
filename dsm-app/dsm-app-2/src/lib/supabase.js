@@ -1166,6 +1166,79 @@ export async function getRecentActivity({ limit = 60 } = {}) {
   return { data: events.slice(0, limit), error: null }
 }
 
+// ─── ADMIN: app-wide activity pulse (all athletes; admin sees all via RLS) ───
+// Unlike getRecentActivity (coached athletes only), this is the owner's
+// whole-app engagement view: recent events across every athlete + aggregates.
+export async function getAppActivity({ days = 7 } = {}) {
+  const since = new Date(Date.now() - days * 86400000).toISOString()
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const todayIso = todayStart.toISOString()
+
+  const recent = (table, extra = '') => supabase.from(table)
+    .select(`id, user_id, created_at${extra}`)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false }).limit(500)
+
+  const [profilesRes, asRes, ckRes, vjRes, chRes, bmRes, mlRes] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, email, created_at').eq('role', 'athlete'),
+    recent('action_steps', ', mental'),
+    recent('weekly_checkins', ', confidence_level'),
+    recent('voice_journal', ', title'),
+    supabase.from('chat_history').select('id, user_id, created_at, role').eq('role', 'user').gte('created_at', since).order('created_at', { ascending: false }).limit(500),
+    recent('ball_mastery'),
+    recent('match_log'),
+  ])
+
+  const athletes = profilesRes.data || []
+  const nameById = new Map(athletes.map(p => [p.id, p.full_name || p.email || 'Athlete']))
+  const nameFor = (id) => nameById.get(id) || 'Athlete'
+
+  const events = []
+  const push = (rows, kind, fmt) => { for (const r of (rows || [])) events.push({ id: `${kind}-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind, summary: fmt(r) }) }
+  push(asRes.data, 'action_step', r => `Logged action step · mental ${r.mental ?? '—'}`)
+  push(ckRes.data, 'checkin',     r => `Weekly check-in · confidence ${r.confidence_level ?? '—'}`)
+  push(vjRes.data, 'voice',       r => `Voice journal · ${r.title || 'untitled'}`)
+  push(chRes.data, 'chat',        () => 'Messaged Coach V')
+  push(bmRes.data, 'ball',        () => 'Ball mastery session')
+  push(mlRes.data, 'match',       () => 'Match logged')
+  events.sort((a, b) => (b.at || '').localeCompare(a.at || ''))
+
+  const byType = {}, byAthlete = {}
+  const activeWeek = new Set(), activeToday = new Set()
+  let eventsToday = 0
+  for (const e of events) {
+    byType[e.kind] = (byType[e.kind] || 0) + 1
+    byAthlete[e.athleteId] = (byAthlete[e.athleteId] || 0) + 1
+    activeWeek.add(e.athleteId)
+    if (e.at >= todayIso) { activeToday.add(e.athleteId); eventsToday++ }
+  }
+  const topAthletes = Object.entries(byAthlete)
+    .map(([id, count]) => ({ id, name: nameFor(id), count }))
+    .sort((a, b) => b.count - a.count).slice(0, 5)
+  const quiet = athletes
+    .filter(p => !activeWeek.has(p.id))
+    .map(p => ({ id: p.id, name: p.full_name || p.email || 'Athlete' }))
+
+  return {
+    data: {
+      events: events.slice(0, 50),
+      byType,
+      topAthletes,
+      quiet,
+      stats: {
+        totalAthletes: athletes.length,
+        activeWeek: activeWeek.size,
+        activeToday: activeToday.size,
+        eventsWeek: events.length,
+        eventsToday,
+        newThisWeek: athletes.filter(p => p.created_at && p.created_at >= since).length,
+      },
+      days,
+    },
+    error: null,
+  }
+}
+
 // ─── MESSAGE FEEDBACK (👍/👎) ────────────────────────────────
 export async function rateMessage(userId, messageId, rating, note = null) {
   const { data, error } = await supabase

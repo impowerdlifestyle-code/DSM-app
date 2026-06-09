@@ -21,6 +21,7 @@ import {
   addGroupMember,
   removeGroupMember,
   getRecentActivity,
+  getAppActivity,
   getGroupActivity,
   assignActivityToGroup,
   getGroupReports,
@@ -42,7 +43,7 @@ export default function AdminTab({ user }) {
   const [loadErr, setLoadErr] = useState('')
   const [sortBy, setSortBy] = useState('recent')
   const [selectedId, setSelectedId] = useState(null)
-  const [section, setSection] = useState('athletes')
+  const [section, setSection] = useState('pulse')
   const [assignFor, setAssignFor] = useState(null)
   const [taskFor, setTaskFor] = useState(null)
   const [addCoachOpen, setAddCoachOpen] = useState(false)
@@ -167,6 +168,10 @@ export default function AdminTab({ user }) {
         <GroupsView user={user} coaches={coaches} athletes={athletes} onViewAthlete={setSelectedId} />
       )}
 
+      {section === 'pulse' && (
+        <PulseView onViewAthlete={setSelectedId} />
+      )}
+
       {section === 'activity' && (
         <ActivityView />
       )}
@@ -222,6 +227,7 @@ export default function AdminTab({ user }) {
 }
 
 function sectionTitle(s) {
+  if (s === 'pulse')    return 'App pulse'
   if (s === 'coaches')  return 'Coaches'
   if (s === 'groups')   return 'Groups'
   if (s === 'activity') return 'Activity'
@@ -244,6 +250,7 @@ function SectionToggle({ section, setSection, athleteCount, coachCount }) {
   })
   return (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+      <button {...tab('pulse',    'Pulse')} />
       <button {...tab('athletes', `Athletes · ${athleteCount}`)} />
       <button {...tab('coaches',  `Coaches · ${coachCount}`)} />
       <button {...tab('groups',   'Groups')} />
@@ -1000,6 +1007,91 @@ function GroupActivityView({ groupId, onViewAthlete }) {
   )
 }
 
+// App-wide engagement overview — the owner's "how is the whole app doing" view.
+function PulseView({ onViewAthlete }) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  async function load() {
+    setLoading(true)
+    const { data } = await getAppActivity({ days: 7 })
+    setData(data)
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  if (loading) return <div style={{ color: t.color.textDim, fontSize: 13 }}>Loading app pulse…</div>
+  if (!data) return <div style={emptyBox}>Couldn’t load activity.</div>
+
+  const { stats, byType, topAthletes, quiet, events } = data
+  const typeRows = Object.entries(byType).sort((a, b) => b[1] - a[1])
+  const maxType = Math.max(1, ...typeRows.map(([, c]) => c))
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10 }}>
+        <div style={{ fontSize: 11, color: t.color.textDim, letterSpacing: 1, fontWeight: 600, textTransform: 'uppercase' }}>Last 7 days</div>
+        <button onClick={load} style={addBtn}>↻ Refresh</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 18 }}>
+        <Stat label="Active 7d" value={`${stats.activeWeek}/${stats.totalAthletes}`} />
+        <Stat label="Active today" value={stats.activeToday} />
+        <Stat label="Events 7d" value={stats.eventsWeek} />
+        <Stat label="New 7d" value={stats.newThisWeek} />
+      </div>
+
+      <div style={pulseColLbl}>ACTIVITY BY TYPE</div>
+      {!typeRows.length && <div style={emptyBox}>No activity in the last 7 days.</div>}
+      {typeRows.map(([kind, count]) => (
+        <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ ...kindBadge(kind), minWidth: 64, textAlign: 'center' }}>{kindLabel(kind)}</span>
+          <div style={{ flex: 1, height: 8, background: t.color.surface2, borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ width: `${(count / maxType) * 100}%`, height: '100%', background: t.color.pitch, borderRadius: 999 }} />
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 800, color: t.color.text, minWidth: 28, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+        </div>
+      ))}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '18px 0' }}>
+        <div>
+          <div style={pulseColLbl}>🔥 Most active</div>
+          {topAthletes.length ? topAthletes.map(a => (
+            <button key={a.id} onClick={() => onViewAthlete(a.id)} style={pulseRowBtn}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+              <span style={{ fontWeight: 800, color: t.color.pitch }}>{a.count}</span>
+            </button>
+          )) : <div style={pulseEmpty}>—</div>}
+        </div>
+        <div>
+          <div style={pulseColLbl}>💤 Going quiet ({quiet.length})</div>
+          {quiet.length ? quiet.slice(0, 6).map(a => (
+            <button key={a.id} onClick={() => onViewAthlete(a.id)} style={pulseRowBtn}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+              <span style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 1, whiteSpace: 'nowrap' }}>7d+</span>
+            </button>
+          )) : <div style={pulseEmpty}>Everyone’s active 🎉</div>}
+        </div>
+      </div>
+
+      <div style={pulseColLbl}>RECENT ACTIVITY · APP-WIDE</div>
+      {!events.length && <div style={emptyBox}>Nothing yet.</div>}
+      {events.map(ev => (
+        <button key={ev.id} onClick={() => onViewAthlete(ev.athleteId)} style={{ ...activityRow, display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.color.text }}>{ev.athlete}</div>
+            <div style={{ fontSize: 10, color: t.color.textMute, whiteSpace: 'nowrap' }}>{timeAgo(ev.at)}</div>
+          </div>
+          <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 4 }}>
+            <span style={kindBadge(ev.kind)}>{kindLabel(ev.kind)}</span>
+            <span style={{ marginLeft: 8 }}>{ev.summary}</span>
+          </div>
+        </button>
+      ))}
+    </>
+  )
+}
+
 function ActivityView() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1506,10 +1598,25 @@ function kindLabel(k) {
   if (k === 'voice')       return 'VOICE'
   if (k === 'chat')        return 'CHAT'
   if (k === 'task_done')   return 'TASK ✓'
+  if (k === 'ball')        return 'BALL'
+  if (k === 'match')       return 'MATCH'
   return k.toUpperCase()
 }
 
 // ─── STYLES ───────────────────────────────────────────────────
+
+const pulseColLbl = {
+  fontSize: 10, letterSpacing: 1.6, color: t.color.textMute,
+  fontWeight: 700, textTransform: 'uppercase', marginBottom: 8,
+}
+const pulseRowBtn = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+  width: '100%', padding: '9px 11px', marginBottom: 6,
+  background: t.color.surface, border: `1px solid ${t.color.line}`,
+  borderRadius: 10, color: t.color.text, cursor: 'pointer',
+  fontFamily: t.font.sans, fontSize: 12, fontWeight: 600, textAlign: 'left',
+}
+const pulseEmpty = { fontSize: 12, color: t.color.textMute, fontStyle: 'italic', padding: '4px 0' }
 
 const inputStyle = () => ({
   flex: 1, width: '100%', padding: '10px 12px',
@@ -1625,6 +1732,8 @@ const kindBadge = (kind) => {
     voice:       '#f472b6',
     chat:        '#fbbf24',
     task_done:   t.color.pitch,
+    ball:        '#fb923c',
+    match:       '#c084fc',
   }[kind] || t.color.textDim
   return {
     display: 'inline-block',
