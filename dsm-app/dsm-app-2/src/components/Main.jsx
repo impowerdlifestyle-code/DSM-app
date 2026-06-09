@@ -1004,6 +1004,7 @@ export default function Main({ user }) {
           display: 'flex', alignItems: 'center', gap: 11,
           background: 'transparent', border: 'none', padding: 0,
           cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', textAlign: 'left',
+          flex: '1 1 auto', minWidth: 0,
         }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <img src="/dsm-logo.png" alt="Di Lorenzo Mindset" style={{
@@ -1018,21 +1019,21 @@ export default function Main({ user }) {
               fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 0.5, fontWeight: 400,
             }}>{PLAYER.level}</div>
           </div>
-          <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, fontWeight: 400, letterSpacing: 2.5, color: t.color.text, lineHeight: 0.9, textTransform: 'uppercase' }}>Di Lorenzo</div>
-            <div style={{ fontSize: 9, letterSpacing: 2, color: t.color.textDim, fontWeight: 600, marginTop: 3, textTransform: 'uppercase' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, fontWeight: 400, letterSpacing: 2.5, color: t.color.text, lineHeight: 0.9, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Di Lorenzo</div>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: t.color.textDim, fontWeight: 600, marginTop: 3, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{PLAYER.levelTitle} · {PLAYER.xp.toLocaleString()} XP</div>
           </div>
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
           {navHist.canBack && (
             <button
               onClick={() => navHist.back()}
               aria-label="Back"
               style={{
                 background: 'transparent', border: `1px solid ${t.color.line2}`,
-                borderRadius: 8, padding: '9px 11px', fontSize: 13,
+                borderRadius: 8, padding: '8px 9px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
-                lineHeight: 1, minWidth: 40,
+                lineHeight: 1, minWidth: 36,
               }}>←</button>
           )}
           {navHist.canForward && (
@@ -1041,9 +1042,9 @@ export default function Main({ user }) {
               aria-label="Forward"
               style={{
                 background: 'transparent', border: `1px solid ${t.color.line2}`,
-                borderRadius: 8, padding: '9px 11px', fontSize: 13,
+                borderRadius: 8, padding: '8px 9px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
-                lineHeight: 1, minWidth: 40,
+                lineHeight: 1, minWidth: 36,
               }}>→</button>
           )}
           <ThemeToggle size={32} />
