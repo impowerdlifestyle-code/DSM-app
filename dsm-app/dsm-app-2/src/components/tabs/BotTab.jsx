@@ -1,11 +1,45 @@
+import { useState, useRef, useEffect } from 'react'
 import { C, tokens as t } from '../../styles.js'
 import { SUGGESTED_QUESTIONS } from '../../lib/coachV.js'
 
 export default function BotTab({
-  messages, typingMsg, chatLoading, chatEnd, chatInputRef,
+  messages, chatLoading, chatEnd, chatInputRef,
   voiceMode, setVoiceMode, sendChat, onStartCall,
   rateCoachMessage,
 }) {
+  // Word-by-word reveal of the newest assistant reply, animated here (local
+  // state) so it doesn't re-render all of Main ~35×/sec. Only a freshly
+  // appended assistant message animates — history loads / tab switches don't.
+  const seenRef = useRef(null)
+  const prevLenRef = useRef(0)
+  const [anim, setAnim] = useState({ key: null, words: 0, total: 0 })
+
+  useEffect(() => {
+    const prevLen = prevLenRef.current
+    prevLenRef.current = messages.length
+    const keyOf = (m, i) => m.id || `idx-${i}`
+
+    if (seenRef.current === null) { seenRef.current = new Set(messages.map(keyOf)); return }
+    // Bulk change (history load, tab remount) — show instantly, never replay.
+    if (messages.length - prevLen !== 1) { seenRef.current = new Set(messages.map(keyOf)); return }
+
+    const last = messages[messages.length - 1]
+    if (!last || last.role !== 'assistant') return
+    const key = keyOf(last, messages.length - 1)
+    if (seenRef.current.has(key)) return
+    seenRef.current.add(key)
+
+    const total = (last.content || '').split(' ').length
+    setAnim({ key, words: 0, total })
+    let i = 0
+    const iv = setInterval(() => {
+      i++
+      setAnim({ key, words: i, total })
+      if (i >= total) clearInterval(iv)
+    }, 28)
+    return () => clearInterval(iv)
+  }, [messages])
+
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'calc(100dvh - 168px)', minHeight:'calc(100vh - 168px)' }} className="fade">
       <div style={{ padding:'12px 20px 10px', borderBottom:`1px solid ${t.color.line}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -37,7 +71,10 @@ export default function BotTab({
         )}
         {messages.map((msg, i) => {
           const isUser = msg.role === 'user'
-          const canRate = !isUser && msg.id && rateCoachMessage
+          const key = msg.id || `idx-${i}`
+          const isAnimating = !isUser && key === anim.key && anim.words < anim.total
+          const shown = isAnimating ? (msg.content || '').split(' ').slice(0, anim.words).join(' ') : msg.content
+          const canRate = !isUser && msg.id && rateCoachMessage && !isAnimating
           return (
             <div key={msg.id || i} style={{ display:'flex', justifyContent: isUser?'flex-end':'flex-start', marginBottom:10, alignItems:'flex-end', gap:7 }}>
               {!isUser && (
@@ -53,7 +90,8 @@ export default function BotTab({
                   borderBottomRightRadius: isUser?4:16,
                   borderBottomLeftRadius: isUser?16:4,
                 }}>
-                  {msg.content}
+                  {shown}
+                  {isAnimating && <span style={{ display:'inline-block', width:8, height:14, background:t.color.text, marginLeft:3, borderRadius:2, verticalAlign:'text-bottom', animation:'blink 0.7s infinite' }}>|</span>}
                 </div>
                 {!isUser && msg.savedFailed && (
                   <div style={{
@@ -102,13 +140,6 @@ export default function BotTab({
             </div>
           )
         })}
-        {typingMsg && (
-          <div style={{ display:'flex', justifyContent:'flex-start', marginBottom:8 }}>
-            <div style={{ maxWidth:'82%', background:t.color.surface, border:`1px solid ${t.color.line}`, borderRadius:'18px 18px 18px 4px', padding:'10px 14px', fontSize:14, lineHeight:1.5, color:t.color.text }}>
-              {typingMsg}<span style={{ display:'inline-block', width:8, height:14, background:t.color.text, marginLeft:3, borderRadius:2, animation:'blink 0.7s infinite' }}>|</span>
-            </div>
-          </div>
-        )}
         {chatLoading && (
           <div style={{ display:'flex', alignItems:'center', gap:7 }}>
             <div style={{ width:28, height:28, borderRadius:'50%', background:t.color.surface, border:`1px solid ${t.color.line2}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:t.font.display, fontSize:13, fontStyle:'italic', color:t.color.text, fontWeight:500 }}>V</div>

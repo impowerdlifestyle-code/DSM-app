@@ -96,7 +96,6 @@ export default function Main({ user }) {
   const [badgeNotice, setBadgeNotice] = useState(null)
   const [activeNudge, setActiveNudge] = useState(null)
   const nudgeCheckedRef = useRef(false)
-  const [typingMsg, setTypingMsg] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [callActive, setCallActive] = useState(false)
   const [callPhase, setCallPhase] = useState('listening')
@@ -241,98 +240,86 @@ export default function Main({ user }) {
     if (!p) { console.error('No profile found for user'); return }
     setProfile(p)
     setStreak(p?.streak || 0)
-    const { data: hd } = await getHabits(user.id)
-    // M2: habits may come back as a parsed object (jsonb column) or as a
-    // string (text column with JSON). Branch on type so we don't throw
-    // JSON.parse on an already-parsed object.
-    if (hd?.habits) {
-      setHabits(typeof hd.habits === 'string' ? JSON.parse(hd.habits) : hd.habits)
-    }
-    const { data: sd } = await getActionSteps(user.id)
+    // CORE dashboard data — what the Home screen needs — fetched in parallel
+    // (was 5 sequential round-trips). This is the only thing that blocks first paint.
+    const [hd, sd, bd, todayQuests, cd] = await Promise.all([
+      getHabits(user.id).then(r => r.data).catch(() => null),
+      getActionSteps(user.id).then(r => r.data).catch(() => null),
+      supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14).then(r => r.data).catch(() => null),
+      getOrSeedDailyQuests(user.id, DAILY_QUESTS).catch(() => DAILY_QUESTS),
+      supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8).then(r => r.data).catch(() => null),
+    ])
+    // M2: habits may come back parsed (jsonb) or as a JSON string.
+    if (hd?.habits) setHabits(typeof hd.habits === 'string' ? JSON.parse(hd.habits) : hd.habits)
     if (sd) setSubmissions(sd)
-    const { data: bd } = await supabase.from('ball_mastery').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(14)
     if (bd) setBallHistory(bd)
-    const todayQuests = await getOrSeedDailyQuests(user.id, DAILY_QUESTS)
     setQuests(todayQuests)
-    const { data: cd } = await supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
-    if (cd) {
-      setCheckinHistory(cd)
-      if (cd.find(c => c.week === currentWeek)) setCheckinDone(true)
-    }
-    // Load Coach V chat history (persistent across sessions)
-    try {
-      const { data: chRows } = await getChatHistory(user.id, 100)
-      if (chRows && chRows.length > 0) {
-        setMessages(chRows.map(r => ({ id: r.id, role: r.role, content: r.content })))
-      }
-    } catch (err) { console.warn('[chat history load failed]', err) }
+    if (cd) { setCheckinHistory(cd); if (cd.find(c => c.week === currentWeek)) setCheckinDone(true) }
 
-    // Load active nudge + trigger nudge check at most once per app open
-    try {
-      const { data: nudge } = await getActiveNudge(user.id)
-      if (nudge) {
-        setActiveNudge(nudge)
-      } else if (!nudgeCheckedRef.current) {
+    // Everything else (other tabs) streams in after first paint — never blocks Home.
+    loadSecondaryData(p)
+    } catch(err) { console.error('loadUserData error:', err) }
+  }
+
+  // Non-blocking, fired after the core load. Each block is independent and
+  // self-contained so a slow/failed query degrades only its own surface.
+  function loadSecondaryData(p) {
+    // Coach V chat history (Coach tab)
+    getChatHistory(user.id, 100).then(({ data: chRows }) => {
+      if (chRows && chRows.length > 0) setMessages(chRows.map(r => ({ id: r.id, role: r.role, content: r.content })))
+    }).catch(err => console.warn('[chat history load failed]', err))
+
+    // Active nudge + once-per-open nudge check
+    getActiveNudge(user.id).then(async ({ data: nudge }) => {
+      if (nudge) setActiveNudge(nudge)
+      else if (!nudgeCheckedRef.current) {
         nudgeCheckedRef.current = true
         const already = await nudgeCreatedToday(user.id)
         if (!already) maybeCreateNudge()
       }
-    } catch (err) { console.warn('[nudge load failed]', err) }
-    // Load leaderboard
-    const { data: lb } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, streak, role')
-      .eq('role', 'athlete')
-      .order('streak', { ascending: false })
-      .limit(20)
-    if (lb) {
-      // Enrich with counts
-      const enriched = await Promise.all(lb.map(async (a) => {
-        const { count: bmCount } = await supabase.from('ball_mastery').select('id', { count: 'exact' }).eq('user_id', a.id)
-        // BUG FIX: was hardcoded to 0 — action steps were never counted in leaderboard scores
-        const { count: asCount } = await supabase.from('action_steps').select('id', { count: 'exact' }).eq('user_id', a.id)
-        const { count: ciCount } = await supabase.from('weekly_checkins').select('id', { count: 'exact' }).eq('user_id', a.id)
-        const score = (a.streak||0)*3 + (bmCount||0)*2 + (asCount||0)*2 + (ciCount||0)*1
-        return { ...a, bmCount: bmCount||0, asCount: asCount||0, ciCount: ciCount||0, score }
-      }))
-      setLeaderboard(enriched.sort((a,b) => b.score - a.score))
-    }
+    }).catch(err => console.warn('[nudge load failed]', err))
 
-    // Load mistake resets
-    const { data: mr } = await supabase.from('mistake_resets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
-    if (mr) setMistakes(mr)
+    // Leaderboard — batched (was N+1: 3 count queries per athlete)
+    ;(async () => {
+      const { data: lb } = await supabase.from('profiles')
+        .select('id, full_name, email, streak, role').eq('role', 'athlete')
+        .order('streak', { ascending: false }).limit(20)
+      if (!lb) return
+      const ids = lb.map(a => a.id)
+      const [bmRes, asRes, ciRes] = await Promise.all([
+        supabase.from('ball_mastery').select('user_id').in('user_id', ids),
+        supabase.from('action_steps').select('user_id').in('user_id', ids),
+        supabase.from('weekly_checkins').select('user_id').in('user_id', ids),
+      ])
+      const tally = (rows) => { const m = {}; for (const r of (rows || [])) m[r.user_id] = (m[r.user_id] || 0) + 1; return m }
+      const bm = tally(bmRes.data), as = tally(asRes.data), ci = tally(ciRes.data)
+      const enriched = lb.map(a => {
+        const bmCount = bm[a.id] || 0, asCount = as[a.id] || 0, ciCount = ci[a.id] || 0
+        return { ...a, bmCount, asCount, ciCount, score: (a.streak || 0) * 3 + bmCount * 2 + asCount * 2 + ciCount * 1 }
+      })
+      setLeaderboard(enriched.sort((a, b) => b.score - a.score))
+    })().catch(err => console.warn('[leaderboard load failed]', err))
 
-    // Load MAP
-    const { data: mapData } = await supabase.from('mindset_map').select('*').eq('user_id', user.id).eq('week', getWeekKey()).maybeSingle()
-    if (mapData) { setMap({ goal: mapData.goal||'', focusArea: mapData.focus_area||'', weeklyWin: mapData.weekly_win||'', adjustment: mapData.adjustment||'', commitment: mapData.commitment||'' }); setMapSaved(true) }
+    // Mistakes / MAP / challenges / community — independent
+    supabase.from('mistake_resets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
+      .then(({ data: mr }) => { if (mr) setMistakes(mr) }).catch(() => {})
 
-    // Load challenges
-    const { data: ch } = await supabase
-      .from('challenges')
-      .select('*, challenge_completions(user_id)')
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (ch) setChallenges(ch)
+    supabase.from('mindset_map').select('*').eq('user_id', user.id).eq('week', getWeekKey()).maybeSingle()
+      .then(({ data: mapData }) => { if (mapData) { setMap({ goal: mapData.goal || '', focusArea: mapData.focus_area || '', weeklyWin: mapData.weekly_win || '', adjustment: mapData.adjustment || '', commitment: mapData.commitment || '' }); setMapSaved(true) } }).catch(() => {})
 
-    // Load community posts
-    const { data: posts } = await supabase
-      .from('community_posts')
-      .select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))')
-      .order('created_at', { ascending: false })
-      .limit(50)
-    if (posts) setCommunityPosts(posts)
+    supabase.from('challenges').select('*, challenge_completions(user_id)').order('created_at', { ascending: false }).limit(20)
+      .then(({ data: ch }) => { if (ch) setChallenges(ch) }).catch(() => {})
 
+    supabase.from('community_posts').select('*, profiles(full_name, email, role), community_comments(id, content, created_at, profiles(full_name, email, role))').order('created_at', { ascending: false }).limit(50)
+      .then(({ data: posts }) => { if (posts) setCommunityPosts(posts) }).catch(() => {})
+
+    // Coach-only datasets (Admin/Coach tabs)
     if (p?.role === 'coach') {
-      const { data: at } = await getAllProfiles()
-      setAllAthletes(at || [])
-      const { data: as } = await getAllActionSteps()
-      setAllSubmissions(as || [])
-      const { data: ac } = await supabase.from('weekly_checkins').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(50)
-      setAllCheckins(ac || [])
-      const { data: ab } = await supabase.from('ball_mastery').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(50)
-      setAllBallMastery(ab || [])
+      getAllProfiles().then(({ data: at }) => setAllAthletes(at || [])).catch(() => {})
+      getAllActionSteps().then(({ data: as }) => setAllSubmissions(as || [])).catch(() => {})
+      supabase.from('weekly_checkins').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(50).then(({ data: ac }) => setAllCheckins(ac || [])).catch(() => {})
+      supabase.from('ball_mastery').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(50).then(({ data: ab }) => setAllBallMastery(ab || [])).catch(() => {})
     }
-    } catch(err) { console.error('loadUserData error:', err) }
   }
 
   async function maybeCreateNudge() {
@@ -542,21 +529,11 @@ export default function Main({ user }) {
       // Daily quest: asked Coach V
       bumpQuestAndRefresh('quest-coach', 1)
 
-      // 7) Typing animation, then commit the final message
+      // 7) Commit the final message. The word-by-word reveal is animated inside
+      // BotTab (local state) so it doesn't re-render all of Main ~35×/sec.
       setChatLoading(false)
-      const words = reply.split(' ')
-      let i = 0
-      setTypingMsg('')
-      const interval = setInterval(() => {
-        i++
-        setTypingMsg(words.slice(0, i).join(' '))
-        if (i >= words.length) {
-          clearInterval(interval)
-          setMessages(p => [...p, { id: assistantId, role: 'assistant', content: reply, savedFailed: !!assistantErr }])
-          setTypingMsg('')
-          if (voiceMode) elevenSpeak(reply)
-        }
-      }, 28)
+      setMessages(p => [...p, { id: assistantId, role: 'assistant', content: reply, savedFailed: !!assistantErr }])
+      if (voiceMode) elevenSpeak(reply)
 
       // 8) Bump counter, consolidate memory if threshold hit
       const { newCount } = await bumpMessagesSinceConsolidation(user.id)
@@ -2095,7 +2072,6 @@ export default function Main({ user }) {
           <CoachSubNav active="bot" setTab={setTab} />
           <BotTab
             messages={messages}
-            typingMsg={typingMsg}
             chatLoading={chatLoading}
             chatEnd={chatEnd}
             chatInputRef={chatInputRef}
