@@ -625,9 +625,12 @@ export default function Main({ user }) {
     try { heard = await transcribe(captured.blob, captured.mimeType) }
     catch { setCallNote('Couldn’t reach transcription. Tap to try again.'); setCallPhase('idle'); return }
     if (!callActiveRef.current || callGenRef.current !== gen) return
-    if (!heard) { setCallNote('Didn’t catch that — tap to talk.'); setCallPhase('idle'); return }
-    setCallTranscript(heard)
-    processCallTurn(heard)
+    // Scribe tags non-speech audio as parentheticals e.g. "(airplane overhead)".
+    // Strip them — if nothing real is left, it was just noise, don't bug Coach.
+    const speech = (heard || '').replace(/\([^)]*\)/g, '').trim()
+    if (!speech) { setCallNote('Didn’t catch that — tap to talk.'); setCallPhase('idle'); return }
+    setCallTranscript(speech)
+    processCallTurn(speech)
   }
 
   const processCallTurn = async (text) => {
@@ -1191,19 +1194,6 @@ export default function Main({ user }) {
             ))}
           </>}
         </div>
-        {callActive && (
-          <CoachCall
-            phase={callPhase}
-            level={callLevel}
-            note={callNote}
-            transcript={callTranscript}
-            reply={callReply}
-            error={callError}
-            onEnd={endCall}
-            onTapTalk={runCallTurn}
-            onStopListening={() => { try { callRecRef.current?.stop() } catch { /* ignore */ } }}
-          />
-        )}
         {drillVideo && (
           <div onClick={() => setDrillVideo(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', zIndex:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
             <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:520, display:'flex', flexDirection:'column', gap:10 }}>
@@ -3114,6 +3104,21 @@ export default function Main({ user }) {
         accentColor={t.color.pitch}
         onChange={(i, item) => { setTab(item.id); setSelectedAthlete(null); }}
       />
+
+      {/* Hands-free Coach call — global overlay, independent of the active tab */}
+      {callActive && (
+        <CoachCall
+          phase={callPhase}
+          level={callLevel}
+          note={callNote}
+          transcript={callTranscript}
+          reply={callReply}
+          error={callError}
+          onEnd={endCall}
+          onTapTalk={runCallTurn}
+          onStopListening={() => { try { callRecRef.current?.stop() } catch { /* ignore */ } }}
+        />
+      )}
     </div>
   )
 }
