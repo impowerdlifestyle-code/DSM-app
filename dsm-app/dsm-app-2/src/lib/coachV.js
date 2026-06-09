@@ -258,7 +258,9 @@ function buildCoachPersona({ athleteContext, memorySummary, memoryThemes }) {
     }).join('\n')}\n\n`
   }
   if (ctx.lastCheckin) {
-    p += `─── LAST WEEKLY CHECK-IN ───\nWeek ${ctx.lastCheckin.week}, mental=${ctx.lastCheckin.mental}/10\nWins: ${ctx.lastCheckin.wins || '—'}\nStruggles: ${ctx.lastCheckin.struggles || '—'}\n\n`
+    const ck = ctx.lastCheckin
+    const conf = ck.confidence_level ?? ck.mental ?? '—'
+    p += `─── LAST WEEKLY CHECK-IN ───\nWeek ${ck.week ?? '—'}, confidence=${conf}/10, energy=${ck.energy_level ?? '—'}/10\nBiggest win: ${ck.biggest_win || ck.wins || '—'}\nBiggest challenge: ${ck.biggest_challenge || ck.struggles || '—'}\n${ck.message_to_coach ? `Message to coach: ${ck.message_to_coach}\n` : ''}\n`
   }
   if (ctx.recentJournal?.length) {
     p += `─── RECENT VOICE-JOURNAL ENTRIES ───\n${ctx.recentJournal.slice(0, 3).map(j =>

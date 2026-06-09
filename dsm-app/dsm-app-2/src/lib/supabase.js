@@ -1212,7 +1212,7 @@ export async function getAthleteStateDigest(userId) {
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
     supabase.from('action_steps').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
     supabase.from('ball_mastery').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
-    supabase.from('weekly_checkins').select('*').eq('user_id', userId).order('week', { ascending: false }).limit(1),
+    supabase.from('weekly_checkins').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
     supabase.from('voice_journal').select('*').eq('user_id', userId).order('recorded_at', { ascending: false }).limit(3),
     supabase.from('match_log').select('*').eq('user_id', userId).not('post_logged_at', 'is', null).order('match_date', { ascending: false }).limit(5),
   ])

@@ -227,8 +227,16 @@ export default function Main({ user }) {
   async function loadUserData() {
     try {
     // M8 + C2: maybeSingle so a brand-new account (no profile row yet)
-    // doesn't crash with PGRST116. We branch on null below.
-    const { data: p, error: pErr } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+    // doesn't crash with PGRST116. Retry transient errors AND a missing row —
+    // on first signup the DB trigger that creates the profile can lag the first
+    // read, and giving up here leaves a blank app with no profile/paywall/onboarding.
+    let p = null, pErr = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+      p = res.data; pErr = res.error
+      if (p) break
+      if (attempt < 2) await new Promise(r => setTimeout(r, 700))
+    }
     if (pErr) { console.error('[loadUserData] profile fetch failed:', pErr.message); return }
     if (!p) { console.error('No profile found for user'); return }
     setProfile(p)
@@ -341,8 +349,8 @@ export default function Main({ user }) {
         daysSinceBallMastery: lastBall ? daysSince(lastBall.created_at || lastBall.date) : null,
         daysSinceJournal: lastJournal ? daysSince(lastJournal.recorded_at) : null,
         lastJournalSentiment: lastJournal?.sentiment || null,
-        lastWeeklyMental: digest.lastCheckin?.mental || null,
-        lastWeeklyStruggles: digest.lastCheckin?.struggles || null,
+        lastWeeklyMental: digest.lastCheckin?.confidence_level ?? digest.lastCheckin?.mental ?? null,
+        lastWeeklyStruggles: digest.lastCheckin?.biggest_challenge || digest.lastCheckin?.struggles || null,
         accessLevel: digest.profile?.access_level || 'trial',
         nowIso: new Date().toISOString(),
       }

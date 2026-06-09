@@ -163,7 +163,11 @@ Tone: encouraging older brother. No therapy talk. End with a tiny action they ca
   }
 
   if (ctx.lastCheckin) {
-    prompt += `─── MOST RECENT WEEKLY CHECK-IN ───\nWeek: ${ctx.lastCheckin.week}\nMental score: ${ctx.lastCheckin.mental || '—'}/10\nWins: ${ctx.lastCheckin.wins || '—'}\nStruggles: ${ctx.lastCheckin.struggles || '—'}\n\n`
+    const ck = ctx.lastCheckin
+    const win = ck.biggest_win || ck.wins || '—'
+    const challenge = ck.biggest_challenge || ck.struggles || '—'
+    const conf = ck.confidence_level ?? ck.mental ?? '—'
+    prompt += `─── MOST RECENT WEEKLY CHECK-IN ───\nWeek: ${ck.week ?? '—'}\nConfidence: ${conf}/10   Energy: ${ck.energy_level ?? '—'}/10\nBiggest win: ${win}\nBiggest challenge: ${challenge}\n${ck.message_to_coach ? `Message to coach: ${ck.message_to_coach}\n` : ''}\n`
   }
 
   if (ctx.recentJournal?.length) {
