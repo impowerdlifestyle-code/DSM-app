@@ -920,8 +920,12 @@ function GroupReportsView({ groupId, reviewerId }) {
   useEffect(() => { load() }, [groupId])
 
   async function act(r, action) {
-    if (action === 'delete' && r.message_id) await deleteGroupMessage(r.message_id)
-    await resolveReport(r.id, action === 'delete' ? 'actioned' : 'dismissed', reviewerId)
+    if (action === 'delete' && r.message_id) {
+      const { error } = (await deleteGroupMessage(r.message_id)) || {}
+      if (error) { alert('Could not delete the message — report kept. ' + (error.message || '')); return }
+    }
+    const { error: resErr } = (await resolveReport(r.id, action === 'delete' ? 'actioned' : 'dismissed', reviewerId)) || {}
+    if (resErr) { alert('Could not update the report — try again. ' + (resErr.message || '')); return }
     setReports(p => p.filter(x => x.id !== r.id))
   }
 

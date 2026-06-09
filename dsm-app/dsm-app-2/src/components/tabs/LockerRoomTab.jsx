@@ -53,8 +53,9 @@ export default function LockerRoomTab({ user, athleteId, adminView = false, onBa
 
   async function saveThemes() {
     setThemesSaving(true)
-    await updateCoachMemoryThemes(targetId, themesDraft)
+    const { error } = (await updateCoachMemoryThemes(targetId, themesDraft)) || {}
     setThemesSaving(false)
+    if (error) { alert('Could not save themes — ' + (error.message || 'try again.')); return }
     setThemesSavedAt(Date.now())
     setTimeout(() => setThemesSavedAt(null), 2000)
   }

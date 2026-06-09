@@ -99,13 +99,16 @@ const css = `
 
 .dsm-name-line {
   font-family: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
-  font-size: 38px;
+  font-size: clamp(24px, 9vw, 38px);
   font-weight: 400;
   letter-spacing: 4px;
   color: #fafafa;
   text-transform: uppercase;
   text-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.15);
   margin-top: -8px;
+  max-width: 90vw;
+  overflow-wrap: break-word;
+  text-align: center;
   animation: dsm-fade 0.7s ease both;
 }
 .dsm-wordmark {

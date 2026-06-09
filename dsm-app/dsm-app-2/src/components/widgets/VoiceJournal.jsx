@@ -65,7 +65,7 @@ export default function VoiceJournal({ user }) {
         else if (code === 'network')          setError('Speech recognition needs network — check your connection.')
         else if (code === 'aborted')          { /* user cancelled — silent */ }
         else if (code === 'restart-failed' || code === 'start-failed') {
-          setError('Recorder stopped — tap record to try again.'); setState('ready')
+          setError('Recorder stopped — tap record to try again.'); setState('idle')
         } else                                 setError(`Recorder error: ${code || 'unknown'}`)
       },
       onEnd: () => {},

@@ -9,8 +9,11 @@ export default async function handler(req, res) {
   const auth = await authGuard(req, res, { loadProfile: true })
   if (!auth.ok) return
   const { profile, admin, user } = auth
-  if (!profile?.is_admin && profile?.role !== 'coach') {
-    return res.status(403).json({ error: 'Admin or coach access required' })
+  // Permanent delete cascades ALL of the athlete's data — restrict to admins.
+  // Coaches can Archive (reversible) instead. coach_tier is not enforced, so
+  // allowing any coach here would let an assistant nuke any athlete.
+  if (!profile?.is_admin) {
+    return res.status(403).json({ error: 'Admin access required to delete. Use Archive instead.' })
   }
 
   let body

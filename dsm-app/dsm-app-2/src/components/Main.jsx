@@ -394,6 +394,10 @@ export default function Main({ user }) {
     if (!surfaceAllowed(tab)) setTab('home')
   }, [isYouth, tab])
   const myName = profile?.full_name || user?.email
+  // Athletes' assigned_coach is a free-text label picked from a dropdown, so a
+  // case/whitespace difference vs the coach's own name would silently empty the
+  // coach's roster. Compare normalized.
+  const sameCoach = (a) => (a?.assigned_coach || '').trim().toLowerCase() === (myName || '').trim().toLowerCase()
   const isEliteLocked = profile?.access_level !== 'paid' && profile?.access_level !== 'mentoring_elite'
 
   const handleLogDay = async () => {
@@ -2504,10 +2508,10 @@ export default function Main({ user }) {
             ))}
           </div>
 
-          {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||a.assigned_coach===myName)).length > 0 && <>
+          {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||sameCoach(a))).length > 0 && <>
             <span style={{ ...C.lbl, color:t.color.text }}>⚠️ PENDING ACTIVATION</span>
-            {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||a.assigned_coach===myName)).map((a,i)=>(
-              <div key={i} style={{ ...C.card, borderColor:t.color.text, cursor:'pointer' }} onClick={()=>setSelectedAthlete(a)}>
+            {allAthletes.filter(a=>a.role==='athlete'&&(!a.access_level||a.access_level==='locked')&&(isAdmin||sameCoach(a))).map((a,i)=>(
+              <div key={i} style={{ ...C.card, borderColor:t.color.text, cursor:'pointer' }} onClick={()=>{ setSelectedAthlete(a); loadAthleteProfile(a); }}>
                 <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
                   <div>
                     <div style={{ fontSize:16,fontWeight:800,marginBottom:2 }}>{a.full_name||a.email}</div>
@@ -2557,7 +2561,7 @@ export default function Main({ user }) {
           </div>}
 
           {allAthletes.filter(a=>a.role==='athlete'&&a.access_level&&a.access_level!=='locked'
-            &&(isAdmin ? (coachFilter==='all'||(coachFilter==='unassigned'?!a.assigned_coach:a.assigned_coach===coachFilter)) : a.assigned_coach===myName)
+            &&(isAdmin ? (coachFilter==='all'||(coachFilter==='unassigned'?!a.assigned_coach:a.assigned_coach===coachFilter)) : sameCoach(a))
           ).map((a,i)=>(
             <div key={i} style={{ ...C.card,cursor:'pointer' }} onClick={()=>{ setSelectedAthlete(a); loadAthleteProfile(a); }}>
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>

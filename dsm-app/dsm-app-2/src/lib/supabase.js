@@ -1080,7 +1080,7 @@ export async function getGroupActivity(groupId, { limit = 60 } = {}) {
 
   const [actions, checkins, voice, chat, tasks] = await Promise.all([
     supabase.from('action_steps').select('id, user_id, created_at, mental').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
-    supabase.from('weekly_checkins').select('id, user_id, created_at, mood, week_number').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
+    supabase.from('weekly_checkins').select('id, user_id, created_at, week, confidence_level').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
     supabase.from('voice_journal').select('id, user_id, created_at, title').in('user_id', ids).order('created_at', { ascending: false }).limit(limit),
     supabase.from('chat_history').select('id, user_id, created_at, role').in('user_id', ids).eq('role', 'user').order('created_at', { ascending: false }).limit(limit),
     supabase.from('coach_tasks').select('id, athlete_id, created_at, completed_at, status, title').in('athlete_id', ids).order('completed_at', { ascending: false, nullsFirst: false }).limit(limit),
@@ -1088,7 +1088,7 @@ export async function getGroupActivity(groupId, { limit = 60 } = {}) {
 
   const events = []
   for (const r of (actions.data  || [])) events.push({ id: `as-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'action_step', summary: `Logged action step · mental ${r.mental ?? '—'}` })
-  for (const r of (checkins.data || [])) events.push({ id: `ck-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'checkin',     summary: `Weekly check-in · mood ${r.mood ?? '—'} · wk ${r.week_number ?? '—'}` })
+  for (const r of (checkins.data || [])) events.push({ id: `ck-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'checkin',     summary: `Weekly check-in · confidence ${r.confidence_level ?? '—'} · wk ${r.week ?? '—'}` })
   for (const r of (voice.data    || [])) events.push({ id: `vj-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'voice',       summary: `Voice journal · ${r.title || 'untitled'}` })
   for (const r of (chat.data     || [])) events.push({ id: `ch-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind: 'chat',        summary: 'Messaged Coach V' })
   for (const r of (tasks.data    || [])) { if (r.completed_at) events.push({ id: `tk-${r.id}`, at: r.completed_at, athleteId: r.athlete_id, athlete: nameFor(r.athlete_id), kind: 'task_done', summary: `Completed task · ${r.title}` }) }
@@ -1128,7 +1128,7 @@ export async function getRecentActivity({ limit = 60 } = {}) {
       .in('user_id', ids)
       .order('created_at', { ascending: false }).limit(limit),
     supabase.from('weekly_checkins')
-      .select('id, user_id, created_at, mood, week_number')
+      .select('id, user_id, created_at, week, confidence_level')
       .in('user_id', ids)
       .order('created_at', { ascending: false }).limit(limit),
     supabase.from('voice_journal')
@@ -1155,7 +1155,7 @@ export async function getRecentActivity({ limit = 60 } = {}) {
   const coachFor = (id) => coachedById.get(id)?.assigned_coach || null
 
   for (const r of (actions.data   || [])) events.push({ id: `as-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'action_step', summary: `Logged action step · mental ${r.mental ?? '—'}` })
-  for (const r of (checkins.data  || [])) events.push({ id: `ck-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'checkin',     summary: `Weekly check-in · mood ${r.mood ?? '—'} · wk ${r.week_number ?? '—'}` })
+  for (const r of (checkins.data  || [])) events.push({ id: `ck-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'checkin',     summary: `Weekly check-in · confidence ${r.confidence_level ?? '—'} · wk ${r.week ?? '—'}` })
   for (const r of (voice.data     || [])) events.push({ id: `vj-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'voice',       summary: `Voice journal · ${r.title || 'untitled'}` })
   for (const r of (chat.data      || [])) events.push({ id: `ch-${r.id}`,  at: r.created_at, athleteId: r.user_id,  athlete: nameFor(r.user_id),  coach: coachFor(r.user_id),  kind: 'chat',        summary: 'Messaged Coach V' })
   for (const r of (tasks.data     || [])) {
