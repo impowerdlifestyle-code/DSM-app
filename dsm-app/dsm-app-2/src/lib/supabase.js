@@ -453,27 +453,29 @@ export async function getSquadLeaderboard(squadId) {
   weekStart.setDate(weekStart.getDate() - 6)
   weekStart.setHours(0, 0, 0, 0)
 
-  const rows = await Promise.all(members.map(async (m) => {
+  // One batched xp_log read for all members, summed client-side — replaces the
+  // old 2-queries-per-member N+1 (was 2N round-trips).
+  const ids = members.map(m => m.user_id)
+  const weekStartIso = weekStart.toISOString()
+  const { data: xpAll } = await supabase
+    .from('xp_log')
+    .select('user_id, xp, created_at')
+    .in('user_id', ids)
+  const weeklyMap = {}, totalMap = {}
+  for (const r of (xpAll || [])) {
+    totalMap[r.user_id] = (totalMap[r.user_id] || 0) + (r.xp || 0)
+    if (r.created_at >= weekStartIso) weeklyMap[r.user_id] = (weeklyMap[r.user_id] || 0) + (r.xp || 0)
+  }
+  const rows = members.map(m => {
     const profile = m.profiles || {}
-    const { data: xpRows } = await supabase
-      .from('xp_log')
-      .select('xp')
-      .eq('user_id', m.user_id)
-      .gte('created_at', weekStart.toISOString())
-    const weeklyXp = (xpRows || []).reduce((a, r) => a + (r.xp || 0), 0)
-    const { data: allXp } = await supabase
-      .from('xp_log')
-      .select('xp')
-      .eq('user_id', m.user_id)
-    const totalXp = (allXp || []).reduce((a, r) => a + (r.xp || 0), 0)
     return {
       user_id: m.user_id,
       full_name: profile.full_name || profile.email || 'Athlete',
       streak: profile.streak || 0,
-      weeklyXp,
-      totalXp,
+      weeklyXp: weeklyMap[m.user_id] || 0,
+      totalXp: totalMap[m.user_id] || 0,
     }
-  }))
+  })
   rows.sort((a, b) => b.weeklyXp - a.weeklyXp || b.totalXp - a.totalXp)
   return { data: rows, error: null }
 }
@@ -675,21 +677,28 @@ export async function getAdminAthleteList() {
   }
   if (!profiles) return { data: [], error: null }
 
-  const enriched = await Promise.all(profiles.map(async (p) => {
-    const [actionCnt, voiceCnt, lastChat, xpRows] = await Promise.all([
-      supabase.from('action_steps').select('id', { count: 'exact', head: true }).eq('user_id', p.id),
-      supabase.from('voice_journal').select('id', { count: 'exact', head: true }).eq('user_id', p.id),
-      supabase.from('chat_history').select('created_at').eq('user_id', p.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('xp_log').select('xp').eq('user_id', p.id),
-    ])
-    const totalXp = (xpRows.data || []).reduce((a, r) => a + (r.xp || 0), 0)
-    return {
-      ...p,
-      actionCount: actionCnt.count || 0,
-      voiceCount:  voiceCnt.count || 0,
-      lastChatAt:  lastChat.data?.created_at || null,
-      totalXp,
-    }
+  // Batched enrichment: 4 queries total (filtered by user_id IN ...) aggregated
+  // client-side, instead of 4 queries per athlete (was 4N round-trips).
+  const ids = profiles.map(p => p.id)
+  const [actionRes, voiceRes, chatRes, xpRes] = await Promise.all([
+    supabase.from('action_steps').select('user_id').in('user_id', ids),
+    supabase.from('voice_journal').select('user_id').in('user_id', ids),
+    supabase.from('chat_history').select('user_id, created_at').in('user_id', ids).order('created_at', { ascending: false }).limit(5000),
+    supabase.from('xp_log').select('user_id, xp').in('user_id', ids),
+  ])
+  const actionCount = {}, voiceCount = {}, lastChatAt = {}, totalXp = {}
+  for (const r of (actionRes.data || [])) actionCount[r.user_id] = (actionCount[r.user_id] || 0) + 1
+  for (const r of (voiceRes.data || [])) voiceCount[r.user_id] = (voiceCount[r.user_id] || 0) + 1
+  // rows are newest-first, so the first occurrence per user is their latest chat
+  for (const r of (chatRes.data || [])) { if (!lastChatAt[r.user_id]) lastChatAt[r.user_id] = r.created_at }
+  for (const r of (xpRes.data || [])) totalXp[r.user_id] = (totalXp[r.user_id] || 0) + (r.xp || 0)
+
+  const enriched = profiles.map(p => ({
+    ...p,
+    actionCount: actionCount[p.id] || 0,
+    voiceCount:  voiceCount[p.id] || 0,
+    lastChatAt:  lastChatAt[p.id] || null,
+    totalXp:     totalXp[p.id] || 0,
   }))
   return { data: enriched, error: null }
 }
