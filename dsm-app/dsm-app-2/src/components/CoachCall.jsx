@@ -5,6 +5,7 @@ import { tokens as t } from '../styles.js'
 // listen→reply→speak loop lives in Main.jsx and drives `phase`:
 //   listening | thinking | speaking | idle
 const PHASE_COPY = {
+  connecting: 'Connecting mic…',
   listening: '● Listening',
   thinking:  'Thinking…',
   speaking:  'Coach is talking…',
@@ -16,11 +17,11 @@ const ERROR_COPY = {
   unsupported:   'Voice calls aren’t supported on this device’s browser.',
 }
 
-export default function CoachCall({ phase = 'listening', level = 0, transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk, onStopListening }) {
+export default function CoachCall({ phase = 'listening', level = 0, note = '', transcript = '', reply = '', error = '', coachName = 'Coach Valentino', onEnd, onTapTalk, onStopListening }) {
   const active = phase === 'listening' || phase === 'speaking'
   // Live mic level drives the orb scale while listening so it's obvious the AI
   // is hearing you. Clamped so a loud room can't blow it up.
-  const listenScale = phase === 'listening' ? 1 + Math.min(level * 2.2, 0.32) : 1
+  const listenScale = phase === 'listening' ? 1 + Math.min(level * 3, 0.4) : 1
 
   // Escape always hangs up — a guaranteed exit even if a tap is missed.
   useEffect(() => {
@@ -63,9 +64,17 @@ export default function CoachCall({ phase = 'listening', level = 0, transcript =
               : transcript
                 ? <span style={{ color: t.color.textDim }}>“{transcript}”</span>
                 : <span style={{ color: t.color.textMute }}>
-                    {phase === 'listening' ? 'Say what’s on your mind…' : phase === 'idle' ? 'No worries — tap the mic when you’re ready.' : ''}
+                    {phase === 'listening' ? 'Say what’s on your mind, then tap Done.'
+                      : phase === 'idle' ? (note || 'No worries — tap the mic when you’re ready.')
+                      : phase === 'connecting' ? 'Getting the mic ready…' : ''}
                   </span>}
         </div>
+
+        {(phase === 'listening' || phase === 'connecting') && !error && (
+          <div style={S.meter} aria-hidden="true">
+            <div style={{ ...S.meterFill, width: `${Math.min(100, Math.round(level * 280))}%` }} />
+          </div>
+        )}
       </div>
 
       <div style={S.controls}>
@@ -108,6 +117,8 @@ const S = {
   orbGlyph: { fontSize: 46 },
   status: { fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: t.color.pitch },
   bubble: { minHeight: 60, textAlign: 'center', fontSize: 16, lineHeight: 1.5, padding: '0 6px', maxWidth: 380 },
+  meter: { width: 180, height: 6, borderRadius: 999, background: t.color.surface2, overflow: 'hidden', border: `1px solid ${t.color.line2}` },
+  meterFill: { height: '100%', borderRadius: 999, background: t.color.pitch, transition: 'width 80ms linear' },
   controls: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%', maxWidth: 320 },
   talkBtn: {
     width: '100%', borderRadius: 999, border: `1px solid ${t.color.line2}`,

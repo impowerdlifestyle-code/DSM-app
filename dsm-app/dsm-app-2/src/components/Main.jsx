@@ -101,6 +101,7 @@ export default function Main({ user }) {
   const [callActive, setCallActive] = useState(false)
   const [callPhase, setCallPhase] = useState('listening')
   const [callLevel, setCallLevel] = useState(0)
+  const [callNote, setCallNote] = useState('')
   const [callTranscript, setCallTranscript] = useState('')
   const [callReply, setCallReply] = useState('')
   const [callError, setCallError] = useState('')
@@ -612,7 +613,7 @@ export default function Main({ user }) {
 
   const runCallTurn = async () => {
     if (!callActiveRef.current) return
-    setCallPhase('listening'); setCallTranscript(''); setCallReply(''); setCallError(''); setCallLevel(0)
+    setCallPhase('connecting'); setCallTranscript(''); setCallReply(''); setCallError(''); setCallLevel(0); setCallNote('')
     const gen = callGenRef.current
     const rec = await recordUtterance({
       audioCtx: callAudioCtxRef.current,
@@ -626,14 +627,20 @@ export default function Main({ user }) {
       },
     })
     callRecRef.current = rec
+    // Only advance to "listening" once recording is truly live and stop() is
+    // wired — otherwise the Done button could fire against a stale/null handle.
+    if (!callActiveRef.current || callGenRef.current !== gen) { try { rec.stop() } catch { /* ignore */ } return }
+    setCallPhase('listening')
     const captured = await rec.promise
     setCallLevel(0)
     if (!callActiveRef.current || callGenRef.current !== gen) return
-    if (!captured) { setCallPhase('idle'); return }
+    if (!captured) { setCallNote('No audio captured — check mic access.'); setCallPhase('idle'); return }
     setCallPhase('thinking')
     let heard = ''
-    try { heard = await transcribe(captured.blob, captured.mimeType) } catch { heard = '' }
+    try { heard = await transcribe(captured.blob, captured.mimeType) }
+    catch { setCallNote('Couldn’t reach transcription. Tap to try again.'); setCallPhase('idle'); return }
     if (!callActiveRef.current || callGenRef.current !== gen) return
+    if (!heard) { setCallNote('Didn’t catch that — tap to talk.'); setCallPhase('idle'); return }
     setCallTranscript(heard)
     processCallTurn(heard)
   }
@@ -1203,6 +1210,7 @@ export default function Main({ user }) {
           <CoachCall
             phase={callPhase}
             level={callLevel}
+            note={callNote}
             transcript={callTranscript}
             reply={callReply}
             error={callError}
