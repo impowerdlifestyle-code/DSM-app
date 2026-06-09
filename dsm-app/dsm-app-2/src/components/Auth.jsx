@@ -211,6 +211,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [needsConfirm, setNeedsConfirm] = useState(false)
   const [invitedBy, setInvitedBy] = useState(null)
   const [agreedTerms, setAgreedTerms] = useState(false)
 
@@ -225,7 +226,7 @@ export default function Auth() {
     const eParam = params.get('email')
     const nParam = params.get('name')
     if (invite) {
-      sessionStorage.setItem('dsm_pending_invite', invite)
+      localStorage.setItem('dsm_pending_invite', invite)
       try {
         const [payloadEncoded] = invite.split('.', 2)
         const payload = JSON.parse(atob(payloadEncoded.replace(/-/g, '+').replace(/_/g, '/')))
@@ -233,7 +234,7 @@ export default function Auth() {
       } catch { /* malformed — server will reject on redeem */ }
       setMode('signup')
     } else {
-      const stored = sessionStorage.getItem('dsm_pending_invite')
+      const stored = localStorage.getItem('dsm_pending_invite')
       if (stored) {
         try {
           const [payloadEncoded] = stored.split('.', 2)
@@ -245,6 +246,15 @@ export default function Auth() {
     if (eParam) setEmail(eParam)
     if (nParam) { setName(nParam); setMode('signup') }
   }, [])
+
+  const handleResend = async () => {
+    if (!email) return setError('Enter your email first.')
+    setLoading(true); setError(''); setMessage('')
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    setLoading(false)
+    if (error) setError(error.message)
+    else { setMessage('Confirmation email re-sent — check your inbox (and spam).'); setNeedsConfirm(false) }
+  }
 
   const handleForgot = async () => {
     if (!email) return setError('Enter your email first, then tap reset.')
@@ -265,7 +275,7 @@ export default function Auth() {
     setMessage('')
     if (mode === 'login') {
       const { error } = await signIn(email, password)
-      if (error) setError(error.message)
+      if (error) { setError(error.message); if (/confirm/i.test(error.message)) setNeedsConfirm(true) }
     } else if (mode === 'signup') {
       const { data, error } = await signUp(email, password, name)
       if (error) setError(error.message)
@@ -276,19 +286,19 @@ export default function Auth() {
     } else if (mode === 'parent') {
       // Stash the code so App.jsx can auto-redeem after sign-in completes
       // (covers both email-confirm-on and email-confirm-off flows).
-      sessionStorage.setItem('dsm_pending_parent_code', parentCode)
+      localStorage.setItem('dsm_pending_parent_code', parentCode)
 
       const { data: signUpData, error } = await signUp(email, password, name)
       if (!error && signUpData?.user) acceptTerms(signUpData.user.id).catch(() => {})
       if (error) {
         // existing account? fall through to sign-in attempt (parent adding 2nd athlete)
         if (!/already registered|exists/i.test(error.message)) {
-          sessionStorage.removeItem('dsm_pending_parent_code')
+          localStorage.removeItem('dsm_pending_parent_code')
           setError(error.message); setLoading(false); return
         }
         const { error: signInErr } = await signIn(email, password)
         if (signInErr) {
-          sessionStorage.removeItem('dsm_pending_parent_code')
+          localStorage.removeItem('dsm_pending_parent_code')
           setError(signInErr.message); setLoading(false); return
         }
         // App.jsx will pick up the pending code and redeem
@@ -358,6 +368,12 @@ export default function Auth() {
 
           {error && <div style={s.alert('err')}>{error}</div>}
           {message && <div style={s.alert('ok')}>{message}</div>}
+          {needsConfirm && (
+            <button onClick={handleResend} disabled={loading}
+              style={{ width: '100%', marginTop: 8, background: 'transparent', border: `1px solid ${t.color.line2}`, color: t.color.text, borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Resend confirmation email
+            </button>
+          )}
 
           {(mode === 'signup' || mode === 'parent') && (
             <>

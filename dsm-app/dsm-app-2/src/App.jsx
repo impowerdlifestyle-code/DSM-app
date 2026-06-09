@@ -64,22 +64,29 @@ export default function App() {
     if (!user?.id) { setRole(null); return }
     setRoleLoading(true)
     ;(async () => {
-      const pending = sessionStorage.getItem('dsm_pending_parent_code')
+      // Redeem the parent invite, but only clear it on success — otherwise a
+      // transient failure would strand the parent on the athlete paywall with
+      // no way to recover. Keeping it lets the next load retry.
+      const pending = localStorage.getItem('dsm_pending_parent_code')
       if (pending) {
-        sessionStorage.removeItem('dsm_pending_parent_code')
-        await redeemParentInvite(user.id, pending)
+        try {
+          const res = await redeemParentInvite(user.id, pending)
+          if (!res?.error) localStorage.removeItem('dsm_pending_parent_code')
+        } catch { /* keep code, retry on next load */ }
       }
-      const pendingInvite = sessionStorage.getItem('dsm_pending_invite')
+      const pendingInvite = localStorage.getItem('dsm_pending_invite')
       const { data } = await supabase.from('profiles')
         .select('role, full_name, assigned_coach').eq('id', user.id).maybeSingle()
       if (pendingInvite && data && !data.assigned_coach) {
-        sessionStorage.removeItem('dsm_pending_invite')
         try {
-          await authFetch('/api/invite/redeem', {
+          const r = await authFetch('/api/invite/redeem', {
             method: 'POST',
             body: JSON.stringify({ token: pendingInvite }),
           })
-        } catch { /* server rejected — invite was forged/expired, signup still succeeds */ }
+          // Clear on success OR a 4xx (forged/expired — won't ever succeed);
+          // keep on network/5xx so a legit invite isn't lost to a blip.
+          if (r.ok || (r.status >= 400 && r.status < 500)) localStorage.removeItem('dsm_pending_invite')
+        } catch { /* network — keep to retry */ }
       }
       setRole(data?.role || 'athlete')
       if (data?.full_name) localStorage.setItem('dsm_player_name', data.full_name)
