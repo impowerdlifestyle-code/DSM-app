@@ -1135,39 +1135,54 @@ export default function Main({ user }) {
           ) : <>
             <div style={C.orange}>
               <span style={C.olbl}>LOG TODAY'S TRAINING</span>
-              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>Tap each drill you trained. Set your reps. Be honest -- this is YOUR progress. 🦈</div>
+              <div style={{ fontSize:14,fontWeight:800,lineHeight:1.4 }}>✅ Check off every drill you trained, then set your reps. Be honest -- this is YOUR progress. 🦈</div>
             </div>
             <div style={C.card}>
               <span style={C.lbl}>BALL MASTERY &amp; DRIBBLING</span>
               <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
-                {BALL_MASTERY_SKILLS.map(skill => (
-                  <div key={skill.id} style={{ display:'flex',alignItems:'center',gap:12 }}>
-                    <button onClick={() => setBallMastery(p => ({ ...p, [skill.id]: (p[skill.id]?.reps||0)>0 ? {reps:0} : {reps:50} }))}
-                      style={{ width:34,height:34,borderRadius:'50%',background:(ballMastery[skill.id]?.reps||0)>0?t.color.text:t.color.surface2,border:'none',fontSize:15,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',color:(ballMastery[skill.id]?.reps||0)>0?t.color.bg:t.color.text }}>
-                      {(ballMastery[skill.id]?.reps||0)>0?'✓':skill.icon}
-                    </button>
-                    <div style={{ flex:1 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <div style={{ fontSize:13,fontWeight:800 }}>{skill.label}</div>
-                        {(skill.videos||[]).map((v,vi)=>(
-                          <button key={vi} onClick={() => setDrillVideo({ url: v.url, label: skill.label })}
-                            style={{ fontSize:9, color: t.color.text, fontWeight:800, letterSpacing:1, border:'none', cursor:'pointer', background:t.color.surface2, borderRadius:6, padding:'3px 7px' }}>
-                            ▶ {v.label}
-                          </button>
-                        ))}
-                      </div>
-                      {(ballMastery[skill.id]?.reps||0)>0 && (
-                        <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4 }}>
-                          <span style={{ fontSize:10,color:t.color.textMute }}>Reps:</span>
-                          <input type="number" min="1" max="9999"
-                            style={{ ...C.inp,width:80,padding:'4px 8px',fontSize:13 }}
-                            value={ballMastery[skill.id]?.reps||50}
-                            onChange={e => setBallMastery(p => ({ ...p, [skill.id]:{...p[skill.id],reps:parseInt(e.target.value)||0} }))} />
+                {BALL_MASTERY_SKILLS.map(skill => {
+                  const checked = (ballMastery[skill.id]?.reps || 0) > 0
+                  const reps = ballMastery[skill.id]?.reps || 0
+                  const toggle = () => setBallMastery(p => ({ ...p, [skill.id]: checked ? { reps:0 } : { reps:50 } }))
+                  const setReps = (n) => setBallMastery(p => ({ ...p, [skill.id]: { ...p[skill.id], reps: Math.max(0, Math.min(9999, n)) } }))
+                  const stepBtn = { width:32, height:32, borderRadius:8, flexShrink:0, border:`1px solid ${t.color.line2}`, background:t.color.surface, color:t.color.text, fontSize:20, fontWeight:800, lineHeight:1, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }
+                  return (
+                    <div key={skill.id} style={{
+                      display:'flex', alignItems:'flex-start', gap:12, padding:'12px 14px', borderRadius:12,
+                      background: checked ? t.color.pitchSoft : t.color.surface2,
+                      border:`2px solid ${checked ? t.color.pitch : t.color.line2}`, transition:'background 150ms, border-color 150ms',
+                    }}>
+                      <button onClick={toggle} aria-label={checked ? `Uncheck ${skill.label}` : `Check ${skill.label}`}
+                        style={{ width:34, height:34, borderRadius:9, flexShrink:0, cursor:'pointer', border:`2px solid ${checked ? t.color.pitch : t.color.line2}`, background: checked ? t.color.pitch : 'transparent', color:'#fff', fontSize:20, fontWeight:900, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        {checked ? '✓' : ''}
+                      </button>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <button onClick={toggle} style={{ background:'none', border:'none', padding:0, textAlign:'left', cursor:'pointer', color:t.color.text, fontSize:14, fontWeight:800, fontFamily:'inherit' }}>
+                          {skill.label}
+                        </button>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8, flexWrap:'wrap' }}>
+                          {(skill.videos||[]).map((v,vi)=>(
+                            <button key={vi} onClick={() => setDrillVideo({ url: v.url, label: skill.label })}
+                              style={{ fontSize:9, color: t.color.text, fontWeight:800, letterSpacing:1, border:`1px solid ${t.color.line2}`, cursor:'pointer', background:t.color.surface, borderRadius:6, padding:'5px 9px' }}>
+                              ▶ {v.label}
+                            </button>
+                          ))}
+                          {checked && (
+                            <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:'auto' }}>
+                              <span style={{ fontSize:9, color:t.color.textMute, fontWeight:700, letterSpacing:1.4 }}>REPS</span>
+                              <button onClick={() => setReps(reps-10)} aria-label="Fewer reps" style={stepBtn}>−</button>
+                              <input type="number" min="0" max="9999" inputMode="numeric"
+                                style={{ ...C.inp, width:58, padding:'6px 4px', fontSize:15, textAlign:'center', fontWeight:800 }}
+                                value={reps}
+                                onChange={e => setReps(parseInt(e.target.value)||0)} />
+                              <button onClick={() => setReps(reps+10)} aria-label="More reps" style={stepBtn}>+</button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
             <div style={C.card}>
