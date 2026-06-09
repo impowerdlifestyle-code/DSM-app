@@ -3,7 +3,8 @@ import { tokens as t, C } from '../../styles.js'
 import FutureSelfPlayer from './FutureSelfPlayer.jsx'
 import { getCurrentMonth, getMonthlyCheckin } from './lib/checkin.js'
 import { authFetch } from '../../lib/authFetch.js'
-import { startDictation, speechSupported } from '../../lib/speech.js'
+import { recordUtterance, micSupported } from '../../lib/micRecorder.js'
+import { transcribe } from '../../lib/stt.js'
 
 // Once-per-month Coach V check-in.
 // Flow: available → asking (Coach V poses the question in his cloned voice)
@@ -19,7 +20,7 @@ export default function MonthlyCheckin({ user }) {
   const [transcript, setTranscript] = useState('')
   const [savedRow, setSavedRow] = useState(null)
   const [error, setError] = useState('')
-  const recognizerRef = useRef(null)
+  const recordRef = useRef(null)
   const month = getCurrentMonth()
   const monthLabel = MONTH_LONG[parseInt(month.slice(-2), 10) - 1]
 
@@ -35,54 +36,55 @@ export default function MonthlyCheckin({ user }) {
     return () => { live = false }
   }, [user?.id, month])
 
-  // Stop any running recognizer on unmount so navigating away mid-recording
-  // doesn't leave the mic open (H10 — mirrors VoiceJournal cleanup).
+  // Stop any in-flight recording on unmount so navigating away mid-recording
+  // doesn't leave the mic open (mirrors VoiceJournal cleanup).
   useEffect(() => () => {
-    const rec = recognizerRef.current
+    const rec = recordRef.current
     if (rec?.stop) { try { rec.stop() } catch { /* ignore */ } }
-    recognizerRef.current = null
+    recordRef.current = null
   }, [])
 
   async function startRecord() {
     setError(''); setTranscript('')
-    if (!speechSupported()) {
-      setError('Speech recognition is not available — try Chrome or iOS Safari 14.5+.')
+    if (!micSupported()) {
+      setError('Recording needs microphone access — open in Safari or Chrome.')
       setPhase('recording'); return
     }
+    // MediaRecorder + server transcription (robust on iOS / in-app browsers).
+    // Records until the athlete taps Done — no silence/maxMs cutoff.
     setPhase('recording')
-    recognizerRef.current = await startDictation({
-      continuous: true,
-      onText: (txt) => setTranscript(txt),
+    recordRef.current = await recordUtterance({
+      silenceMs: 600000,
+      maxMs: 180000,
       onError: (code) => {
-        console.warn('[MonthlyCheckin SR error]', code)
-        if (code === 'not-allowed')           setError('Microphone permission denied.')
-        else if (code === 'no-speech')        setError("Didn't catch any speech — try again.")
-        else if (code === 'audio-capture')    setError("Couldn't access your mic — check the OS settings.")
-        else if (code === 'network')          setError('Speech recognition needs network — check your connection.')
-        else if (code === 'aborted')          { /* user cancelled — silent */ }
-        else if (code === 'restart-failed' || code === 'start-failed') {
-          setError('Recorder stopped — tap record to try again.'); setPhase('available')
-        } else                                 setError(`Recorder error: ${code || 'unknown'}`)
+        console.warn('[MonthlyCheckin rec error]', code)
+        setError(code === 'not-allowed'
+          ? 'Microphone permission denied — enable mic access, then try again.'
+          : "Couldn't access your mic. Check your browser/OS settings.")
+        setPhase('available')
       },
-      onEnd: () => {},
     })
   }
 
   async function stopAndSave() {
-    if (recognizerRef.current?.stop) {
-      try { recognizerRef.current.stop() } catch { /* ignore */ }
-    }
-    recognizerRef.current = null
-    const finalText = transcript.trim()
-    if (!finalText) {
-      setError("Didn't catch a response — tap Start over to retry.")
-      return
-    }
-    if (!prompt) {
-      setError('Lost the question — Start over.')
-      return
-    }
+    const rec = recordRef.current
+    if (!rec) return // recorder still starting
+    recordRef.current = null
+    if (!prompt) { setError('Lost the question — Start over.'); return }
     setPhase('saving'); setError('')
+
+    let finalText = ''
+    try {
+      rec.stop()
+      const captured = await rec.promise
+      if (captured) finalText = await transcribe(captured.blob, captured.mimeType)
+    } catch (err) {
+      console.warn('[MonthlyCheckin transcribe failed]', err)
+    }
+    finalText = (finalText || '').replace(/\([^)]*\)/g, '').trim()
+    if (!finalText) {
+      setError("Didn't catch a response — tap Done again, or Start over."); setPhase('recording'); return
+    }
     try {
       const res = await authFetch('/api/future-self/save-checkin', {
         method: 'POST',
@@ -169,7 +171,7 @@ export default function MonthlyCheckin({ user }) {
       {phase === 'recording' && (
         <>
           <div style={liveBox}>
-            {transcript || <span style={{ color: t.color.textMute }}>Listening… answer out loud, then tap Done.</span>}
+            <span style={{ color: t.color.text }}>● Recording…</span> <span style={{ color: t.color.textMute }}>answer out loud, then tap Done.</span>
           </div>
           {error && <div style={errStyle}>{error}</div>}
           <button style={{ ...C.btn, marginTop: 12, marginBottom: 0 }} onClick={stopAndSave}>
@@ -179,7 +181,7 @@ export default function MonthlyCheckin({ user }) {
       )}
 
       {phase === 'saving' && (
-        <div style={{ marginTop: 12, fontSize: 12, color: t.color.textDim }}>Saving and reflecting…</div>
+        <div style={{ marginTop: 12, fontSize: 12, color: t.color.textDim }}>Transcribing, saving & reflecting…</div>
       )}
     </div>
   )

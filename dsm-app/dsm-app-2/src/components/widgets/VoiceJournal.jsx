@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { tokens as t } from '../../styles.js'
 import { analyzeVoiceJournal } from '../../lib/coachV.js'
 import { saveVoiceJournal, awardXp, evaluateBadges, supabase, bumpQuest } from '../../lib/supabase.js'
-import { startDictation, speechSupported } from '../../lib/speech.js'
+import { recordUtterance, micSupported } from '../../lib/micRecorder.js'
+import { transcribe } from '../../lib/stt.js'
 import { XP_TABLE } from '../../data/gamification.js'
 import FutureSelfPlayer from '../../features/future-self/FutureSelfPlayer.jsx'
 
@@ -18,7 +19,7 @@ export default function VoiceJournal({ user }) {
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState(null)
   const [transcript, setTranscript] = useState('')
-  const recognizerRef = useRef(null)
+  const recordRef = useRef(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [proposedActions, setProposedActions] = useState([])      // string[]
@@ -32,10 +33,10 @@ export default function VoiceJournal({ user }) {
     return () => clearInterval(id)
   }, [state])
 
-  // cleanup any pending recognizer on unmount
+  // cleanup any in-flight recording on unmount
   useEffect(() => () => {
-    if (recognizerRef.current?.stop) {
-      try { recognizerRef.current.stop() } catch { /* ignore */ }
+    if (recordRef.current?.stop) {
+      try { recordRef.current.stop() } catch { /* ignore */ }
     }
   }, [])
 
@@ -46,47 +47,48 @@ export default function VoiceJournal({ user }) {
     setTranscript('')
     setElapsed(0)
 
-    if (!speechSupported()) {
-      // Fallback: still allow the UI flow but warn — user can type.
-      setError('Live speech recognition not available in this browser. Try Chrome or Safari (iOS 14.5+).')
+    if (!micSupported()) {
+      setError('Recording needs microphone access in this browser. Open in Safari or Chrome.')
       setState('recording')
       return
     }
 
+    // MediaRecorder + server transcription (works on iOS / in-app browsers where
+    // Web Speech doesn't). Records until the athlete taps Stop — silence/maxMs
+    // auto-stop is effectively disabled so a long reflection isn't cut off.
     setState('recording')
-    recognizerRef.current = await startDictation({
-      continuous: true,
-      onText: (txt) => setTranscript(txt),
+    recordRef.current = await recordUtterance({
+      silenceMs: 600000,
+      maxMs: 180000,
       onError: (code) => {
-        console.warn('[VoiceJournal SR error]', code)
-        if (code === 'not-allowed')           setError('Microphone permission denied.')
-        else if (code === 'no-speech')        setError("Didn't catch any speech — try again.")
-        else if (code === 'audio-capture')    setError("Couldn't access your mic — check the OS settings.")
-        else if (code === 'network')          setError('Speech recognition needs network — check your connection.')
-        else if (code === 'aborted')          { /* user cancelled — silent */ }
-        else if (code === 'restart-failed' || code === 'start-failed') {
-          setError('Recorder stopped — tap record to try again.'); setState('idle')
-        } else                                 setError(`Recorder error: ${code || 'unknown'}`)
+        console.warn('[VoiceJournal rec error]', code)
+        setError(code === 'not-allowed'
+          ? 'Microphone permission denied — enable mic access, then try again.'
+          : "Couldn't access your mic. Check your browser/OS settings.")
+        setState('idle')
       },
-      onEnd: () => {},
     })
   }
 
   async function stopRecord() {
-    if (recognizerRef.current?.stop) {
-      try { recognizerRef.current.stop() } catch { /* ignore */ }
-    }
-    recognizerRef.current = null
-
-    const finalTranscript = (transcript || '').trim()
+    const rec = recordRef.current
+    if (!rec) return // recorder hasn't finished starting yet
+    recordRef.current = null
     setState('transcribing')
 
-    // L10: was showing FAKE_RESULT as if it were the athlete's own
-    // transcript when SpeechRecognition was unavailable — misleading.
-    // Now: explicit "type instead" UX. The static demo content is
-    // retained at module scope only as a reference for the UI shape.
+    let finalTranscript = ''
+    try {
+      rec.stop()
+      const captured = await rec.promise
+      if (captured) finalTranscript = await transcribe(captured.blob, captured.mimeType)
+    } catch (err) {
+      console.warn('[VoiceJournal transcribe failed]', err)
+    }
+    // Scribe tags non-speech audio as "(background noise)" etc — strip those.
+    finalTranscript = (finalTranscript || '').replace(/\([^)]*\)/g, '').trim()
+
     if (!finalTranscript) {
-      setError('Speech recognition unavailable on this device — type your reflection in the next field, or try a different browser.')
+      setError("Didn't catch any speech — tap New entry and try again, a bit closer to the mic.")
       setResult({ transcript: '', cues: [], sentiment: 'neutral', aiNote: '' })
       setState('analyzed')
       return
