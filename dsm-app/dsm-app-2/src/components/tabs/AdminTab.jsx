@@ -1079,7 +1079,9 @@ function PulseView({ onViewAthlete }) {
       {events.map(ev => (
         <button key={ev.id} onClick={() => onViewAthlete(ev.athleteId)} style={{ ...activityRow, display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: t.color.text }}>{ev.athlete}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.color.text }}>
+              {ev.athlete}{ev.isAthlete === false && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: t.color.textMute, marginLeft: 6 }}>COACH</span>}
+            </div>
             <div style={{ fontSize: 10, color: t.color.textMute, whiteSpace: 'nowrap' }}>{timeAgo(ev.at)}</div>
           </div>
           <div style={{ fontSize: 12, color: t.color.textDim, marginTop: 4 }}>

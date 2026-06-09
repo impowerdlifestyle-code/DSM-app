@@ -1180,7 +1180,7 @@ export async function getAppActivity({ days = 7 } = {}) {
     .order('created_at', { ascending: false }).limit(500)
 
   const [profilesRes, asRes, ckRes, vjRes, chRes, bmRes, mlRes] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, email, created_at').eq('role', 'athlete'),
+    supabase.from('profiles').select('id, full_name, email, role, created_at'),
     recent('action_steps', ', mental'),
     recent('weekly_checkins', ', confidence_level'),
     recent('voice_journal', ', title'),
@@ -1189,12 +1189,15 @@ export async function getAppActivity({ days = 7 } = {}) {
     recent('match_log'),
   ])
 
-  const athletes = profilesRes.data || []
-  const nameById = new Map(athletes.map(p => [p.id, p.full_name || p.email || 'Athlete']))
-  const nameFor = (id) => nameById.get(id) || 'Athlete'
+  // All profiles feed the name map (so coach activity shows a real name, not
+  // "Athlete"); athlete-engagement stats are scoped to role==='athlete' below.
+  const profiles = profilesRes.data || []
+  const nameById = new Map(profiles.map(p => [p.id, p.full_name || p.email || 'Athlete']))
+  const isAthlete = new Set(profiles.filter(p => p.role === 'athlete').map(p => p.id))
+  const nameFor = (id) => nameById.get(id) || 'Member'
 
   const events = []
-  const push = (rows, kind, fmt) => { for (const r of (rows || [])) events.push({ id: `${kind}-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind, summary: fmt(r) }) }
+  const push = (rows, kind, fmt) => { for (const r of (rows || [])) { if (!nameById.has(r.user_id)) continue; events.push({ id: `${kind}-${r.id}`, at: r.created_at, athleteId: r.user_id, athlete: nameFor(r.user_id), kind, summary: fmt(r), isAthlete: isAthlete.has(r.user_id) }) } }
   push(asRes.data, 'action_step', r => `Logged action step · mental ${r.mental ?? '—'}`)
   push(ckRes.data, 'checkin',     r => `Weekly check-in · confidence ${r.confidence_level ?? '—'}`)
   push(vjRes.data, 'voice',       r => `Voice journal · ${r.title || 'untitled'}`)
@@ -1203,20 +1206,25 @@ export async function getAppActivity({ days = 7 } = {}) {
   push(mlRes.data, 'match',       () => 'Match logged')
   events.sort((a, b) => (b.at || '').localeCompare(a.at || ''))
 
+  // byType + event counts are app-wide (incl. coaches testing); active/top/quiet
+  // are athlete-only engagement metrics.
   const byType = {}, byAthlete = {}
-  const activeWeek = new Set(), activeToday = new Set()
+  const activeAthleteWeek = new Set(), activeAthleteToday = new Set()
   let eventsToday = 0
   for (const e of events) {
     byType[e.kind] = (byType[e.kind] || 0) + 1
+    if (e.at >= todayIso) eventsToday++
+    if (!e.isAthlete) continue
     byAthlete[e.athleteId] = (byAthlete[e.athleteId] || 0) + 1
-    activeWeek.add(e.athleteId)
-    if (e.at >= todayIso) { activeToday.add(e.athleteId); eventsToday++ }
+    activeAthleteWeek.add(e.athleteId)
+    if (e.at >= todayIso) activeAthleteToday.add(e.athleteId)
   }
   const topAthletes = Object.entries(byAthlete)
     .map(([id, count]) => ({ id, name: nameFor(id), count }))
     .sort((a, b) => b.count - a.count).slice(0, 5)
-  const quiet = athletes
-    .filter(p => !activeWeek.has(p.id))
+  const athleteProfiles = profiles.filter(p => p.role === 'athlete')
+  const quiet = athleteProfiles
+    .filter(p => !activeAthleteWeek.has(p.id))
     .map(p => ({ id: p.id, name: p.full_name || p.email || 'Athlete' }))
 
   return {
@@ -1226,12 +1234,12 @@ export async function getAppActivity({ days = 7 } = {}) {
       topAthletes,
       quiet,
       stats: {
-        totalAthletes: athletes.length,
-        activeWeek: activeWeek.size,
-        activeToday: activeToday.size,
+        totalAthletes: athleteProfiles.length,
+        activeWeek: activeAthleteWeek.size,
+        activeToday: activeAthleteToday.size,
         eventsWeek: events.length,
         eventsToday,
-        newThisWeek: athletes.filter(p => p.created_at && p.created_at >= since).length,
+        newThisWeek: athleteProfiles.filter(p => p.created_at && p.created_at >= since).length,
       },
       days,
     },
