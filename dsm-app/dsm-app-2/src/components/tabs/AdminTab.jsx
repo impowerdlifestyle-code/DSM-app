@@ -960,9 +960,12 @@ function GroupActivityView({ groupId, onViewAthlete }) {
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     let on = true
-    const pull = async () => { const { data } = await getGroupActivity(groupId); if (on) { setEvents(data || []); setLoading(false) } }
+    const pull = async () => {
+      if (document.hidden) return // don't poll while the tab is backgrounded
+      const { data } = await getGroupActivity(groupId); if (on) { setEvents(data || []); setLoading(false) }
+    }
     pull()
-    const iv = setInterval(pull, 10000) // live: refresh as activity comes in
+    const iv = setInterval(pull, 30000) // live-ish refresh; paused when hidden
     return () => { on = false; clearInterval(iv) }
   }, [groupId])
 

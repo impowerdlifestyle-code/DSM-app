@@ -1779,7 +1779,7 @@ export async function getActiveMatch(userId) {
     .eq('user_id', userId)
     .is('post_logged_at', null)
     .gte('match_date', since)
-    .order('match_date', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1).maybeSingle()
   return { data, error }
 }

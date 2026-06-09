@@ -190,9 +190,9 @@ export default function NutritionTab({ user }) {
                       <div style={{
                         fontFamily: t.font.display, fontSize: 18, color: t.color.text,
                         fontVariantNumeric: 'tabular-nums', fontWeight: 500,
-                      }}>{entry.cal * entry.qty}</div>
+                      }}>{Math.round(entry.cal * entry.qty)}</div>
                       <div style={{ fontSize: 9, color: t.color.textMute, letterSpacing: 1.4, fontWeight: 600 }}>
-                        {entry.p * entry.qty}P · {entry.c * entry.qty}C · {entry.f * entry.qty}F
+                        {Math.round(entry.p * entry.qty)}P · {Math.round(entry.c * entry.qty)}C · {Math.round(entry.f * entry.qty)}F
                       </div>
                     </div>
                     <button onClick={() => deleteEntry(entry)}

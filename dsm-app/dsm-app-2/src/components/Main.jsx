@@ -1030,9 +1030,9 @@ export default function Main({ user }) {
               aria-label="Back"
               style={{
                 background: 'transparent', border: `1px solid ${t.color.line2}`,
-                borderRadius: 8, padding: '6px 9px', fontSize: 13,
+                borderRadius: 8, padding: '9px 11px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
-                lineHeight: 1, minWidth: 30,
+                lineHeight: 1, minWidth: 40,
               }}>←</button>
           )}
           {navHist.canForward && (
@@ -1041,9 +1041,9 @@ export default function Main({ user }) {
               aria-label="Forward"
               style={{
                 background: 'transparent', border: `1px solid ${t.color.line2}`,
-                borderRadius: 8, padding: '6px 9px', fontSize: 13,
+                borderRadius: 8, padding: '9px 11px', fontSize: 13,
                 color: t.color.text, cursor: 'pointer', fontWeight: 600,
-                lineHeight: 1, minWidth: 30,
+                lineHeight: 1, minWidth: 40,
               }}>→</button>
           )}
           <ThemeToggle size={32} />
@@ -1343,7 +1343,7 @@ export default function Main({ user }) {
               <div style={{ display:'flex',gap:6 }}>
                 {[0,1,2,3,4,5,6,7].map(n=>(
                   <button key={n} onClick={()=>setCI('sessionsCompleted',n)}
-                    style={{ flex:1,background:checkin.sessionsCompleted===n?t.color.text:t.color.surface2,border:'none',borderRadius:6,padding:'8px 4px',fontSize:11,fontWeight:800,color:checkin.sessionsCompleted===n?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
+                    style={{ flex:1,background:checkin.sessionsCompleted===n?t.color.text:t.color.surface2,border:'none',borderRadius:6,padding:'12px 4px',fontSize:11,fontWeight:800,color:checkin.sessionsCompleted===n?t.color.bg:t.color.text,cursor:'pointer',fontFamily:'inherit' }}>
                     {n}
                   </button>
                 ))}
