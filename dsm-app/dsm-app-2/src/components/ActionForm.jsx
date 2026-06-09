@@ -11,22 +11,25 @@ const StepCard = React.memo(({ icon, title, desc, k, usedSteps, occasions, comme
   useEffect(() => { occRef.current = onOccasion }, [onOccasion])
   useEffect(() => { comRef.current = onComment }, [onComment])
   return (
-    <div style={{ background:t.color.surface, borderRadius:12, padding:16, marginBottom:8, border:`1px solid ${used?t.color.text:t.color.surface2}` }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: used?10:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ fontSize:20 }}>{icon}</div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:800 }}>{title}</div>
-            <div style={{ fontSize:10, color:t.color.textMute }}>{desc}</div>
-          </div>
-        </div>
-        <button onClick={() => onToggle(k)}
-          style={{ background: used?t.color.text:t.color.surface2, border:'none', borderRadius:20, padding:'10px 16px', minHeight:44, fontSize:11, fontWeight:700, letterSpacing:1.2, color: used?t.color.bg:t.color.text, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
-          {used ? '✓ USED' : 'MARK'}
-        </button>
-      </div>
+    <div style={{
+      background: used ? t.color.pitchSoft : t.color.surface,
+      borderRadius:12, padding:14, marginBottom:8,
+      border:`2px solid ${used ? t.color.pitch : t.color.line2}`,
+      transition:'background 150ms, border-color 150ms',
+    }}>
+      <button onClick={() => onToggle(k)} aria-label={used ? `Uncheck ${title}` : `Check ${title}`}
+        style={{ display:'flex', alignItems:'center', gap:12, width:'100%', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left', fontFamily:'inherit' }}>
+        <span style={{ width:34, height:34, borderRadius:9, flexShrink:0, border:`2px solid ${used ? t.color.pitch : t.color.line2}`, background: used ? t.color.pitch : 'transparent', color:'#fff', fontSize:20, fontWeight:900, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {used ? '✓' : ''}
+        </span>
+        <span style={{ fontSize:20, flexShrink:0 }}>{icon}</span>
+        <span style={{ flex:1, minWidth:0 }}>
+          <span style={{ display:'block', fontSize:13, fontWeight:800, color:t.color.text }}>{title}</span>
+          <span style={{ display:'block', fontSize:10, color:t.color.textMute }}>{desc}</span>
+        </span>
+      </button>
       {used && (
-        <div>
+        <div style={{ marginTop:12 }}>
           <div style={{ fontSize:9, letterSpacing:3, color:t.color.textMute, fontWeight:700, marginBottom:7 }}>OCCASION</div>
           <input style={{ width:'100%', background:t.color.surface, border:`1px solid ${t.color.line}`, borderRadius:10, padding:'12px 14px', fontSize:14, color: t.color.text, fontFamily:'inherit', outline:'none', boxSizing:'border-box', marginBottom:8 }}
             placeholder="When did you use this?" value={occ}
