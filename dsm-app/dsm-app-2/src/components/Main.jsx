@@ -250,7 +250,9 @@ export default function Main({ user }) {
       supabase.from('weekly_checkins').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8).then(r => r.data).catch(() => null),
     ])
     // M2: habits may come back parsed (jsonb) or as a JSON string.
-    if (hd?.habits) setHabits(typeof hd.habits === 'string' ? JSON.parse(hd.habits) : hd.habits)
+    if (hd?.habits) {
+      try { setHabits(typeof hd.habits === 'string' ? JSON.parse(hd.habits) : hd.habits) } catch { /* malformed row — leave habits as-is */ }
+    }
     if (sd) setSubmissions(sd)
     if (bd) setBallHistory(bd)
     setQuests(todayQuests)
@@ -392,7 +394,7 @@ export default function Main({ user }) {
   useEffect(() => {
     if (!isYouth) return
     if (!surfaceAllowed(tab)) setTab('home')
-  }, [isYouth, tab])
+  }, [isYouth, tab, profile])
   const myName = profile?.full_name || user?.email
   // Athletes' assigned_coach is a free-text label picked from a dropdown, so a
   // case/whitespace difference vs the coach's own name would silently empty the
@@ -559,7 +561,6 @@ export default function Main({ user }) {
     } catch (err) {
       console.error('[Coach V error]', err)
       setChatLoading(false)
-      setTypingMsg('')
       const content = err?.code === 'daily_message_cap'
         ? err.message
         : '⚠️ Coach V is offline — try again in a moment.'
@@ -711,6 +712,17 @@ export default function Main({ user }) {
     if (callAudioRef.current) { try { callAudioRef.current.pause() } catch { /* ignore */ } callAudioRef.current = null }
   }
 
+  // Tear down an in-progress hands-free call if Main unmounts (sign-out, role
+  // change, paywall flip) — otherwise the mic stream + AudioContext leak and
+  // Coach audio keeps playing after the user has left.
+  useEffect(() => () => {
+    callGenRef.current++
+    callActiveRef.current = false
+    try { callRecRef.current?.stop() } catch { /* ignore */ }
+    try { window.speechSynthesis?.cancel() } catch { /* ignore */ }
+    if (callAudioRef.current) { try { callAudioRef.current.pause() } catch { /* ignore */ } callAudioRef.current = null }
+  }, [])
+
   // PAYWALL CHECK — see lib/supabase.js → evaluateAccess
   const access = profile ? evaluateAccess(profile) : { ok: true }
   const showPaywall = profile && !access.ok && profile.role !== 'coach'
@@ -845,7 +857,6 @@ export default function Main({ user }) {
     { id: 'actions',   label: 'Train',  icon: NavIcon.Activity,        matches: ['actions', 'ball', 'workouts', 'calendar', 'mental', 'match'] },
     { id: 'bot',       label: 'Coach',  icon: NavIcon.MessageCircle,   matches: ['bot', 'inbox'] },
     { id: 'squad',     label: 'Squad',  icon: NavIcon.Users },
-    { id: 'more',      label: 'More',   icon: NavIcon.Menu,            matches: ['more', 'nutrition', 'body', 'tracker', 'weekly', 'parents', 'course', 'voice', 'future'] },
     ...(isCoach && !isAdmin ? [{ id: 'dashboard', label: 'Mode',  icon: NavIcon.LayoutDashboard }] : []),
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: NavIcon.Shield }] : []),
   ]
@@ -1064,6 +1075,12 @@ export default function Main({ user }) {
             color: tab === 'locker' ? t.color.bg : t.color.textDim, cursor: 'pointer', fontWeight: 600,
             letterSpacing: 1.4, textTransform: 'uppercase',
           }}>Locker</button>
+          <button onClick={() => setTab('more')} aria-label="Menu" style={{
+            background: tab === 'more' ? t.color.text : 'transparent',
+            border: `1px solid ${t.color.line}`,
+            borderRadius: 8, padding: '6px 10px', fontSize: 14, lineHeight: 1,
+            color: tab === 'more' ? t.color.bg : t.color.textDim, cursor: 'pointer', fontWeight: 600,
+          }}>☰</button>
           <button onClick={() => signOut()} style={{
             background: 'transparent', border: `1px solid ${t.color.line}`,
             borderRadius: 8, padding: '6px 10px', fontSize: 10,
@@ -1107,6 +1124,7 @@ export default function Main({ user }) {
           todayActionLogged={todayActionLogged}
           isCoach={isCoach}
           onLogDay={handleLogDay}
+          onCallCoach={startCall}
         />
       )}
 
