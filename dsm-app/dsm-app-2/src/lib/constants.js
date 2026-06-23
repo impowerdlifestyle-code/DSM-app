@@ -1,3 +1,5 @@
+import { todayLocal } from './dates.js'
+
 export const QUOTES = [
   "The body achieves what the mind believes. Train your mind first.",
   "Champions aren't born. They're built -- one mental rep at a time.",
@@ -43,7 +45,7 @@ export const AI_SYSTEM = `You are Coach Valentino -- the AI version of Valentino
 export const emptyForm = {
   playerName: '',
   sessionType: 'Practice',
-  date: new Date().toISOString().split('T')[0],
+  date: todayLocal(),
   dayOfWeek: WEEKDAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1],
   didSteps: '',
   usedSteps: {},

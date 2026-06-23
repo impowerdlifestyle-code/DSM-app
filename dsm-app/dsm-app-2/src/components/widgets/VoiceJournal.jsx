@@ -131,7 +131,8 @@ export default function VoiceJournal({ user }) {
       did_action_steps: text,
       conditioning: 7, strength: 7, technical: 7, mental: 7,
     }))
-    await supabase.from('action_steps').insert(rows)
+    const { error } = await supabase.from('action_steps').insert(rows)
+    if (error) { alert('Could not save to action steps — try again.'); return }
     setActionsSaved(true)
   }
 

@@ -134,7 +134,7 @@ function BreathTimer({ onDone }) {
 }
 
 export default function MatchDayTab({ user, profile }) {
-  const PRE_KEY = `dsm_pre_match_${user.id}`
+  const PRE_KEY = `dsm_pre_match_${user?.id || 'anon'}`
   const [mode, setMode] = useState('home')    // home | pre | live | post
   const [active, setActive] = useState(null)
   const [history, setHistory] = useState([])
@@ -174,6 +174,7 @@ export default function MatchDayTab({ user, profile }) {
   useEffect(() => { load() }, [user])
 
   async function load() {
+    if (!user?.id) { setLoading(false); return }
     setLoading(true)
     const [activeRes, histRes] = await Promise.all([
       getActiveMatch(user.id),

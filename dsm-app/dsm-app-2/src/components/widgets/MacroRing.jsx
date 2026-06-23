@@ -5,7 +5,7 @@ import ProgressBar from './ProgressBar.jsx'
  * MacroRing — donut showing macro split with calories in the center.
  * Pass current totals (p/c/f grams) and the daily target for percentages.
  */
-export default function MacroRing({ totals, targets, size = 160, stroke = 14 }) {
+export default function MacroRing({ totals = { p: 0, c: 0, f: 0 }, targets = { cal: 0 }, size = 160, stroke = 14 }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const pCals = totals.p * 4
@@ -16,7 +16,7 @@ export default function MacroRing({ totals, targets, size = 160, stroke = 14 }) 
   const cPct = cCals / total
   const fPct = fCals / total
   const calsTotal = pCals + cCals + fCals
-  const calPctOfTarget = Math.round((calsTotal / targets.cal) * 100)
+  const calPctOfTarget = targets.cal ? Math.round((calsTotal / targets.cal) * 100) : 0
 
   const seg = (pct) => c * pct
   let offset = 0

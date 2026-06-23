@@ -9,6 +9,10 @@ export default function RestTimer({ seconds = 90, onDone }) {
   const [remaining, setRemaining] = useState(seconds)
   const [running, setRunning] = useState(false)
   const startedAt = useRef(null)
+  // Keep onDone in a ref so an inline parent callback doesn't re-create the
+  // interval on every render (which would reset the 1s tick mid-countdown).
+  const onDoneRef = useRef(onDone)
+  useEffect(() => { onDoneRef.current = onDone }, [onDone])
 
   useEffect(() => { setRemaining(seconds) }, [seconds])
 
@@ -18,14 +22,14 @@ export default function RestTimer({ seconds = 90, onDone }) {
       setRemaining(r => {
         if (r <= 1) {
           setRunning(false)
-          onDone?.()
+          onDoneRef.current?.()
           return 0
         }
         return r - 1
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [running, onDone])
+  }, [running])
 
   const pct = Math.max(0, remaining / seconds)
   const mins = Math.floor(remaining / 60)

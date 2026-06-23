@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
     let matchContext = null
     if (matchId) {
-      const { data: m } = await admin.from('match_log').select('*').eq('id', matchId).maybeSingle()
+      const { data: m } = await admin.from('match_log').select('*').eq('id', matchId).eq('user_id', userId).maybeSingle()
       matchContext = m || null
     } else if (context === 'pre_match') {
       const upcoming = digest.recentMatches.find(m => !m.result) // no result yet = upcoming

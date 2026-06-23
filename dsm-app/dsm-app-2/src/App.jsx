@@ -41,7 +41,7 @@ export default function App() {
       userIdRef.current = session?.user?.id ?? null
       setUser(session?.user ?? null)
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Supabase fires PASSWORD_RECOVERY when the user clicks the magic link
       // from the reset email. At that point there IS a session, but we want
@@ -64,6 +64,7 @@ export default function App() {
     if (!user?.id) { setRole(null); return }
     setRoleLoading(true)
     ;(async () => {
+      try {
       // Redeem the parent invite, but only clear it on success — otherwise a
       // transient failure would strand the parent on the athlete paywall with
       // no way to recover. Keeping it lets the next load retry.
@@ -90,7 +91,14 @@ export default function App() {
       }
       setRole(data?.role || 'athlete')
       if (data?.full_name) localStorage.setItem('dsm_player_name', data.full_name)
-      setRoleLoading(false)
+      } catch (e) {
+        // Transient failure restoring role — let the user in as athlete rather
+        // than stranding them on the splash forever. Next load retries.
+        console.error('[role load failed]', e)
+        setRole('athlete')
+      } finally {
+        setRoleLoading(false)
+      }
     })()
   }, [user?.id])
 

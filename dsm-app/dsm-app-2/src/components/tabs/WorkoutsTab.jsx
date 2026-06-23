@@ -76,7 +76,7 @@ function TodayView({ user }) {
 
   const totalSets = logs.reduce((a, l) => a + l.sets.length, 0)
   const doneSets = logs.reduce((a, l) => a + l.sets.filter(s => s.done).length, 0)
-  const pct = Math.round((doneSets / totalSets) * 100)
+  const pct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0
 
   async function onFinish() {
     if (!user?.id) { alert('Sign in to save workouts.'); return }
