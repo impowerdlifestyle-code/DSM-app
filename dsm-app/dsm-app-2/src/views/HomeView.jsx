@@ -1,17 +1,13 @@
 import React from 'react'
 import { C, tokens as t } from '../styles.js'
 import TiltCard from '../components/widgets/TiltCard.jsx'
-import QuestCard from '../components/widgets/QuestCard.jsx'
-import WeeklyRecapCard from '../components/widgets/WeeklyRecapCard.jsx'
-import CoachTasksCard from '../components/widgets/CoachTasksCard.jsx'
 import TrialBanner from '../components/widgets/TrialBanner.jsx'
-import WeeklyChallengesCard from '../components/widgets/WeeklyChallengesCard.jsx'
 
 export default function HomeView({
-  user, profile, access, streak, quests, activeNudge, badgeNotice,
-  setTab, onQuestClick, onDismissNudge, onActOnNudge,
-  quote, currentWeek, checkinDone, pct, completedHabits, totalHabits,
-  todayBMLogged, todayActionLogged, isCoach, onLogDay, onCallCoach,
+  user, profile, access, activeNudge,
+  setTab, onDismissNudge, onActOnNudge,
+  currentWeek, checkinDone, todayBMLogged, todayActionLogged,
+  isCoach, onLogDay, onCallCoach,
 }) {
   const todayTasks = [
     { glyph: 'B', label: 'Ball Mastery', sub: 'Daily skills log', done: todayBMLogged, tab: 'ball' },
@@ -21,16 +17,8 @@ export default function HomeView({
   const doneCount = todayTasks.filter(t => t.done).length
   const allDone = doneCount === todayTasks.length
   const nextTask = todayTasks.find(t => !t.done)
-  const streakLabel = pct >= 70 ? 'Elite cadence' : pct >= 40 ? 'Building rhythm' : 'Get going'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-
-  // Progressive disclosure (#4): keep the first days dead-simple — Coach + today's
-  // steps only. The rest of the app unlocks after the athlete has settled in.
-  const daysSince = profile?.onboarded_at
-    ? Math.floor((Date.now() - new Date(profile.onboarded_at).getTime()) / 86400000)
-    : 99
-  const isNew = !isCoach && daysSince < 3
 
   return (
     <>
@@ -92,7 +80,7 @@ export default function HomeView({
 
         <TrialBanner access={access} />
 
-        {/* ── VOICE-FIRST HERO (#5) — the one big, obvious action (#3) ── */}
+        {/* ── VOICE-FIRST HERO — the one big, obvious action ── */}
         {onCallCoach && (
           <TiltCard tiltLimit={8} scale={1.02} style={{ borderRadius: 18, marginBottom: 14 }}>
             <button onClick={onCallCoach} style={{
@@ -125,7 +113,7 @@ export default function HomeView({
           cursor: 'pointer', fontFamily: 'inherit', marginBottom: 18,
         }}>Type to Coach V instead</button>
 
-        {/* ── TODAY — the daily focus (#1), with done/empty states (#6) ── */}
+        {/* ── TODAY — the daily focus, with done/empty states ── */}
         <TiltCard tiltLimit={8} scale={1.015} style={{ borderRadius: 16, marginBottom: 14 }}>
         <div style={{ ...C.card, padding: 18, marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -182,120 +170,10 @@ export default function HomeView({
         </div>
         </TiltCard>
 
-        {/* Single primary action (#3) */}
+        {/* Single primary action */}
         <button style={C.btn} onClick={onLogDay}>Log today</button>
 
-        {/* ── EVERYTHING ELSE — unlocks after the first days (#4) ── */}
-        {!isNew && (
-          <>
-            <div style={{ height: 18 }} />
-            <CoachTasksCard user={user} />
-            <WeeklyRecapCard user={user} />
-            <WeeklyChallengesCard user={user} />
-
-            {/* Mindset fuel — athletic pull quote */}
-            <TiltCard tiltLimit={10} scale={1.02} style={{ borderRadius: 16, marginBottom: 14 }}>
-            <div style={{ ...C.orange, marginBottom: 0 }}>
-              <div style={{
-                position: 'absolute', top: 16, right: 18,
-                fontFamily: "'Bebas Neue', sans-serif", fontSize: 76, lineHeight: 0.75,
-                color: t.color.surface, letterSpacing: 0,
-              }}>&ldquo;</div>
-              <span style={C.olbl}>Today&rsquo;s fuel</span>
-              <div style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 28, fontWeight: 400, lineHeight: 1.05,
-                letterSpacing: 0.5, color: t.color.text,
-                marginTop: 6, marginBottom: 14, paddingRight: 50,
-                textTransform: 'uppercase',
-              }}>{quote}</div>
-              <div style={{
-                fontSize: 10, color: t.color.textDim, fontWeight: 600,
-                letterSpacing: 2.4, textTransform: 'uppercase',
-              }}>— Coach Valentino</div>
-            </div>
-            </TiltCard>
-
-            {/* Daily quests */}
-            {quests.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                  <span style={C.lbl}>Daily quests</span>
-                  <span style={{ fontSize: 10, letterSpacing: 1.4, color: t.color.text, fontWeight: 600, textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums' }}>
-                    {quests.filter(q => q.progress >= q.target).length}/{quests.length} done
-                  </span>
-                </div>
-                {quests.map(q => (
-                  <QuestCard key={q.id} quest={q} onClick={() => onQuestClick(q)} />
-                ))}
-              </div>
-            )}
-
-            {/* Weekly habits stat card */}
-            <TiltCard tiltLimit={8} scale={1.015} style={{ borderRadius: 16, marginBottom: 12 }}>
-            <div style={{ ...C.card, padding: 20, marginBottom: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
-                  <svg width="72" height="72" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="36" cy="36" r="30" fill="none" stroke={t.color.line} strokeWidth="3" />
-                    <circle cx="36" cy="36" r="30" fill="none" stroke={t.color.text} strokeWidth="3"
-                      strokeDasharray={`${2*Math.PI*30}`} strokeDashoffset={`${2*Math.PI*30*(1-pct/100)}`}
-                      strokeLinecap="round" style={{ transition: 'stroke-dashoffset 600ms cubic-bezier(.2,.7,.2,1)' }} />
-                  </svg>
-                  <div style={{
-                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-                    fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, fontWeight: 400, color: t.color.text,
-                    fontVariantNumeric: 'tabular-nums', letterSpacing: 1,
-                  }}>{pct}<span style={{ fontSize: 11, color: t.color.textDim, marginLeft: 2 }}>%</span></div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, letterSpacing: 2.4, color: t.color.textMute, fontWeight: 600, textTransform: 'uppercase' }}>Week habits</div>
-                  <div style={{
-                    fontFamily: "'Bebas Neue', sans-serif",
-                    fontSize: 40, fontWeight: 400, color: t.color.text,
-                    marginTop: 4, lineHeight: 0.9, fontVariantNumeric: 'tabular-nums', letterSpacing: 1,
-                  }}>
-                    {completedHabits}<span style={{ fontSize: 22, color: t.color.textMute }}> / {totalHabits}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: t.color.text, fontWeight: 600, marginTop: 6, letterSpacing: 1.4, textTransform: 'uppercase' }}>{streakLabel}</div>
-                </div>
-              </div>
-            </div>
-            </TiltCard>
-
-            {/* Explore — everything else lives behind the Menu button too */}
-            <div style={{ marginTop: 18, marginBottom: 14 }}>
-              <span style={C.lbl}>Explore</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[
-                  ['Calendar',        'Workouts & games',      'calendar'],
-                  ['Mental Tools',    'Train your mind',        'mental'],
-                  ['Habit Tracker',   'Deep streak history',    'tracker'],
-                  ['Weekly Check-In', 'Sunday reflection',      'weekly'],
-                  ['Course',          'Video lessons',          'course'],
-                  ['For Parents',     'Best-practices guide',   'parents'],
-                ].map(([label, sub, target]) => (
-                  <TiltCard key={target} tiltLimit={14} scale={1.04} style={{ borderRadius: 14 }}>
-                  <button onClick={() => setTab(target)} style={{
-                    width: '100%',
-                    background: t.color.surface, border: `1px solid ${t.color.line}`,
-                    borderRadius: 14, padding: '14px 14px', textAlign: 'left',
-                    cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                    fontFamily: 'inherit', color: 'inherit',
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: t.color.text, letterSpacing: -0.1 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: t.color.textDim, marginTop: 3 }}>{sub}</div>
-                    <div style={{
-                      position: 'absolute', bottom: 12, right: 12,
-                      fontSize: 12, color: t.color.line2,
-                    }}>→</div>
-                  </button>
-                  </TiltCard>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+        {/* Everything else lives behind the ☰ menu and the bottom nav. */}
 
         {profile && (
           <div style={{
