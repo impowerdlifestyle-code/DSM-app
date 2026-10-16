@@ -1033,7 +1033,9 @@ export async function resolveReport(reportId, status, reviewerId) {
 }
 
 // Admin/coach manually creates an athlete account. Returns { data, error }.
+// authFetch imports this module, so load it lazily — same as deleteAccount.
 export async function adminCreateAthlete({ email, name, password, age, assignedCoach }) {
+  const { authFetch } = await import('./authFetch.js')
   const res = await authFetch('/api/admin-create-athlete', {
     method: 'POST',
     body: JSON.stringify({ email, name, password, age, assignedCoach }),
@@ -1052,7 +1054,9 @@ export async function adminArchiveAthlete(athleteId, archived = true) {
 }
 
 // Permanently delete an athlete account + all their data (admin/coach only).
+// authFetch imports this module, so load it lazily — same as deleteAccount.
 export async function adminDeleteAthlete(athleteId) {
+  const { authFetch } = await import('./authFetch.js')
   const res = await authFetch('/api/admin-delete-athlete', { method: 'POST', body: JSON.stringify({ athleteId }) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) return { error: new Error(json.error || `Failed (${res.status})`) }
